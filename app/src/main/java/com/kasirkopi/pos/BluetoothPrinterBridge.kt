@@ -9,22 +9,31 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Base64
 import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.core.content.ContextCompat
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.IOException
+import java.io.OutputStream
 import java.util.UUID
 
 class BluetoothPrinterBridge(private val context: Context) {
 
-    companion object {
-        private val SPP_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+    private var webView: WebView? = null
+
+    constructor(context: Context, webView: WebView) : this(context) {
+        this.webView = webView
     }
+
+    private val sppUuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+    private var bluetoothSocket: BluetoothSocket? = null
+    private var outputStream: OutputStream? = null
+    private var connectedMac: String = ""
 
     private fun getBluetoothAdapter(): BluetoothAdapter? {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        return manager?.adapter
+        return manager?.adapter ?: BluetoothAdapter.getDefaultAdapter()
     }
 
     private fun hasBluetoothPermission(): Boolean {
@@ -34,135 +43,156 @@ class BluetoothPrinterBridge(private val context: Context) {
                 Manifest.permission.BLUETOOTH_CONNECT
             ) == PackageManager.PERMISSION_GRANTED
         } else {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.BLUETOOTH
-            ) == PackageManager.PERMISSION_GRANTED
+            true
         }
+    }
+
+    @JavascriptInterface
+    fun isBluetoothAvailable(): Boolean {
+        val adapter = getBluetoothAdapter()
+        return adapter != null && adapter.isEnabled
     }
 
     @SuppressLint("MissingPermission")
     @JavascriptInterface
-    fun getPairedPrinters(): String {
+    fun getPairedDevices(): String {
         val result = JSONArray()
         val adapter = getBluetoothAdapter() ?: return result.toString()
-
-        if (!hasBluetoothPermission() || !adapter.isEnabled) {
+        if (!adapter.isEnabled || !hasBluetoothPermission()) {
             return result.toString()
         }
 
-        val pairedDevices: Set<BluetoothDevice> = adapter.bondedDevices ?: emptySet()
-        for (device in pairedDevices) {
-            val obj = JSONObject()
-            obj.put("name", device.name ?: "Printer Bluetooth")
-            obj.put("address", device.address)
-            result.put(obj)
+        try {
+            val pairedDevices: Set<BluetoothDevice>? = adapter.bondedDevices
+            pairedDevices?.forEach { device ->
+                val obj = JSONObject()
+                obj.put("name", device.name ?: "Perangkat Bluetooth")
+                obj.put("address", device.address ?: "")
+                result.put(obj)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         return result.toString()
     }
 
-    @JavascriptInterface
-    fun getPairedDevices(): String = getPairedPrinters()
-
     @SuppressLint("MissingPermission")
     @JavascriptInterface
-    fun print(macAddress: String, content: String): String {
-        val response = JSONObject()
+    fun connect(macAddress: String): Boolean {
+        if (macAddress.isBlank() || !hasBluetoothPermission()) return false
+        val adapter = getBluetoothAdapter() ?: return false
+        if (!adapter.isEnabled) return false
 
-        if (!hasBluetoothPermission()) {
-            return response
-                .put("success", false)
-                .put("error", "Izin Bluetooth belum diberikan. Buka Pengaturan Aplikasi > Izin > Perangkat di sekitar.")
-                .toString()
+        if (isConnected() && connectedMac.equals(macAddress, ignoreCase = true)) {
+            return true
         }
 
-        val adapter = getBluetoothAdapter()
-        if (adapter == null) {
-            return response
-                .put("success", false)
-                .put("error", "Tablet ini tidak mendukung Bluetooth.")
-                .toString()
-        }
+        disconnect()
 
-        if (!adapter.isEnabled) {
-            return response
-                .put("success", false)
-                .put("error", "Bluetooth tablet mati. Nyalakan Bluetooth terlebih dahulu.")
-                .toString()
-        }
-
-        if (macAddress.isBlank()) {
-            return response
-                .put("success", false)
-                .put("error", "Printer belum dipilih. Pilih VSC MP-58A di menu Pengaturan Printer.")
-                .toString()
-        }
-
-        var socket: BluetoothSocket? = null
         return try {
-            val device: BluetoothDevice = adapter.getRemoteDevice(macAddress.trim())
             adapter.cancelDiscovery()
-
-            val activeSocket: BluetoothSocket = try {
-                device.createRfcommSocketToServiceRecord(SPP_UUID)
-            } catch (e: Exception) {
-                val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                m.invoke(device, 1) as BluetoothSocket
-            }
-            socket = activeSocket
-
-            activeSocket.connect()
-            val outputStream = activeSocket.outputStream
-
-            outputStream.write(byteArrayOf(0x1B, 0x40))
-            outputStream.write(byteArrayOf(0x1B, 0x74, 0x00))
-            val cleanText = content.replace("\r\n", "\n")
-            outputStream.write(cleanText.toByteArray(Charsets.ISO_8859_1))
-            outputStream.write("\n\n\n\n".toByteArray(Charsets.ISO_8859_1))
-            outputStream.flush()
-
-            Thread.sleep(250)
-            response.put("success", true).toString()
-        } catch (e: IllegalArgumentException) {
-            response
-                .put("success", false)
-                .put("error", "Alamat MAC printer tidak valid ($macAddress).")
-                .toString()
-        } catch (e: IOException) {
-            response
-                .put("success", false)
-                .put("error", "Gagal terhubung ke printer. Pastikan VSC MP-58A menyala, tidak kehabisan kertas, dan berada dekat tablet.")
-                .toString()
+            val device: BluetoothDevice = adapter.getRemoteDevice(macAddress)
+            val socket = device.createRfcommSocketToServiceRecord(sppUuid)
+            socket.connect()
+            bluetoothSocket = socket
+            outputStream = socket.outputStream
+            connectedMac = macAddress
+            true
         } catch (e: Exception) {
-            response
-                .put("success", false)
-                .put("error", "Error cetak: ${e.localizedMessage ?: "Tidak diketahui"}")
-                .toString()
-        } finally {
-            try {
-                socket?.close()
-            } catch (_: IOException) {
-            }
+            e.printStackTrace()
+            disconnect()
+            false
         }
     }
 
     @JavascriptInterface
-    fun printText(macAddress: String, content: String): String = print(macAddress, content)
+    fun connectPrinter(macAddress: String): Boolean {
+        return connect(macAddress)
+    }
 
     @JavascriptInterface
-    fun printReceipt(macAddress: String, content: String): String = print(macAddress, content)
-
-    @JavascriptInterface
-    fun testPrint(macAddress: String): String {
-        val sample = buildString {
-            appendLine("================================")
-            appendLine("         TES CETAK A-POS        ")
-            appendLine("   VSC MP-58A (32 KARAKTER)     ")
-            appendLine("================================")
-            appendLine("12345678901234567890123456789012")
-            appendLine("Status : Koneksi SPP Berhasil")
-            appendLine("--------------------------------")
+    fun isConnected(): Boolean {
+        return try {
+            bluetoothSocket?.isConnected == true && outputStream != null
+        } catch (e: Exception) {
+            false
         }
-        return print(macAddress, sample)
+    }
+
+    @JavascriptInterface
+    fun getConnectedAddress(): String {
+        return if (isConnected()) connectedMac else ""
+    }
+
+    @JavascriptInterface
+    fun disconnect(): Boolean {
+        return try {
+            outputStream?.close()
+            bluetoothSocket?.close()
+            outputStream = null
+            bluetoothSocket = null
+            connectedMac = ""
+            true
+        } catch (e: Exception) {
+            outputStream = null
+            bluetoothSocket = null
+            connectedMac = ""
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun printRawBase64(base64Data: String): Boolean {
+        if (base64Data.isBlank()) return false
+        if (!isConnected() && connectedMac.isNotBlank()) {
+            connect(connectedMac)
+        }
+        val out = outputStream ?: return false
+
+        return try {
+            val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+            val chunkSize = 384
+            var offset = 0
+            while (offset < bytes.size) {
+                val len = minOf(chunkSize, bytes.size - offset)
+                out.write(bytes, offset, len)
+                out.flush()
+                offset += len
+                if (offset < bytes.size) {
+                    Thread.sleep(15)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            disconnect()
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun printText(text: String): Boolean {
+        if (!isConnected() && connectedMac.isNotBlank()) {
+            connect(connectedMac)
+        }
+        val out = outputStream ?: return false
+
+        return try {
+            val initCmd = byteArrayOf(0x1B, 0x40)
+            val payload = (text + "\n\n\n").toByteArray(Charsets.UTF_8)
+            out.write(initCmd)
+            out.write(payload)
+            out.flush()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            disconnect()
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun printReceipt(text: String): Boolean {
+        return printText(text)
     }
 }
