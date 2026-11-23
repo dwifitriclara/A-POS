@@ -824,7 +824,7 @@
 
           <div class="card">
             <div class="flex-between">
-              <h3 style="margin:0;">2. Logo Struk (Monokrom 1-Bit)</h3>
+              <h3 style="margin:0;">1. Logo Struk (Monokrom 1-Bit)</h3>
               <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer;">
                 <input type="checkbox" id="logo-enabled" style="width:22px; height:22px;" onchange="savePrinterProfile()" />
                 <span>Aktifkan Logo</span>
@@ -860,20 +860,46 @@
 
           <div class="card">
             <h3>3. Area Cetak &amp; Profil Kedai</h3>
-            <div class="grid-3 mt-1">
-              <div>
-                <label for="char-width-input">Lebar Karakter</label>
-                <input type="number" id="char-width-input" min="24" max="42" value="32" onchange="savePrinterProfile()" />
-              </div>
-              <div>
-                <label for="left-margin-input">Margin Kiri (Spasi)</label>
-                <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
-              </div>
-              <div>
-                <label for="feed-lines-input">Spasi Sobek Bawah</label>
-                <input type="number" id="feed-lines-input" min="1" max="8" value="3" onchange="savePrinterProfile()" />
-              </div>
-            </div>
+            <div class="card">
+         <h3>3. Area Cetak, Ukuran Font &amp; Profil Kedai</h3>
+
+         <div class="grid-2 mt-1">
+           <div>
+             <label for="paper-size-select">Ukuran Kertas Thermal</label>
+             <select id="paper-size-select" onchange="onPrinterPresetChange()">
+               <option value="58mm">58mm (Mini Thermal)</option>
+               <option value="80mm">80mm (Standard)</option>
+             </select>
+           </div>
+           <div>
+             <label for="receipt-font-mode">Ukuran Font Kertas Struk</label>
+             <select id="receipt-font-mode" onchange="onPrinterPresetChange()">
+               <option value="FONT_B">Kecil &amp; Rapat (Font B — Ideal 58mm)</option>
+               <option value="FONT_A">Sedang / Standar (Font A)</option>
+               <option value="FONT_A_TALL">Besar / Tinggi (Font A 2x)</option>
+             </select>
+           </div>
+         </div>
+
+         <div class="mt-1">
+           <label for="receipt-preview-size">Ukuran Teks Pratinjau Struk: <span id="receipt-preview-size-val">11</span> px</label>
+           <input type="range" id="receipt-preview-size" min="9" max="15" step="0.5" value="11" oninput="onPreviewFontSlider()" />
+         </div>
+
+         <div class="grid-3 mt-1">
+           <div>
+             <label for="char-width-input">Lebar Karakter</label>
+             <input type="number" id="char-width-input" min="24" max="48" value="42" onchange="savePrinterProfile()" />
+           </div>
+           <div>
+             <label for="left-margin-input">Margin Kiri (Spasi)</label>
+             <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
+           </div>
+           <div>
+             <label for="feed-lines-input">Spasi Sobek Bawah</label>
+             <input type="number" id="feed-lines-input" min="1" max="8" value="3" onchange="savePrinterProfile()" />
+           </div>
+         </div>
 
             <div class="grid-2 mt-1">
               <div>
@@ -2682,5 +2708,89 @@
       }
     });
   </script>
+<script>
+  // === PENGATUR UKURAN KERTAS & FONT STRUK ===
+  function applyReceiptFontPreset() {
+    const paperEl = document.getElementById('paperSizeSelect');
+    const fontEl = document.getElementById('receiptFontMode');
+    const charInput = document.getElementById('charWidthInput');
+    const slider = document.getElementById('receiptPreviewSlider');
+
+    const paper = paperEl ? paperEl.value : '58mm';
+    const fontMode = fontEl ? fontEl.value : 'FONT_B';
+
+    if (charInput) {
+      charInput.max = 64;
+      if (paper === '58mm') {
+        charInput.value = (fontMode === 'FONT_B') ? 42 : 32;
+      } else {
+        charInput.value = (fontMode === 'FONT_B') ? 56 : 48;
+      }
+    }
+
+    if (slider) {
+      if (fontMode === 'FONT_B') {
+        slider.value = 10;
+      } else if (fontMode === 'FONT_A') {
+        slider.value = 11.5;
+      } else {
+        slider.value = 13.5;
+      }
+    }
+
+    localStorage.setItem('pos_paper_size', paper);
+    localStorage.setItem('pos_receipt_font_mode', fontMode);
+
+    updateReceiptPreviewFont();
+    if (typeof updatePrinterSettings === 'function') {
+      updatePrinterSettings();
+    }
+  }
+
+  function updateReceiptPreviewFont() {
+    const slider = document.getElementById('receiptPreviewSlider');
+    const label = document.getElementById('receiptPreviewSizeVal');
+    const size = slider ? slider.value : (localStorage.getItem('pos_receipt_preview_size') || '10');
+
+    if (label) label.textContent = size;
+    localStorage.setItem('pos_receipt_preview_size', size);
+
+    let styleTag = document.getElementById('dynamic-receipt-font-style');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'dynamic-receipt-font-style';
+      document.head.appendChild(styleTag);
+    }
+
+    styleTag.textContent = `
+      #receiptPreview, .receipt-preview, #previewStruk, .struk-preview, pre {
+        font-size: ${size}px !important;
+        line-height: 1.35 !important;
+      }
+      @media print {
+        #receiptPreview, .receipt-preview, #previewStruk, .struk-preview, pre, .print-area * {
+          font-size: ${size}px !important;
+          line-height: 1.35 !important;
+        }
+      }
+    `;
+  }
+
+  (function initReceiptFontSettings() {
+    const savedPaper = localStorage.getItem('pos_paper_size') || '58mm';
+    const savedFont = localStorage.getItem('pos_receipt_font_mode') || 'FONT_B';
+    const savedSize = localStorage.getItem('pos_receipt_preview_size') || '10';
+
+    const paperEl = document.getElementById('paperSizeSelect');
+    const fontEl = document.getElementById('receiptFontMode');
+    const sliderEl = document.getElementById('receiptPreviewSlider');
+
+    if (paperEl) paperEl.value = savedPaper;
+    if (fontEl) fontEl.value = savedFont;
+    if (sliderEl) sliderEl.value = savedSize;
+
+    updateReceiptPreviewFont();
+  })();
+</script>
 </body>
 </html>
