@@ -103,15 +103,16 @@ class BluetoothPrinterBridge(private val context: Context) {
             val device: BluetoothDevice = adapter.getRemoteDevice(macAddress.trim())
             adapter.cancelDiscovery()
 
-            socket = try {
+            val activeSocket: BluetoothSocket = try {
                 device.createRfcommSocketToServiceRecord(SPP_UUID)
             } catch (e: Exception) {
                 val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
                 m.invoke(device, 1) as BluetoothSocket
             }
+            socket = activeSocket
 
-            socket.connect()
-            val outputStream = socket.outputStream
+            activeSocket.connect()
+            val outputStream = activeSocket.outputStream
 
             outputStream.write(byteArrayOf(0x1B, 0x40))
             outputStream.write(byteArrayOf(0x1B, 0x74, 0x00))
