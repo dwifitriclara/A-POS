@@ -1,3809 +1,479 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>A-POS — Kasir Street Coffee Shop</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A-POS • SEGI COFFEE</title>
   <style>
-    /* =========================================================================
-       1. DESIGN TOKENS & BASE STYLES (OFFLINE-READY, ZERO EXTERNAL ASSETS)
-       ========================================================================= */
     :root {
-      --bg-cream: #F6F4EF;
-      --bg-cream-deep: #ECE8DF;
+      --bg: #FAF7F2;
       --surface: #FFFFFF;
-      --border: #E5E0D8;
-      --border-strong: #D1C9BC;
-      --text-espresso: #231F1E;
-      --text-muted: #6B635B;
-      --accent-coffee: #B45309;
-      --accent-coffee-dark: #92400E;
-      --accent-coffee-soft: #FEF3C7;
-      --accent-coffee-tint: #FFFBEB;
-      --emerald: #15803D;
-      --emerald-bg: #DCFCE7;
-      --emerald-border: #86EFAC;
-      --amber: #D97706;
-      --amber-bg: #FEF3C7;
-      --amber-border: #FCD34D;
-      --red: #DC2626;
-      --red-bg: #FEE2E2;
-      --red-border: #FCA5A5;
-      --sky: #0369A1;
-      --sky-bg: #E0F2FE;
-      --sky-border: #7DD3FC;
-      --shadow-xs: 0 1px 3px rgba(35, 31, 30, 0.05);
-      --shadow-sm: 0 4px 12px rgba(35, 31, 30, 0.06);
-      --shadow-lg: 0 18px 42px rgba(35, 31, 30, 0.16);
-      --radius-sm: 10px;
-      --radius-md: 14px;
-      --radius-lg: 18px;
-      --radius-xl: 24px;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+      --surface-alt: #F3ECE2;
+      --border: #DFD3C3;
+      --primary: #3E2723;
+      --primary-hover: #2C1B18;
+      --accent: #795548;
+      --accent-soft: #EFEBE9;
+      --text: #231715;
+      --muted: #6D5D58;
+      --success: #2E7D32;
+      --success-bg: #E8F5E9;
+      --warning: #EF6C00;
+      --warning-bg: #FFF3E0;
+      --danger: #C62828;
+      --danger-bg: #FFEBEE;
+      --shadow: 0 2px 10px rgba(62, 39, 35, 0.07);
+      --radius: 12px;
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-cream);
-      color: var(--text-espresso);
-      font-family: var(--font-sans);
-      font-size: 15px;
-      line-height: 1.45;
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    button, input, select {
-      font-family: inherit;
-      font-size: inherit;
-    }
-
-    button {
-      cursor: pointer;
-      border: none;
-      background: none;
-      touch-action: manipulation;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .mono {
-      font-family: var(--font-mono);
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #CFC7BA;
-      border-radius: 999px;
-    }
-
-    /* =========================================================================
-       2. BUTTONS, INPUTS & BADGES (MIN 48PX TOUCH TARGETS)
-       ========================================================================= */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 48px;
-      padding: 12px 18px;
-      border-radius: var(--radius-md);
-      font-weight: 700;
-      font-size: 14.5px;
-      transition: transform 0.08s ease, background-color 0.15s ease, border-color 0.15s ease;
-      user-select: none;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-lg {
-      min-height: 56px;
-      padding: 14px 22px;
-      font-size: 16px;
-      border-radius: 16px;
-    }
-
-    .btn-sm {
-      min-height: 40px;
-      padding: 8px 13px;
-      font-size: 13px;
-      border-radius: 11px;
-    }
-
-    .btn-block {
-      width: 100%;
-    }
-
-    .btn-primary {
-      background: var(--accent-coffee);
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(180, 83, 9, 0.24);
-    }
-    .btn-primary:hover {
-      background: var(--accent-coffee-dark);
-    }
-
-    .btn-espresso {
-      background: var(--text-espresso);
-      color: #FFFFFF;
-      box-shadow: var(--shadow-xs);
-    }
-    .btn-espresso:hover {
-      background: #141110;
-    }
-
-    .btn-emerald {
-      background: var(--emerald);
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(21, 128, 61, 0.22);
-    }
-    .btn-emerald:hover {
-      background: #166534;
-    }
-
-    .btn-outline {
-      background: var(--surface);
-      color: var(--text-espresso);
-      border: 1.5px solid var(--border);
-    }
-    .btn-outline:hover {
-      background: var(--bg-cream);
-    }
-
-    .btn-soft {
-      background: var(--bg-cream);
-      color: var(--text-espresso);
-      border: 1px solid var(--border);
-    }
-    .btn-soft:hover {
-      background: var(--bg-cream-deep);
-    }
-
-    .btn-danger-outline {
-      background: var(--red-bg);
-      color: var(--red);
-      border: 1.5px solid var(--red-border);
-    }
-
-    .input-field, .select-field {
-      width: 100%;
-      min-height: 48px;
-      padding: 12px 15px;
-      border-radius: var(--radius-md);
-      border: 1.5px solid var(--border);
-      background: var(--bg-cream);
-      color: var(--text-espresso);
-      font-weight: 600;
-      font-size: 15px;
-      transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
-    }
-
-    .input-field:focus, .select-field:focus {
-      outline: none;
-      background: var(--surface);
-      border-color: var(--accent-coffee);
-      box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.14);
-    }
-
-    .input-field.input-error {
-      border-color: var(--red);
-      background: #FFF9F9;
-      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
-    }
-
-    .field-label {
-      display: block;
-      font-size: 11.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 800;
-      line-height: 1.2;
-      white-space: nowrap;
-    }
-
-    .badge-emerald { background: var(--emerald-bg); color: var(--emerald); border: 1px solid var(--emerald-border); }
-    .badge-amber   { background: var(--amber-bg);   color: #B45309;        border: 1px solid var(--amber-border); }
-    .badge-red     { background: var(--red-bg);     color: var(--red);     border: 1px solid var(--red-border); }
-    .badge-sky     { background: var(--sky-bg);     color: var(--sky);     border: 1px solid var(--sky-border); }
-    .badge-coffee  { background: var(--accent-coffee-soft); color: var(--accent-coffee-dark); border: 1px solid #FCD34D; }
-    .badge-neutral { background: var(--bg-cream-deep); color: var(--text-muted); }
-
-    .alert-box {
-      padding: 13px 16px;
-      border-radius: var(--radius-md);
-      font-size: 13.5px;
-      line-height: 1.45;
-    }
-    .alert-red   { background: var(--red-bg);   border: 1.5px solid var(--red-border);   color: #991B1B; }
-    .alert-amber { background: var(--amber-bg); border: 1.5px solid var(--amber-border); color: #92400E; }
-    .alert-sky   { background: var(--sky-bg);   border: 1.5px solid var(--sky-border);   color: #075985; }
-    .alert-green { background: var(--emerald-bg); border: 1.5px solid var(--emerald-border); color: #166534; }
-
-    /* =========================================================================
-       3. FULL-SCREEN OVERLAYS: LOGIN PIN & BUKA KASIR
-       ========================================================================= */
-    .overlay-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      background: var(--bg-cream);
-      overflow-y: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-    }
-
-    .login-container {
-      width: 100%;
-      max-width: 880px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      padding: 26px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 26px;
-      align-items: center;
-    }
-
-    @media (min-width: 768px) {
-      .login-container {
-        grid-template-columns: 1.05fr 0.95fr;
-        padding: 34px;
-      }
-    }
-
-    .brand-badge {
-      width: 50px;
-      height: 50px;
-      border-radius: 15px;
-      background: linear-gradient(135deg, var(--accent-coffee), var(--accent-coffee-dark));
-      color: #FFFFFF;
-      font-weight: 900;
-      font-size: 20px;
-      letter-spacing: -0.03em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 6px 14px rgba(180, 83, 9, 0.25);
-    }
-
-    .account-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      max-height: 280px;
-      overflow-y: auto;
-      padding-right: 4px;
     }
 
-    .account-card {
-      width: 100%;
-      min-height: 62px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 16px;
-      border: 1.5px solid var(--border);
-      background: var(--surface);
-      text-align: left;
-      transition: all 0.14s ease;
-    }
-
-    .account-card:hover {
-      background: var(--bg-cream);
-    }
-
-    .account-card.selected {
-      border-color: var(--accent-coffee);
-      background: var(--accent-coffee-tint);
-      box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.14);
-    }
-
-    .account-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: var(--bg-cream-deep);
-      color: var(--text-muted);
-      font-weight: 800;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .account-card.selected .account-avatar {
-      background: var(--accent-coffee);
-      color: #FFFFFF;
-    }
-
-    .pin-pad-box {
-      background: var(--bg-cream);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .pin-dots {
-      display: flex;
-      gap: 16px;
-      margin: 16px 0 20px;
-    }
-
-    .pin-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid var(--border-strong);
-      background: #FFFFFF;
-      transition: all 0.14s ease;
-    }
-
-    .pin-dot.filled {
-      border-color: var(--accent-coffee);
-      background: var(--accent-coffee);
-      transform: scale(1.18);
-    }
-
-    .numpad-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 100%;
-      max-width: 310px;
-    }
-
-    .numpad-key {
-      height: 58px;
-      border-radius: 16px;
-      background: #FFFFFF;
-      border: 1.5px solid var(--border);
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text-espresso);
-      box-shadow: var(--shadow-xs);
-      transition: transform 0.07s, background-color 0.12s;
-    }
-
-    .numpad-key:hover {
-      background: #FAF8F5;
-    }
-
-    .numpad-key:active {
-      transform: scale(0.95);
-    }
-
-    .numpad-key.key-fn {
-      font-size: 13.5px;
-      font-weight: 800;
-      color: var(--text-muted);
-      background: #FAF8F5;
-    }
-
-    .open-shift-card {
-      width: 100%;
-      max-width: 540px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      padding: 28px;
-    }
-
-    /* =========================================================================
-       4. TOP NAVIGATION HEADER
-       ========================================================================= */
+    /* TOP BAR */
     .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: rgba(246, 244, 239, 0.96);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 18px;
-    }
-
-    .topbar-inner {
-      max-width: 1360px;
-      margin: 0 auto;
+      background: var(--primary);
+      color: #FFF;
+      padding: 10px 16px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     }
+    .brand-group { display: flex; align-items: center; gap: 10px; }
+    .brand-logo {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: #D7CCC8; color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+    }
+    .brand-title { font-weight: 800; font-size: 16px; letter-spacing: 0.4px; }
+    .brand-sub { font-size: 11px; color: #D7CCC8; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-    .topbar-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .sync-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,0.14); color: #FFF;
     }
-
-    .topbar-logo {
-      width: 42px;
-      height: 42px;
-      border-radius: 13px;
-      background: linear-gradient(135deg, var(--accent-coffee), var(--accent-coffee-dark));
-      color: #FFFFFF;
-      font-weight: 900;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #81C784; }
+    .sync-dot.offline { background: #FFB74D; }
 
     .nav-tabs {
-      display: flex;
+      display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;
+    }
+    .nav-btn {
+      background: rgba(255,255,255,0.1);
+      color: #EFEBE9;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: var(--bg-cream-deep);
-      padding: 5px;
-      border-radius: 16px;
-      overflow-x: auto;
     }
-
-    .nav-tab {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 44px;
-      padding: 9px 18px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted);
-      white-space: nowrap;
-      transition: all 0.14s ease;
+    .nav-btn.active {
+      background: #FAF7F2;
+      color: var(--primary);
+      border-color: #FAF7F2;
     }
-
-    .nav-tab:hover {
-      color: var(--text-espresso);
-    }
-
-    .nav-tab.active {
-      background: var(--surface);
-      color: var(--text-espresso);
-      box-shadow: var(--shadow-xs);
-    }
-
-    .tab-count-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 22px;
-      height: 22px;
-      padding: 0 6px;
+    .badge-count {
+      background: var(--warning);
+      color: #FFF;
+      font-size: 11px;
+      padding: 1px 6px;
       border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 800;
-      background: var(--accent-coffee);
-      color: #FFFFFF;
-    }
-
-    .tab-count-pill.empty {
-      background: #CFC7BA;
-      color: var(--text-espresso);
-    }
-
-    .status-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--emerald);
-    }
-
-    .status-dot.warn {
-      background: var(--amber);
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .user-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 8px 13px;
-      font-size: 13.5px;
       font-weight: 700;
     }
 
-    /* =========================================================================
-       5. MAIN WORKSPACE & TAB LAYOUTS
-       ========================================================================= */
+    .user-controls { display: flex; align-items: center; gap: 8px; }
+    .role-badge {
+      background: #5D4037;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .btn-switch {
+      background: #D7CCC8;
+      color: var(--primary);
+      border: none;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* MAIN LAYOUT */
     .main-container {
-      max-width: 1360px;
+      flex: 1;
+      padding: 14px;
+      max-width: 1440px;
       width: 100%;
       margin: 0 auto;
-      padding: 18px;
     }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
+    /* CARDS & BUTTONS */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 20px;
-      box-shadow: var(--shadow-xs);
-    }
-
-    /* --- TAB 1: KASIR SPLIT-SCREEN --- */
-    .kasir-split {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      align-items: start;
-    }
-
-    @media (min-width: 880px) {
-      .kasir-split {
-        grid-template-columns: 1.38fr 1fr;
-      }
-    }
-
-    .category-pills {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      margin-bottom: 16px;
-    }
-
-    .cat-pill {
-      min-height: 48px;
-      padding: 11px 22px;
-      border-radius: 999px;
-      font-size: 14.5px;
-      font-weight: 800;
-      background: var(--surface);
-      color: var(--text-muted);
-      border: 1.5px solid var(--border);
-      white-space: nowrap;
-      transition: all 0.14s ease;
-    }
-
-    .cat-pill.active {
-      background: var(--text-espresso);
-      color: #FFFFFF;
-      border-color: var(--text-espresso);
-      box-shadow: var(--shadow-xs);
-    }
-
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 13px;
-    }
-
-    @media (min-width: 600px) {
-      .product-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    .product-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 18px;
+      border-radius: var(--radius);
       padding: 16px;
-      min-height: 120px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      text-align: left;
-      box-shadow: var(--shadow-xs);
-      transition: transform 0.08s, border-color 0.14s, box-shadow 0.14s;
-      user-select: none;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
     }
-
-    .product-card:hover {
-      border-color: var(--border-strong);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .product-card:active {
-      transform: scale(0.97);
-    }
-
-    .product-card.selected {
-      border-color: var(--accent-coffee);
-      background: #FFFDF8;
-      box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.14);
-    }
-
-    .qty-bubble {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 26px;
-      height: 26px;
-      padding: 0 7px;
-      border-radius: 999px;
-      background: var(--accent-coffee);
-      color: #FFFFFF;
-      font-size: 12.5px;
+    .card-title {
+      font-size: 15px;
       font-weight: 800;
-    }
-
-    /* Right Cart Panel */
-    .cart-panel {
-      position: sticky;
-      top: 84px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .cart-scroll-area {
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 0;
-    }
-
-    .cart-items {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 245px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-
-    .cart-row {
+      color: var(--primary);
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      background: var(--bg-cream);
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      padding: 10px 12px;
-    }
-
-    .stepper-group {
-      display: flex;
-      align-items: center;
       gap: 8px;
-      flex-shrink: 0;
     }
-
-    .step-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      font-size: 20px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .step-btn.dec {
-      background: #FFFFFF;
-      border: 1.5px solid var(--border);
-      color: var(--text-espresso);
-    }
-
-    .step-btn.inc {
-      background: var(--text-espresso);
-      color: #FFFFFF;
-    }
-
-    .seg-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      background: var(--bg-cream);
-      border: 1px solid var(--border);
-      padding: 5px;
-      border-radius: 15px;
-    }
-
-    .seg-option {
-      min-height: 46px;
-      border-radius: 11px;
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--text-muted);
-      transition: all 0.14s ease;
-    }
-
-    .seg-option.active {
-      background: #FFFFFF;
-      color: var(--text-espresso);
-      box-shadow: var(--shadow-xs);
-    }
-
-    .quick-nominals {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 7px;
-    }
-
-    .nominal-chip {
-      min-height: 42px;
-      padding: 6px 8px;
-      border-radius: 11px;
-      background: #FFFFFF;
-      border: 1.5px solid var(--border);
-      font-size: 12.5px;
-      font-weight: 800;
-      color: var(--text-espresso);
-    }
-
-    .nominal-chip:hover {
-      background: var(--bg-cream);
-    }
-
-    .change-banner {
-      padding: 12px 15px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-weight: 800;
-      font-size: 14px;
-    }
-
-    /* --- TAB 2: DAPUR --- */
-    .dapur-cards-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    @media (min-width: 680px) {
-      .dapur-cards-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (min-width: 1060px) {
-      .dapur-cards-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    .kitchen-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top-width: 5px;
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: var(--shadow-xs);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .kitchen-card.st-masuk { border-top-color: var(--sky); }
-    .kitchen-card.st-dibuat { border-top-color: var(--amber); }
-    .kitchen-card.st-disajikan { border-top-color: var(--emerald); }
-
-    .done-order-row {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 14px 18px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    /* --- TWO-COLUMN LAYOUT FOR LACI KAS, PRINTER, KELOLA --- */
-    .two-col-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      align-items: start;
-    }
-
-    @media (min-width: 900px) {
-      .two-col-grid {
-        grid-template-columns: 1fr 1.15fr;
-      }
-    }
-
-    .ledger-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      font-size: 14.5px;
-    }
-
-    /* --- THERMAL 58MM PAPER (EXACTLY 32 CHARS) --- */
-    .thermal-paper {
-      background: #FFFFFF;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: var(--shadow-sm);
-      overflow-x: auto;
-      width: 100%;
-      max-width: 345px;
-    }
-
-    .thermal-ruler {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: #8C8278;
-      border-bottom: 1px dashed var(--border-strong);
-      padding-bottom: 6px;
-      margin-bottom: 8px;
-      white-space: pre;
-      user-select: none;
-    }
-
-    .thermal-text {
-      margin: 0;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      line-height: 1.45;
-      color: #1A1716;
-      white-space: pre;
-    }
-
-    /* --- OWNER MANAGE SUB-TABS --- */
-    .sub-pills {
-      display: inline-flex;
-      gap: 6px;
-      background: var(--bg-cream-deep);
-      padding: 5px;
-      border-radius: 15px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
-    .sub-pill {
-      min-height: 42px;
-      padding: 8px 16px;
-      border-radius: 11px;
-      font-size: 13.5px;
-      font-weight: 800;
-      color: var(--text-muted);
-    }
-
-    .sub-pill.active {
-      background: var(--surface);
-      color: var(--text-espresso);
-      box-shadow: var(--shadow-xs);
-    }
-
-    /* --- MODALS & TOASTS --- */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      background: rgba(35, 31, 30, 0.56);
-      backdrop-filter: blur(3px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      overflow-y: auto;
-    }
-
-    .modal-dialog {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      width: 100%;
-      max-width: 740px;
-      max-height: 92vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      overflow: hidden;
-    }
-
-    .modal-dialog.modal-narrow {
-      max-width: 450px;
-    }
-
-    .modal-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-cream);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .modal-footer {
-      padding: 14px 20px;
-      border-top: 1px solid var(--border);
-      background: var(--bg-cream);
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .receipts-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 18px;
-    }
-
-    .toast-container {
-      position: fixed;
-      bottom: 22px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 80;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      width: 94%;
-      max-width: 480px;
-      pointer-events: none;
-    }
-
-    .toast-banner {
-      pointer-events: auto;
-      background: var(--text-espresso);
-      color: #FFFFFF;
-      padding: 12px 16px;
-      border-radius: 16px;
-      font-size: 13.5px;
+    .btn {
+      border: none;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 13px;
       font-weight: 700;
-      box-shadow: var(--shadow-lg);
-      display: flex;
+      cursor: pointer;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.85; }
+    .btn-primary { background: var(--primary); color: #FFF; }
+    .btn-accent { background: var(--accent); color: #FFF; }
+    .btn-success { background: var(--success); color: #FFF; }
+    .btn-danger { background: var(--danger); color: #FFF; }
+    .btn-outline { background: var(--surface); color: var(--primary); border: 1.5px solid var(--border); }
+    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 7px; }
+    .btn-block { width: 100%; }
+
+    input, select, textarea {
       width: 100%;
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 9px 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      background: #FFF;
+      color: var(--text);
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .form-group { margin-bottom: 11px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+    /* KASIR SPLIT LAYOUT */
+    .pos-layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 820px) {
+      .pos-layout { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
     }
 
-    .toast-banner.t-success { background: #14532D; }
-    .toast-banner.t-error   { background: #991B1B; }
+    .cat-pills { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px; }
+    .cat-pill {
+      padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .cat-pill.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 10px;
+    }
+    .menu-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 96px;
+      transition: transform 0.08s, border-color 0.15s;
+    }
+    .menu-card:active { transform: scale(0.98); border-color: var(--primary); }
+    .menu-cat { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; }
+    .menu-name { font-size: 14px; font-weight: 800; margin: 4px 0; line-height: 1.25; }
+    .menu-price { font-size: 13px; font-weight: 700; color: var(--primary); }
+
+    .cart-box { position: sticky; top: 70px; }
+    .order-type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .type-btn {
+      padding: 8px; border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--surface-alt); font-weight: 800; font-size: 12px; cursor: pointer;
+    }
+    .type-btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+
+    .cart-items { max-height: 310px; overflow-y: auto; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 10px 0; }
+    .cart-item {
+      padding: 9px 0;
+      border-bottom: 1px dashed var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .qty-ctrl { display: flex; align-items: center; gap: 6px; }
+    .qty-btn {
+      width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
+      background: var(--surface-alt); font-weight: 800; cursor: pointer;
+    }
+    .note-tag {
+      display: inline-block; font-size: 11px; background: var(--warning-bg);
+      color: var(--warning); padding: 2px 6px; border-radius: 5px; margin-top: 3px; font-weight: 600;
+    }
+
+    .summary-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+    .summary-total { font-size: 17px; font-weight: 900; color: var(--primary); border-top: 1.5px solid var(--border); padding-top: 8px; margin-top: 6px; }
+
+    /* DAPUR & HISTORY */
+    .kitchen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+    .ticket-card {
+      background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px;
+      border-top: 5px solid var(--warning);
+    }
+    .ticket-card.done { border-top-color: var(--success); opacity: 0.85; }
+    .ticket-card.voided { border-top-color: var(--danger); background: #FFF8F8; }
+
+    /* PRINTER & THERMAL PREVIEW */
+    .printer-layout { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; align-items: start; }
+    @media (max-width: 860px) { .printer-layout { grid-template-columns: 1fr; } }
+
+    .bt-device {
+      padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 9px;
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    .bt-device.selected { border-color: var(--success); background: var(--success-bg); }
+
+    .thermal-paper-wrap {
+      background: #E6DFD5; padding: 18px; border-radius: 12px; display: flex; justify-content: center;
+    }
+    .thermal-paper {
+      background: #FFFDF9;
+      color: #1A1A1A;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      line-height: 1.32;
+      padding: 16px 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+      width: 270px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .preview-logo-box { text-align: center; margin-bottom: 6px; }
+    .preview-logo-box canvas { max-width: 100%; height: auto; image-rendering: pixelated; }
+
+    /* SUBTABS IN KELOLA */
+    .subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .subtab-btn {
+      padding: 8px 13px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .subtab-btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+
+    /* MODALS */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(20, 12, 10, 0.65);
+      display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--surface); border-radius: 14px; max-width: 440px; width: 100%;
+      padding: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.28); max-height: 92vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 17px; font-weight: 900; color: var(--primary); margin-bottom: 10px; }
+
+    .badge {
+      display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 800;
+    }
+    .badge-success { background: var(--success-bg); color: var(--success); }
+    .badge-warning { background: var(--warning-bg); color: var(--warning); }
+    .badge-danger { background: var(--danger-bg); color: var(--danger); }
+    .badge-neutral { background: var(--surface-alt); color: var(--primary); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { font-weight: 800; color: var(--muted); background: var(--surface-alt); }
+
+    .toast {
+      position: fixed; bottom: 18px; right: 18px; background: var(--primary); color: #FFF;
+      padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.22); z-index: 200; display: none;
+    }
   </style>
 </head>
 <body>
 
-  <!-- ==================== TOAST NOTIFICATION AREA ==================== -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <!-- ==================== 1. FULL-SCREEN PIN LOGIN ==================== -->
-  <div id="screenLogin" class="overlay-screen">
-    <div class="login-container">
-      <!-- Left: Brand & Account List -->
-      <div>
-        <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
-          <div class="brand-badge">A-POS</div>
-          <div>
-            <h1 style="margin:0; font-size:24px; font-weight:900; letter-spacing:-0.02em;">A-POS</h1>
-            <p style="margin:2px 0 0; font-size:13.5px; color:var(--text-muted);">Pilih akun kasir lalu masukkan 4 digit PIN</p>
-          </div>
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-cream); border:1px solid var(--border); border-radius:14px; padding:11px 15px; margin-bottom:16px; font-size:13.5px;">
-          <span style="color:var(--text-muted); font-weight:700;">Status Toko:</span>
-          <span id="loginShopStatusBadge" class="badge badge-neutral">TUTUP</span>
-        </div>
-
-        <span class="field-label">PILIH AKUN KASIR</span>
-        <div id="loginAccountList" class="account-list"></div>
-
-        <p style="margin:14px 0 0; font-size:12px; color:var(--text-muted);">
-          PIN Bawaan: <strong>Owner</strong> (<span class="mono">1234</span>) · <strong>Kasir 1</strong> (<span class="mono">1111</span>) · <strong>Kasir 2</strong> (<span class="mono">2222</span>)
-        </p>
-      </div>
-
-      <!-- Right: Touchscreen Numeric Keypad -->
-      <div class="pin-pad-box">
-        <span style="font-size:11.5px; font-weight:800; letter-spacing:0.06em; color:var(--text-muted);">MASUKKAN PIN UNTUK</span>
-        <div id="loginSelectedUserLabel" style="font-size:19px; font-weight:900; margin-top:4px;">Owner</div>
-
-        <div id="loginPinDots" class="pin-dots">
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-        </div>
-
-        <div id="loginErrorAlert" class="alert-box alert-red hidden" style="width:100%; margin-bottom:14px; padding:10px 12px; text-align:center; font-weight:700;">
-          PIN salah. Silakan coba lagi.
-        </div>
-
-        <div class="numpad-grid">
-          <button type="button" class="numpad-key" data-digit="1">1</button>
-          <button type="button" class="numpad-key" data-digit="2">2</button>
-          <button type="button" class="numpad-key" data-digit="3">3</button>
-          <button type="button" class="numpad-key" data-digit="4">4</button>
-          <button type="button" class="numpad-key" data-digit="5">5</button>
-          <button type="button" class="numpad-key" data-digit="6">6</button>
-          <button type="button" class="numpad-key" data-digit="7">7</button>
-          <button type="button" class="numpad-key" data-digit="8">8</button>
-          <button type="button" class="numpad-key" data-digit="9">9</button>
-          <button type="button" id="btnPinClearAll" class="numpad-key key-fn">Clear</button>
-          <button type="button" class="numpad-key" data-digit="0">0</button>
-          <button type="button" id="btnPinBackspace" class="numpad-key key-fn">Hapus</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 2. BUKA KASIR HARI INI ==================== -->
-  <div id="screenOpenCashier" class="overlay-screen hidden">
-    <div class="open-shift-card">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div class="brand-badge">A-POS</div>
-          <div>
-            <h2 style="margin:0; font-size:21px; font-weight:900;">Buka Kasir Hari Ini</h2>
-            <p style="margin:3px 0 0; font-size:13.5px; color:var(--text-muted);">
-              Kasir aktif: <strong id="openShiftUserText" style="color:var(--text-espresso);">Owner</strong>
-            </p>
-          </div>
-        </div>
-        <button type="button" id="btnSwitchUserFromOpen" class="btn btn-soft btn-sm">Ganti Akun</button>
-      </div>
-
-      <div class="alert-box alert-amber" style="margin-top:18px;">
-        <strong>Modal Kembalian dari Tutup Kasir Sebelumnya:</strong>
-        <div id="openShiftPrevNote" style="margin-top:4px;">
-          Terisi otomatis sebesar <strong>Rp 200.000</strong> dari sisa laci shift terakhir.
-        </div>
-      </div>
-
-      <div style="margin-top:18px; display:flex; flex-direction:column; gap:14px;">
-        <div>
-          <label class="field-label" for="inputOpeningFloat">MODAL AWAL LACI (RP)</label>
-          <input id="inputOpeningFloat" type="text" inputmode="numeric" autocomplete="off" class="input-field" style="font-size:20px; font-weight:900;">
-        </div>
-
-        <div>
-          <label class="field-label" for="inputOpeningNote">CATATAN BUKA KASIR (OPSIONAL)</label>
-          <input id="inputOpeningNote" type="text" autocomplete="off" placeholder="Contoh: Tambah uang receh Rp 50.000" class="input-field">
-        </div>
-
-        <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
-          <span style="width:9px; height:9px; border-radius:50%; background:var(--emerald); flex-shrink:0;"></span>
-          <span>Nomor urut pesanan akan otomatis direset mulai dari <strong>#1</strong>.</span>
-        </div>
-
-        <button type="button" id="btnOpenStoreSubmit" class="btn btn-primary btn-lg btn-block" style="margin-top:4px;">
-          Buka Toko &amp; Mulai Kasir
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 3. TOP BAR NAVIGATION ==================== -->
+  <!-- TOP NAVIGATION -->
   <header class="topbar">
-    <div class="topbar-inner">
-      <div class="topbar-brand">
-        <div class="topbar-logo">A-POS</div>
-        <div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="font-size:18px; font-weight:900; letter-spacing:-0.02em;">A-POS</strong>
-            <span id="topShopBadge" class="badge badge-emerald">BUKA</span>
-          </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-            <span id="topShiftMeta">Shift aktif</span> · Next: <strong id="topNextOrderNum" style="color:var(--accent-coffee);">#1</strong>
-          </div>
+    <div class="brand-group">
+      <div class="brand-logo">SC</div>
+      <div>
+        <div class="brand-title" id="topStoreName">SEGI COFFEE</div>
+        <div class="brand-sub">
+          <span id="topBranchName">Cabang Utama</span>
+          <span class="sync-pill" id="syncStatusPill">
+            <span class="sync-dot" id="syncDot"></span>
+            <span id="syncText">Lokal Siap</span>
+          </span>
         </div>
       </div>
+    </div>
 
-      <!-- Main Navigation Tabs -->
-      <nav class="nav-tabs" aria-label="Menu Utama">
-        <button type="button" class="nav-tab active" data-tab="kasir">Kasir</button>
-        <button type="button" class="nav-tab" data-tab="dapur">
-          <span>Dapur</span>
-          <span id="tabDapurBadge" class="tab-count-pill empty">0</span>
-        </button>
-        <button type="button" class="nav-tab" data-tab="laci">Laci Kas</button>
-        <button type="button" class="nav-tab" data-tab="printer">
-          <span>Printer</span>
-          <span id="tabPrinterDot" class="status-dot"></span>
-        </button>
-        <button type="button" id="navTabKelola" class="nav-tab hidden" data-tab="kelola">Kelola</button>
-      </nav>
+    <nav class="nav-tabs" id="mainNavTabs">
+      <button class="nav-btn active" data-tab="kasir" onclick="switchTab('kasir')">Kasir</button>
+      <button class="nav-btn" data-tab="dapur" onclick="switchTab('dapur')">
+        Dapur <span class="badge-count" id="kitchenBadge">0</span>
+      </button>
+      <button class="nav-btn" data-tab="laci" onclick="switchTab('laci')">Laci Kas</button>
+      <button class="nav-btn" data-tab="printer" onclick="switchTab('printer')">Printer</button>
+      <button class="nav-btn" data-tab="kelola" onclick="switchTab('kelola')">Kelola</button>
+    </nav>
 
-      <!-- Active User & Lock Button -->
-      <div class="topbar-right">
-        <div class="user-pill">
-          <span id="topUserName">Owner</span>
-          <span id="topUserRoleBadge" class="badge badge-coffee">Owner</span>
-        </div>
-        <button type="button" id="btnLockAccount" class="btn btn-outline btn-sm">
-          <span>Kunci / Ganti Akun</span>
-        </button>
-      </div>
+    <div class="user-controls">
+      <span class="role-badge" id="activeUserBadge">Owner</span>
+      <button class="btn-switch" onclick="openAccountModal()">Ganti Akun</button>
     </div>
   </header>
 
-  <!-- ==================== 4. MAIN CONTENT WORKSPACE ==================== -->
   <main class="main-container">
 
     <!-- ==================== TAB 1: KASIR ==================== -->
-    <section id="panel-kasir" class="tab-panel kasir-split">
-      <!-- Left: Categories & Menu Grid -->
-      <div>
-        <div class="category-pills">
-          <button type="button" class="cat-pill active" data-cat="Semua">Semua</button>
-          <button type="button" class="cat-pill" data-cat="Kopi">Kopi</button>
-          <button type="button" class="cat-pill" data-cat="Non-kopi">Non-kopi</button>
-          <button type="button" class="cat-pill" data-cat="Makanan">Makanan</button>
-        </div>
-
-        <div id="productGrid" class="product-grid"></div>
-      </div>
-
-      <!-- Right: Cart & Payment -->
-      <div class="card cart-panel">
-        <!-- Customer Name -->
+    <section id="tab-kasir" class="tab-pane active">
+      <div class="pos-layout">
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <label class="field-label" for="inputCustomerName" style="margin:0;">NAMA PELANGGAN <span style="color:var(--red);">*</span></label>
-            <span style="font-size:12.5px; color:var(--text-muted);">Order <strong id="cartOrderSeqBadge" style="color:var(--accent-coffee);">#1</strong></span>
-          </div>
-          <input id="inputCustomerName" type="text" autocomplete="off" placeholder="Ketik nama pelanggan (Contoh: Rina)" class="input-field">
-          <div id="customerNameWarning" class="hidden" style="margin-top:6px; font-size:12.5px; font-weight:800; color:var(--red);">
-            Nama pelanggan wajib diisi sebelum menyimpan pesanan!
-          </div>
-        </div>
-
-        <!-- Cart Items -->
-        <div class="cart-scroll-area">
-          <div id="cartEmptyState" style="padding:26px 10px; text-align:center; font-size:13.5px; color:var(--text-muted);">
-            Ketuk kartu menu di sebelah kiri untuk menambah pesanan.
-          </div>
-          <div id="cartItemsList" class="cart-items hidden"></div>
-        </div>
-
-        <!-- Grand Total -->
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <span style="font-size:13px; font-weight:800; letter-spacing:0.05em; color:var(--text-muted);">TOTAL PESANAN</span>
-          <span id="cartTotalDisplay" style="font-size:28px; font-weight:900; letter-spacing:-0.02em;">Rp 0</span>
-        </div>
-
-        <!-- Payment Controls -->
-        <div style="display:flex; flex-direction:column; gap:11px;">
-          <span class="field-label" style="margin:0;">PEMBAYARAN</span>
-
-          <div class="seg-group">
-            <button type="button" class="seg-option active" data-pay-mode="sekarang">Bayar sekarang</button>
-            <button type="button" class="seg-option" data-pay-mode="nanti">Bayar nanti</button>
-          </div>
-
-          <!-- Bayar Sekarang Options -->
-          <div id="sectionPayNow" style="display:flex; flex-direction:column; gap:11px;">
-            <div class="seg-group">
-              <button type="button" class="seg-option active" data-pay-method="TUNAI">Tunai</button>
-              <button type="button" class="seg-option" data-pay-method="QRIS">QRIS</button>
+          <div class="card" style="padding: 12px;">
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+              <input type="text" id="menuSearch" placeholder="Cari menu kopi / makanan..." oninput="renderMenuGrid()" />
             </div>
+            <div class="cat-pills" id="categoryPills"></div>
+            <div class="menu-grid" id="menuGrid"></div>
+          </div>
+        </div>
 
-            <!-- Tunai Cash Input -->
-            <div id="sectionCashInput" style="display:flex; flex-direction:column; gap:9px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <label class="field-label" for="inputCashReceived" style="margin:0;">UANG DITERIMA</label>
-                <button type="button" id="btnClearCash" class="hidden" style="font-size:12px; font-weight:800; color:var(--accent-coffee);">Hapus</button>
-              </div>
-              <input id="inputCashReceived" type="text" inputmode="numeric" autocomplete="off" placeholder="Kosongkan jika uang pas" class="input-field">
+        <div class="card cart-box">
+          <div class="card-title">
+            <span>Pesanan Baru</span>
+            <span class="badge badge-neutral" id="nextOrderBadge">Next #0001</span>
+          </div>
 
-              <div class="quick-nominals">
-                <button type="button" class="nominal-chip" data-quick-amt="exact">Uang pas</button>
-                <button type="button" class="nominal-chip" data-quick-amt="20000">20.000</button>
-                <button type="button" class="nominal-chip" data-quick-amt="50000">50.000</button>
-                <button type="button" class="nominal-chip" data-quick-amt="100000">100.000</button>
-              </div>
+          <div class="order-type-toggle">
+            <button class="type-btn active" id="btnDineIn" onclick="setOrderType('DINE IN')">DINE IN</button>
+            <button class="type-btn" id="btnTakeAway" onclick="setOrderType('TAKE AWAY')">TAKE AWAY</button>
+          </div>
 
-              <div id="changeBanner" class="change-banner hidden">
-                <span id="changeLabel">KEMBALIAN</span>
-                <span id="changeValue" style="font-size:17px; font-weight:900;">Rp 0</span>
-              </div>
-            </div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <input type="text" id="customerNameInput" placeholder="Nama Pelanggan / No. Meja (Opsional)" />
+          </div>
 
-            <!-- QRIS Info -->
-            <div id="sectionQrisHint" class="alert-box alert-sky hidden">
-              <strong>Pembayaran QRIS:</strong> Pastikan pelanggan sudah menunjukkan bukti berhasil transfer QRIS.
+          <div class="cart-items" id="cartItemsList">
+            <div style="text-align:center; color:var(--muted); padding:24px 0; font-size:13px;">
+              Belum ada item dipilih
             </div>
           </div>
 
-          <!-- Bayar Nanti Info -->
-          <div id="sectionPayLaterHint" class="alert-box alert-amber hidden">
-            <strong>Bayar Nanti (Open Bill):</strong> Tiket bar tetap dicetak &amp; pesanan masuk Dapur. Pelunasan dilakukan di tab Dapur.
+          <div id="discountRow" class="form-group" style="display:flex; gap:8px; align-items:center;">
+            <label style="margin:0; white-space:nowrap;">Diskon (Rp):</label>
+            <input type="number" id="discountInput" value="0" min="0" oninput="renderCart()" />
+          </div>
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong id="cartSubtotal">Rp 0</strong>
+          </div>
+          <div class="summary-row">
+            <span>Diskon</span>
+            <span id="cartDiscount">- Rp 0</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Grand Total</span>
+            <span id="cartGrandTotal">Rp 0</span>
+          </div>
+
+          <div class="grid-2" style="margin-top:12px;">
+            <button class="btn btn-primary" onclick="openCheckoutModal('CASH')">Bayar Tunai</button>
+            <button class="btn btn-success" onclick="openCheckoutModal('QRIS')">Bayar QRIS</button>
           </div>
         </div>
-
-        <!-- Print Customer Receipt Checkbox -->
-        <label style="display:flex; align-items:flex-start; gap:11px; cursor:pointer; user-select:none;">
-          <input id="chkPrintCustomerReceipt" type="checkbox" checked style="width:21px; height:21px; margin-top:2px; accent-color:var(--accent-coffee); cursor:pointer;">
-          <div>
-            <div style="font-size:14px; font-weight:800;">Cetak struk pelanggan</div>
-            <div style="font-size:12px; color:var(--text-muted);">Tiket bar SELALU dicetak otomatis di printer 58mm.</div>
-          </div>
-        </label>
-
-        <!-- Submit Order Button -->
-        <button type="button" id="btnSubmitOrder" class="btn btn-primary btn-lg btn-block">
-          Simpan &amp; Bayar
-        </button>
       </div>
     </section>
 
     <!-- ==================== TAB 2: DAPUR ==================== -->
-    <section id="panel-dapur" class="tab-panel hidden" style="display:flex; flex-direction:column; gap:26px;">
-      <!-- Section 1: Pesanan Berjalan -->
-      <div>
-        <div style="display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:14px;">
-          <h2 style="margin:0; font-size:20px; font-weight:900;">Pesanan berjalan</h2>
-          <span id="dapurActiveSubtitle" style="font-size:13px; color:var(--text-muted);">0 pesanan · paling lama di kiri atas</span>
+    <section id="tab-dapur" class="tab-pane">
+      <div class="card">
+        <div class="card-title">
+          <span>Antrean Pesanan Barista / Dapur</span>
+          <span style="font-size:12px; color:var(--muted);">Struk dapur tercetak otomatis saat pembayaran</span>
         </div>
-
-        <div id="dapurEmptyActive" class="card" style="text-align:center; padding:42px 20px;">
-          <div style="font-size:16px; font-weight:800;">Tidak ada pesanan aktif</div>
-          <p style="margin:6px 0 0; font-size:13.5px; color:var(--text-muted);">Pesanan baru dari Kasir akan muncul otomatis di sini.</p>
-        </div>
-
-        <div id="dapurActiveGrid" class="dapur-cards-grid"></div>
-      </div>
-
-      <!-- Section 2: Selesai Hari Ini -->
-      <div>
-        <div style="display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:12px;">
-          <h3 style="margin:0; font-size:17px; font-weight:900;">Selesai hari ini</h3>
-          <span id="dapurCompletedSubtitle" style="font-size:13px; color:var(--text-muted);">0 selesai</span>
-        </div>
-
-        <div id="dapurEmptyCompleted" class="card" style="text-align:center; padding:24px; color:var(--text-muted); font-size:13.5px;">
-          Belum ada pesanan yang selesai pada shift ini.
-        </div>
-
-        <div id="dapurCompletedList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <div class="kitchen-grid" id="kitchenList"></div>
       </div>
     </section>
 
-    <!-- ==================== TAB 3: LACI KAS ==================== -->
-    <section id="panel-laci" class="tab-panel hidden two-col-grid">
-      <!-- Left: Kas Masuk / Kas Keluar -->
-      <div style="display:flex; flex-direction:column; gap:18px;">
+    <!-- ==================== TAB 3: LACI KAS & AUDIT ==================== -->
+    <section id="tab-laci" class="tab-pane">
+      <div class="grid-3">
         <div class="card">
-          <h2 style="margin:0; font-size:19px; font-weight:900;">Kas Masuk &amp; Kas Keluar</h2>
-          <p style="margin:4px 0 14px; font-size:13px; color:var(--text-muted);">Catat pengeluaran tunai dari laci (beli es batu, susu) atau tambahan modal receh.</p>
-
-          <div class="seg-group" style="margin-bottom:14px;">
-            <button type="button" class="seg-option active" data-cash-type="keluar">Kas Keluar (−)</button>
-            <button type="button" class="seg-option" data-cash-type="masuk">Kas Masuk (+)</button>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div>
-              <label class="field-label" for="inputCashMoveAmount">NOMINAL (RP) <span style="color:var(--red);">*</span></label>
-              <input id="inputCashMoveAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="Contoh: 20.000" class="input-field">
-            </div>
-            <div>
-              <label class="field-label" for="inputCashMoveReason">ALASAN <span style="color:var(--red);">*</span></label>
-              <input id="inputCashMoveReason" type="text" autocomplete="off" placeholder="Contoh: Beli es batu / Tukar receh" class="input-field">
-            </div>
-            <button type="button" id="btnRecordCashMove" class="btn btn-espresso btn-block">Simpan Catatan Kas</button>
+          <label>Modal Awal Laci Kas (Rp)</label>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <input type="number" id="openingCashInput" value="200000" />
+            <button class="btn btn-primary btn-sm" onclick="saveOpeningCash()">Simpan</button>
           </div>
         </div>
-
-        <!-- Log Kas Shift Ini -->
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0; font-size:16px; font-weight:800;">Riwayat Kas Shift Ini</h3>
-            <span id="cashMoveCountBadge" class="badge badge-neutral">0 catatan</span>
-          </div>
-          <div id="cashMoveEmpty" style="padding:20px 10px; text-align:center; font-size:13px; color:var(--text-muted);">
-            Belum ada catatan kas masuk atau kas keluar.
-          </div>
-          <div id="cashMoveList" class="hidden" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
+          <label>Omzet Bersih Hari Ini (Non-Void)</label>
+          <div style="font-size:20px; font-weight:900; color:var(--success); margin-top:4px;" id="statNetSales">Rp 0</div>
+          <div style="font-size:11px; color:var(--muted);" id="statPaymentSplit">Tunai: Rp 0 • QRIS: Rp 0</div>
         </div>
-      </div>
-
-      <!-- Right: Ringkasan Laci & Tutup Kasir -->
-      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border-bottom:1px solid var(--border); padding-bottom:14px;">
-          <div>
-            <h2 style="margin:0; font-size:19px; font-weight:900;">Ringkasan Laci &amp; Tutup Kasir</h2>
-            <p id="laciHeaderMeta" style="margin:4px 0 0; font-size:13px; color:var(--text-muted);">Shift sedang berjalan</p>
-          </div>
-          <span class="badge badge-coffee">Shift Aktif</span>
-        </div>
-
-        <div id="laciUnpaidWarning" class="alert-box alert-amber hidden">
-          <strong id="laciUnpaidWarningTitle">Ada pesanan Belum Bayar!</strong>
-          <div style="margin-top:3px; font-size:12.5px;">Pesanan belum bayar tidak dihitung sebagai uang tunai di laci.</div>
-        </div>
-
-        <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:18px; padding:16px;">
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Waktu Buka / Kasir</span>
-            <strong id="ledgerOpenInfo">-</strong>
-          </div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Modal Awal Laci</span>
-            <strong id="ledgerOpeningFloat">Rp 0</strong>
-          </div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Penjualan Tunai Lunas</span>
-            <strong id="ledgerCashSales" style="color:var(--emerald);">+ Rp 0</strong>
-          </div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Penjualan QRIS Lunas (Non-Tunai)</span>
-            <strong id="ledgerQrisSales" style="color:var(--sky);">Rp 0</strong>
-          </div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Pesanan Belum Bayar (<span id="ledgerUnpaidCount">0</span>)</span>
-            <strong id="ledgerUnpaidTotal" style="color:var(--amber);">Rp 0</strong>
-          </div>
-          <div style="border-top:1px dashed var(--border-strong); margin:8px 0;"></div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Total Kas Masuk (+)</span>
-            <strong id="ledgerCashIn" style="color:var(--emerald);">+ Rp 0</strong>
-          </div>
-          <div class="ledger-row">
-            <span style="color:var(--text-muted);">Total Kas Keluar (−)</span>
-            <strong id="ledgerCashOut" style="color:var(--red);">− Rp 0</strong>
-          </div>
-          <div style="border-top:2px solid var(--border); margin-top:8px; padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-weight:900; font-size:15px;">Uang Tunai Seharusnya di Laci</span>
-            <span id="ledgerExpectedCash" style="font-weight:900; font-size:21px;">Rp 0</span>
-          </div>
-        </div>
-
-        <!-- Tutup Kasir Inputs -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <label class="field-label" for="inputActualDrawerCash" style="margin:0;">UANG AKTUAL DI LACI <span style="color:var(--red);">*</span></label>
-              <button type="button" id="btnFillExactCash" style="font-size:12px; font-weight:800; color:var(--accent-coffee);">Isi pas</button>
-            </div>
-            <input id="inputActualDrawerCash" type="text" inputmode="numeric" autocomplete="off" placeholder="Hitung uang fisik" class="input-field" style="font-weight:800;">
-          </div>
-
-          <div>
-            <label class="field-label" for="inputLeftForTomorrow">DITINGGALKAN UNTUK BESOK</label>
-            <input id="inputLeftForTomorrow" type="text" inputmode="numeric" autocomplete="off" value="200.000" class="input-field" style="font-weight:800;">
-          </div>
-        </div>
-
-        <!-- Live Selisih & Uang Disetor -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div id="varianceBox" style="background:var(--bg-cream); border:1px solid var(--border); border-radius:15px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:var(--text-muted);">SELISIH</span>
-            <strong id="varianceText" style="font-size:14px; color:var(--text-muted);">Isi uang aktual</strong>
-          </div>
-
-          <div style="background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:15px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11.5px; font-weight:800; color:var(--emerald);">UANG DISETOR</span>
-            <strong id="depositText" style="font-size:15px; color:var(--emerald);">Rp 0</strong>
-          </div>
-        </div>
-
-        <button type="button" id="btnOpenCloseShiftConfirm" class="btn btn-primary btn-lg btn-block">
-          Tutup Kasir &amp; Cetak Rekap
-        </button>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 4: PRINTER (58MM BLUETOOTH SPP) ==================== -->
-    <section id="panel-printer" class="tab-panel hidden two-col-grid">
-      <!-- Left: Bluetooth Printer Settings -->
-      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
-          <div>
-            <h2 style="margin:0; font-size:19px; font-weight:900;">Pengaturan Printer Bluetooth</h2>
-            <p style="margin:3px 0 0; font-size:13px; color:var(--text-muted);">VSC MP-58A · Bluetooth Klasik (SPP) · ESC/POS 32 karakter/baris</p>
-          </div>
-          <button type="button" id="btnReloadBluetooth" class="btn btn-soft btn-sm">
-            Muat Ulang Daftar Bluetooth
-          </button>
-        </div>
-
-        <!-- Bridge Status Indicator -->
-        <div id="printerModeBanner" class="alert-box alert-sky"></div>
-
-        <!-- Paired Printers List -->
-        <div>
-          <span class="field-label">PERANGKAT BLUETOOTH TERPASANG (PAIRED)</span>
-          <div id="pairedDevicesList" style="display:flex; flex-direction:column; gap:10px;"></div>
-        </div>
-
-        <!-- Prominent Printer Error Box with Retry -->
-        <div id="printerErrorAlert" class="alert-box alert-red hidden">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-            <div>
-              <strong>Gagal Mencetak ke Printer</strong>
-              <div id="printerErrorMessage" style="margin-top:4px;"></div>
-            </div>
-            <button type="button" id="btnRetryLastPrint" class="btn btn-danger-outline btn-sm" style="flex-shrink:0;">
-              Coba Cetak Lagi
-            </button>
-          </div>
-        </div>
-
-        <!-- Test Print Button -->
-        <button type="button" id="btnTestPrint32" class="btn btn-espresso btn-lg btn-block">
-          Tes Cetak (32 Karakter)
-        </button>
-      </div>
-
-      <!-- Right: 32-Char Thermal Output Preview -->
-      <div style="display:flex; flex-direction:column; align-items:center;">
-        <div style="width:100%; max-width:345px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span class="field-label" style="margin:0;">PRATINJAU OUTPUT THERMAL 58MM</span>
-            <span class="mono" style="font-size:12px; font-weight:800; color:var(--accent-coffee);">32 kolom</span>
-          </div>
-          <div class="thermal-paper">
-            <div class="thermal-ruler">12345678901234567890123456789012
-|------- 32 Karakter ----------|</div>
-            <pre id="printerPreviewPre" class="thermal-text"></pre>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 5: KELOLA (OWNER ONLY) ==================== -->
-    <section id="panel-kelola" class="tab-panel hidden">
-      <div class="sub-pills">
-        <button type="button" class="sub-pill active" data-kelola-sub="users">Kelola User &amp; PIN</button>
-        <button type="button" class="sub-pill" data-kelola-sub="menu">Kelola Menu &amp; HPP</button>
-        <button type="button" class="sub-pill" data-kelola-sub="shifts">Arsip Tutup Kasir</button>
-      </div>
-
-      <!-- Sub-panel 1: Users & PIN -->
-      <div id="kelola-sub-users" class="two-col-grid">
         <div class="card">
-          <h3 style="margin:0 0 4px; font-size:18px; font-weight:900;">Tambah User Baru</h3>
-          <p style="margin:0 0 14px; font-size:13px; color:var(--text-muted);">Buat akun PIN baru untuk Owner atau Kasir Staff.</p>
-
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div>
-              <label class="field-label" for="inputNewUserName">NAMA USER</label>
-              <input id="inputNewUserName" type="text" placeholder="Contoh: Kasir 3" class="input-field">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <div>
-                <label class="field-label" for="selectNewUserRole">ROLE</label>
-                <select id="selectNewUserRole" class="select-field">
-                  <option value="staff">Staff</option>
-                  <option value="owner">Owner</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="inputNewUserPin">PIN (4 ANGKA)</label>
-                <input id="inputNewUserPin" type="text" inputmode="numeric" maxlength="4" placeholder="3333" class="input-field mono">
-              </div>
-            </div>
-            <button type="button" id="btnCreateUser" class="btn btn-primary">+ Simpan User Baru</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="margin:0 0 12px; font-size:17px; font-weight:900;">Daftar Akun Terdaftar</h3>
-          <div id="manageUsersList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <label>Estimasi Uang di Laci</label>
+          <div style="font-size:20px; font-weight:900; color:var(--primary); margin-top:4px;" id="statExpectedDrawer">Rp 0</div>
+          <button class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="printShiftSummary()">Cetak Rekap Kas</button>
         </div>
       </div>
 
-      <!-- Sub-panel 2: Menu & HPP -->
-      <div id="kelola-sub-menu" class="hidden two-col-grid">
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <h3 id="menuFormTitle" style="margin:0; font-size:18px; font-weight:900;">Tambah Menu Baru</h3>
-            <button type="button" id="btnResetMenuForm" class="btn btn-soft btn-sm hidden">Batal Edit</button>
-          </div>
-          <p style="margin:0 0 14px; font-size:13px; color:var(--text-muted);">Atur nama produk, kategori, harga jual, HPP modal, dan tujuan tiket.</p>
-
-          <input type="hidden" id="editMenuId">
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div>
-              <label class="field-label" for="inputMenuName">NAMA PRODUK</label>
-              <input id="inputMenuName" type="text" placeholder="Contoh: Kopi Susu Gula Aren" class="input-field">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <div>
-                <label class="field-label" for="selectMenuCat">KATEGORI</label>
-                <select id="selectMenuCat" class="select-field">
-                  <option value="Kopi">Kopi</option>
-                  <option value="Non-kopi">Non-kopi</option>
-                  <option value="Makanan">Makanan</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="selectMenuTarget">TUJUAN</label>
-                <select id="selectMenuTarget" class="select-field">
-                  <option value="bar">Bar (Minuman)</option>
-                  <option value="dapur">Dapur (Makanan)</option>
-                </select>
-              </div>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <div>
-                <label class="field-label" for="inputMenuPrice">HARGA JUAL (RP)</label>
-                <input id="inputMenuPrice" type="text" inputmode="numeric" placeholder="20.000" class="input-field">
-              </div>
-              <div>
-                <label class="field-label" for="inputMenuHpp">HPP MODAL (RP)</label>
-                <input id="inputMenuHpp" type="text" inputmode="numeric" placeholder="7.500" class="input-field">
-              </div>
-            </div>
-            <button type="button" id="btnSaveMenuProduct" class="btn btn-primary">Simpan Produk Menu</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0; font-size:17px; font-weight:900;">Daftar Menu &amp; HPP</h3>
-            <span id="manageMenuCount" class="badge badge-neutral">0 item</span>
-          </div>
-          <div id="manageMenuList" style="display:flex; flex-direction:column; gap:9px; max-height:520px; overflow-y:auto;"></div>
-        </div>
-      </div>
-
-      <!-- Sub-panel 3: Arsip Tutup Kasir -->
-      <div id="kelola-sub-shifts" class="hidden card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <div>
-            <h3 style="margin:0; font-size:18px; font-weight:900;">Arsip Laporan Tutup Kasir</h3>
-            <p style="margin:2px 0 0; font-size:13px; color:var(--text-muted);">Riwayat rekonsiliasi shift harian</p>
-          </div>
-          <span id="archiveShiftBadge" class="badge badge-neutral">0 shift</span>
-        </div>
-        <div id="archiveShiftContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ==================== MODAL 1: STRUK / TIKET & STATUS CETAK ==================== -->
-  <div id="modalReceipt" class="modal-backdrop hidden">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span id="modalPrintBadge" class="badge badge-emerald">Terkirim ke Printer</span>
-            <span id="modalPrinterDevice" style="font-size:12px; color:var(--text-muted); font-weight:700;">VSC MP-58A</span>
-          </div>
-          <h3 id="modalReceiptTitle" style="margin:4px 0 0; font-size:18px; font-weight:900;">Struk &amp; Tiket 58mm</h3>
-        </div>
-        <button type="button" id="btnCloseReceiptModalTop" class="btn btn-outline btn-sm">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <div id="modalReceiptErrorBox" class="alert-box alert-red hidden" style="margin-bottom:16px;">
-          <strong>Gagal Mencetak ke Printer Bluetooth</strong>
-          <div id="modalReceiptErrorText" style="margin-top:4px;"></div>
-        </div>
-
-        <div id="modalReceiptSheets" class="receipts-row"></div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" id="btnModalReprint" class="btn btn-outline">Coba Cetak Lagi</button>
-        <button type="button" id="btnCloseReceiptModalBottom" class="btn btn-espresso">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 2: KONFIRMASI TUTUP KASIR ==================== -->
-  <div id="modalConfirmCloseShift" class="modal-backdrop hidden">
-    <div class="modal-dialog modal-narrow">
-      <div class="modal-header">
-        <h3 style="margin:0; font-size:17px; font-weight:900;">Konfirmasi Tutup Kasir</h3>
-        <button type="button" id="btnCloseConfirmShiftTop" class="btn btn-outline btn-sm">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin:0; font-size:14.5px;">
-          Toko akan ditutup, rekap shift 58mm akan dicetak ke printer Bluetooth, dan layar akan kembali ke Login PIN.
-        </p>
-        <div id="confirmCloseShiftWarnings" class="alert-box alert-amber hidden" style="margin-top:12px;"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="btnCloseConfirmShiftCancel" class="btn btn-soft">Batal</button>
-        <button type="button" id="btnConfirmCloseShiftDo" class="btn btn-primary">Ya, Tutup &amp; Cetak Rekap</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 3: EDIT PIN USER ==================== -->
-  <div id="modalEditUserPin" class="modal-backdrop hidden">
-    <div class="modal-dialog modal-narrow">
-      <div class="modal-header">
-        <h3 style="margin:0; font-size:17px; font-weight:900;">Ubah PIN Akun</h3>
-        <button type="button" id="btnCloseEditPinTop" class="btn btn-outline btn-sm">✕</button>
-      </div>
-      <div class="modal-body">
-        <p id="editPinUserDesc" style="margin:0 0 12px; font-size:13.5px; color:var(--text-muted);">Masukkan 4 digit PIN baru</p>
-        <input id="inputEditUserPinVal" type="text" inputmode="numeric" maxlength="4" placeholder="4 angka" class="input-field mono" style="text-align:center; font-size:22px; letter-spacing:0.25em;">
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="btnCloseEditPinCancel" class="btn btn-soft">Batal</button>
-        <button type="button" id="btnSaveUserPin" class="btn btn-primary">Simpan PIN</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== APPLICATION LOGIC (VANILLA JS) ==================== -->
-  <script>
-    (function () {
-      'use strict';
-
-      // =======================================================================
-      // 1. DEFAULT DATA (ACCOUNTS & INDONESIAN STREET COFFEE SHOP MENU)
-      // =======================================================================
-      const DEFAULT_ACCOUNTS = [
-        { id: 'usr-owner', name: 'Owner', role: 'owner', pin: '1234', active: true },
-        { id: 'usr-kasir1', name: 'Kasir 1', role: 'staff', pin: '1111', active: true },
-        { id: 'usr-kasir2', name: 'Kasir 2', role: 'staff', pin: '2222', active: true }
-      ];
-
-      const DEFAULT_MENU = [
-        // Kopi (target: 'bar')
-        { id: 'kopi-1', name: 'Espresso', category: 'Kopi', price: 15000, hpp: 5000, target: 'bar' },
-        { id: 'kopi-2', name: 'Americano', category: 'Kopi', price: 18000, hpp: 6000, target: 'bar' },
-        { id: 'kopi-3', name: 'Kopi Susu Gula Aren', category: 'Kopi', price: 20000, hpp: 7500, target: 'bar' },
-        { id: 'kopi-4', name: 'Cafe Latte', category: 'Kopi', price: 23000, hpp: 8500, target: 'bar' },
-        { id: 'kopi-5', name: 'Cappuccino', category: 'Kopi', price: 23000, hpp: 8500, target: 'bar' },
-        { id: 'kopi-6', name: 'Caramel Macchiato', category: 'Kopi', price: 26000, hpp: 9500, target: 'bar' },
-        { id: 'kopi-7', name: 'V60 Manual Brew', category: 'Kopi', price: 25000, hpp: 9000, target: 'bar' },
-        // Non-kopi (target: 'bar')
-        { id: 'non-1', name: 'Matcha Latte', category: 'Non-kopi', price: 24000, hpp: 9000, target: 'bar' },
-        { id: 'non-2', name: 'Coklat Klasik', category: 'Non-kopi', price: 22000, hpp: 8000, target: 'bar' },
-        { id: 'non-3', name: 'Red Velvet Latte', category: 'Non-kopi', price: 23000, hpp: 8500, target: 'bar' },
-        { id: 'non-4', name: 'Lemon Tea', category: 'Non-kopi', price: 15000, hpp: 4500, target: 'bar' },
-        { id: 'non-5', name: 'Lychee Tea', category: 'Non-kopi', price: 18000, hpp: 6000, target: 'bar' },
-        // Makanan (target: 'dapur')
-        { id: 'mak-1', name: 'Kentang Goreng', category: 'Makanan', price: 18000, hpp: 7000, target: 'dapur' },
-        { id: 'mak-2', name: 'Roti Bakar Coklat Keju', category: 'Makanan', price: 20000, hpp: 8000, target: 'dapur' },
-        { id: 'mak-3', name: 'Pisang Goreng Aren', category: 'Makanan', price: 18000, hpp: 6500, target: 'dapur' },
-        { id: 'mak-4', name: 'Croissant Butter', category: 'Makanan', price: 22000, hpp: 9000, target: 'dapur' },
-        { id: 'mak-5', name: 'Cireng Rujak', category: 'Makanan', price: 16000, hpp: 5500, target: 'dapur' }
-      ];
-
-      const KEYS = {
-        ACCOUNTS: 'apos_accounts_v1',
-        MENU: 'apos_menu_v1',
-        SHIFT: 'apos_shift_v1',
-        ORDERS: 'apos_orders_v1',
-        NEXT_SEQ: 'apos_next_seq_v1',
-        LAST_LEFT: 'apos_last_left_drawer_v1',
-        ARCHIVE: 'apos_shift_archive_v1',
-        PRINTER: 'apos_printer_cfg_v1'
-      };
-
-      // =======================================================================
-      // 2. APPLICATION STATE
-      // =======================================================================
-      const state = {
-        accounts: [],
-        menu: [],
-        activeUserId: null, // null = PIN screen locked
-        selectedLoginUserId: 'usr-owner',
-        pinDigits: '',
-
-        shift: {
-          id: null,
-          isOpen: false,
-          openedAt: null,
-          openedBy: null,
-          openingFloat: 200000,
-          openingNote: '',
-          cashMovements: []
-        },
-
-        lastLeftInDrawer: 200000,
-        shiftArchive: [],
-
-        orders: [],
-        nextOrderSeq: 1,
-
-        // Kasir Screen State
-        activeTab: 'kasir',
-        activeCategory: 'Semua',
-        cart: [],
-        customerName: '',
-        payMode: 'sekarang',     // 'sekarang' | 'nanti'
-        payMethod: 'TUNAI',      // 'TUNAI' | 'QRIS'
-        cashReceivedRaw: '',
-        printCustomerReceipt: true,
-
-        // Laci Kas State
-        cashMoveType: 'keluar',
-
-        // Kelola Sub-tab State
-        kelolaSubTab: 'users',
-        editingPinUserId: null,
-
-        // Printer State
-        printer: {
-          selectedAddress: '00:11:22:33:44:55',
-          selectedName: 'VSC MP-58A (Simulasi)',
-          pairedPrinters: [],
-          isAndroidBridge: false,
-          lastPayload: '',
-          lastError: ''
-        },
-
-        // Receipt Modal Context
-        modalReceiptCtx: {
-          order: null,
-          recapText: null,
-          lockAfterClose: false
-        }
-      };
-
-      function getActiveUser() {
-        return state.accounts.find(u => u.id === state.activeUserId) || null;
-      }
-
-      // =======================================================================
-      // 3. LOCALSTORAGE & ANDROID BLUETOOTH BRIDGE
-      // =======================================================================
-      function loadFromStorage() {
-        try {
-          const rawAcc = localStorage.getItem(KEYS.ACCOUNTS);
-          state.accounts = rawAcc ? JSON.parse(rawAcc) : JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-
-          const rawMenu = localStorage.getItem(KEYS.MENU);
-          state.menu = rawMenu ? JSON.parse(rawMenu) : JSON.parse(JSON.stringify(DEFAULT_MENU));
-
-          const rawShift = localStorage.getItem(KEYS.SHIFT);
-          if (rawShift) state.shift = { ...state.shift, ...JSON.parse(rawShift) };
-
-          const rawOrders = localStorage.getItem(KEYS.ORDERS);
-          if (rawOrders) state.orders = JSON.parse(rawOrders);
-
-          const rawSeq = localStorage.getItem(KEYS.NEXT_SEQ);
-          if (rawSeq) state.nextOrderSeq = parseInt(rawSeq, 10) || 1;
-
-          const rawLeft = localStorage.getItem(KEYS.LAST_LEFT);
-          if (rawLeft !== null) state.lastLeftInDrawer = parseInt(rawLeft, 10) || 0;
-
-          const rawArch = localStorage.getItem(KEYS.ARCHIVE);
-          if (rawArch) state.shiftArchive = JSON.parse(rawArch);
-
-          const rawPrn = localStorage.getItem(KEYS.PRINTER);
-          if (rawPrn) {
-            const p = JSON.parse(rawPrn);
-            if (p.selectedAddress) state.printer.selectedAddress = p.selectedAddress;
-            if (p.selectedName) state.printer.selectedName = p.selectedName;
-          }
-        } catch (err) {
-          console.error('Gagal membaca localStorage:', err);
-          state.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-          state.menu = JSON.parse(JSON.stringify(DEFAULT_MENU));
-        }
-
-        reloadPairedBluetoothPrinters(false);
-        state.printer.lastPayload = buildTestPrint32();
-      }
-
-      function saveToStorage() {
-        try {
-          localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(state.accounts));
-          localStorage.setItem(KEYS.MENU, JSON.stringify(state.menu));
-          localStorage.setItem(KEYS.SHIFT, JSON.stringify(state.shift));
-          localStorage.setItem(KEYS.ORDERS, JSON.stringify(state.orders));
-          localStorage.setItem(KEYS.NEXT_SEQ, String(state.nextOrderSeq));
-          localStorage.setItem(KEYS.LAST_LEFT, String(state.lastLeftInDrawer));
-          localStorage.setItem(KEYS.ARCHIVE, JSON.stringify(state.shiftArchive));
-          localStorage.setItem(KEYS.PRINTER, JSON.stringify({
-            selectedAddress: state.printer.selectedAddress,
-            selectedName: state.printer.selectedName
-          }));
-        } catch (err) {
-          showToast('Gagal menyimpan data lokal perangkat.', 'error');
-        }
-      }
-
-      function reloadPairedBluetoothPrinters(notify = true) {
-        const hasBridge = typeof window.AndroidPrinter !== 'undefined' &&
-                          window.AndroidPrinter !== null &&
-                          typeof window.AndroidPrinter.getPairedPrinters === 'function';
-
-        state.printer.isAndroidBridge = hasBridge;
-
-        if (hasBridge) {
-          try {
-            const jsonStr = window.AndroidPrinter.getPairedPrinters();
-            const list = JSON.parse(jsonStr || '[]');
-            state.printer.pairedPrinters = Array.isArray(list) ? list : [];
-
-            if (state.printer.pairedPrinters.length > 0) {
-              const found = state.printer.pairedPrinters.some(d => d.address === state.printer.selectedAddress);
-              if (!found) {
-                const vsc = state.printer.pairedPrinters.find(d => {
-                  const n = (d.name || '').toUpperCase();
-                  return n.includes('VSC') || n.includes('58') || n.includes('MP-');
-                });
-                const picked = vsc || state.printer.pairedPrinters[0];
-                state.printer.selectedAddress = picked.address;
-                state.printer.selectedName = picked.name || 'Printer Bluetooth';
-              }
-            }
-            if (notify) {
-              showToast(`Ditemukan ${state.printer.pairedPrinters.length} perangkat Bluetooth terpasang.`, 'success');
-            }
-          } catch (err) {
-            state.printer.pairedPrinters = [];
-            if (notify) showToast('Gagal membaca daftar Bluetooth Android: ' + err.message, 'error');
-          }
-        } else {
-          // Desktop browser preview fallback
-          state.printer.pairedPrinters = [
-            { name: 'VSC MP-58A (Simulasi)', address: '00:11:22:33:44:55' }
-          ];
-          state.printer.selectedAddress = '00:11:22:33:44:55';
-          state.printer.selectedName = 'VSC MP-58A (Simulasi)';
-          if (notify) {
-            showToast('Daftar printer simulasi diperbarui.', 'info');
-          }
-        }
-        saveToStorage();
-      }
-
-      // =======================================================================
-      // 4. CURRENCY, DATE/TIME & STRICT 32-CHARACTER ESC/POS FORMATTERS
-      // =======================================================================
-      function formatRp(num) {
-        const val = Math.round(Number(num) || 0);
-        return 'Rp ' + val.toLocaleString('id-ID');
-      }
-
-      function formatDigits(num) {
-        const val = Math.round(Number(num) || 0);
-        return val.toLocaleString('id-ID');
-      }
-
-      function parseDigits(str) {
-        const clean = String(str || '').replace(/\D/g, '');
-        return clean ? parseInt(clean, 10) : 0;
-      }
-
-      function formatHHMM(iso) {
-        const d = new Date(iso);
-        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-      }
-
-      function formatDDMMYYYY_HHMM(iso) {
-        const d = new Date(iso);
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yyyy = d.getFullYear();
-        return `${dd}/${mm}/${yyyy} ${formatHHMM(iso)}`;
-      }
-
-      function elapsedMinutesText(iso) {
-        const diffMin = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
-        return diffMin === 0 ? 'baru saja' : `${diffMin} mnt lalu`;
-      }
-
-      // --- Strict 32-Char/Line Helpers ---
-      const LINE_WIDTH = 32;
-
-      function padRight(str, len) {
-        const s = String(str || '');
-        return s.length >= len ? s.slice(0, len) : s + ' '.repeat(len - s.length);
-      }
-
-      function padLeft(str, len) {
-        const s = String(str || '');
-        return s.length >= len ? s.slice(0, len) : ' '.repeat(len - s.length) + s;
-      }
-
-      function centerText(str) {
-        const s = String(str || '').slice(0, LINE_WIDTH);
-        const totalPad = LINE_WIDTH - s.length;
-        const leftPad = Math.floor(totalPad / 2);
-        const rightPad = totalPad - leftPad;
-        return ' '.repeat(leftPad) + s + ' '.repeat(rightPad);
-      }
-
-      function lineDivider(char = '-') {
-        return char.repeat(LINE_WIDTH);
-      }
-
-      function formatLeftRight(left, right) {
-        const r = String(right || '');
-        const maxL = Math.max(1, LINE_WIDTH - r.length - 1);
-        const l = String(left || '').slice(0, maxL);
-        const space = Math.max(1, LINE_WIDTH - l.length - r.length);
-        return padRight(l + ' '.repeat(space) + r, LINE_WIDTH);
-      }
-
-      function wrapText32(text) {
-        const words = String(text || '').split(/\s+/);
-        const lines = [];
-        let current = '';
-        for (const w of words) {
-          if (!w) continue;
-          if (!current) {
-            current = w.slice(0, LINE_WIDTH);
-          } else if (current.length + 1 + w.length <= LINE_WIDTH) {
-            current += ' ' + w;
-          } else {
-            lines.push(current);
-            current = w.slice(0, LINE_WIDTH);
-          }
-        }
-        if (current) lines.push(current);
-        return lines.length ? lines : [''];
-      }
-
-      function buildBarTicket32(order) {
-        const out = [];
-        out.push(lineDivider('='));
-        out.push(centerText('A-POS · TIKET BAR/DAPUR'));
-        out.push(lineDivider('='));
-        out.push(formatLeftRight(`ORDER #${order.orderNumber}`, formatHHMM(order.createdAt)));
-        out.push(...wrapText32(`Pelanggan: ${order.customerName.toUpperCase()}`));
-        out.push(`Waktu: ${formatDDMMYYYY_HHMM(order.createdAt)}`);
-        out.push(lineDivider('-'));
-
-        const barItems = order.items.filter(it => it.target === 'bar');
-        const dapurItems = order.items.filter(it => it.target === 'dapur');
-
-        if (barItems.length > 0) {
-          out.push('[BAR - MINUMAN]');
-          barItems.forEach(it => {
-            out.push(formatLeftRight(`${it.qty}x ${it.name}`, '[BAR]'));
-          });
-        }
-
-        if (dapurItems.length > 0) {
-          if (barItems.length > 0) out.push('');
-          out.push('[DAPUR - MAKANAN]');
-          dapurItems.forEach(it => {
-            out.push(formatLeftRight(`${it.qty}x ${it.name}`, '[DAPUR]'));
-          });
-        }
-
-        out.push(lineDivider('-'));
-        const statusBayar = order.paymentStatus === 'lunas'
-          ? `LUNAS (${order.paymentMethod})`
-          : 'BELUM BAYAR';
-        out.push(centerText(statusBayar));
-        out.push(lineDivider('='));
-        return out.join('\n');
-      }
-
-      function buildCustomerReceipt32(order) {
-        const out = [];
-        out.push(centerText('A-POS'));
-        out.push(centerText('Street Coffee Shop'));
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight(`Order #${order.orderNumber}`, formatDDMMYYYY_HHMM(order.createdAt)));
-        out.push(...wrapText32(`Plg  : ${order.customerName}`));
-        out.push(`Kasir: ${order.cashierName}`);
-        out.push(lineDivider('-'));
-
-        order.items.forEach(it => {
-          out.push(...wrapText32(it.name));
-          out.push(formatLeftRight(`  ${it.qty} x ${formatDigits(it.price)}`, formatDigits(it.qty * it.price)));
-        });
-
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('TOTAL', formatRp(order.totalAmount)));
-
-        if (order.paymentStatus === 'lunas') {
-          const paid = order.paymentMethod === 'TUNAI' ? order.cashReceived : order.totalAmount;
-          out.push(formatLeftRight(`Bayar (${order.paymentMethod})`, formatRp(paid)));
-          if (order.paymentMethod === 'TUNAI') {
-            out.push(formatLeftRight('Kembalian', formatRp(order.changeAmount)));
-          }
-          out.push(formatLeftRight('Status', 'LUNAS'));
-        } else {
-          out.push(formatLeftRight('Status', 'BELUM BAYAR'));
-        }
-
-        out.push(lineDivider('-'));
-        out.push(centerText('Terima kasih!'));
-        out.push(centerText('Selamat menikmati kopi Anda'));
-        return out.join('\n');
-      }
-
-      function buildShiftRecap32(recap) {
-        const out = [];
-        out.push(lineDivider('='));
-        out.push(centerText('A-POS · REKAP TUTUP KASIR'));
-        out.push(lineDivider('='));
-        out.push(formatLeftRight('Buka :', formatDDMMYYYY_HHMM(recap.openedAt)));
-        out.push(formatLeftRight('Oleh :', recap.openedBy));
-        out.push(formatLeftRight('Tutup:', formatDDMMYYYY_HHMM(recap.closedAt)));
-        out.push(formatLeftRight('Oleh :', recap.closedBy));
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('Modal Awal', formatDigits(recap.openingFloat)));
-        out.push(formatLeftRight('Jual Tunai', formatDigits(recap.cashSales)));
-        out.push(formatLeftRight('Kas Masuk', formatDigits(recap.cashIn)));
-        out.push(formatLeftRight('Kas Keluar', `-${formatDigits(recap.cashOut)}`));
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('Seharusnya', formatDigits(recap.expectedCash)));
-        out.push(formatLeftRight('Aktual Laci', formatDigits(recap.actualCash)));
-        const vPrefix = recap.variance > 0 ? '+' : '';
-        out.push(formatLeftRight('Selisih', `${vPrefix}${formatDigits(recap.variance)}`));
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('Sisa Besok', formatDigits(recap.leftForTomorrow)));
-        out.push(formatLeftRight('Disetor', formatDigits(recap.depositedCash)));
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('Jual QRIS', formatDigits(recap.qrisSales)));
-        if (recap.unpaidTotal > 0) {
-          out.push(formatLeftRight('Belum Bayar', formatDigits(recap.unpaidTotal)));
-        }
-        out.push(formatLeftRight('Total Order', `${recap.totalOrders} trx`));
-        out.push(lineDivider('='));
-        out.push(centerText('SHIFT DITUTUP'));
-        return out.join('\n');
-      }
-
-      function buildTestPrint32() {
-        const out = [];
-        out.push(lineDivider('='));
-        out.push(centerText('TES CETAK A-POS 58MM'));
-        out.push(centerText('ESC/POS BLUETOOTH SPP'));
-        out.push(lineDivider('='));
-        out.push(formatLeftRight('Printer:', state.printer.selectedName || 'VSC MP-58A'));
-        out.push(formatLeftRight('MAC:', state.printer.selectedAddress || '-'));
-        out.push(formatLeftRight('Waktu:', formatDDMMYYYY_HHMM(new Date().toISOString())));
-        out.push(lineDivider('-'));
-        out.push('Penggaris 32 Karakter:');
-        out.push('12345678901234567890123456789012');
-        out.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ012345');
-        out.push(lineDivider('-'));
-        out.push(formatLeftRight('1x Kopi Susu Gula Aren', '20.000'));
-        out.push(formatLeftRight('TOTAL', 'Rp 20.000'));
-        out.push(lineDivider('='));
-        out.push(centerText('KONEKSI PRINTER OK'));
-        return out.join('\n');
-      }
-
-      // =======================================================================
-      // 5. BLUETOOTH PRINT DISPATCHER (WITH RETRY & ERROR HANDLING)
-      // =======================================================================
-      function sendToBluetoothPrinter(payloadText) {
-        state.printer.lastPayload = payloadText;
-        const previewPre = document.getElementById('printerPreviewPre');
-        if (previewPre) previewPre.textContent = payloadText;
-
-        if (state.printer.isAndroidBridge && typeof window.AndroidPrinter.print === 'function') {
-          try {
-            const rawResp = window.AndroidPrinter.print(state.printer.selectedAddress, payloadText);
-            const parsed = JSON.parse(rawResp || '{}');
-            if (parsed.success === true) {
-              state.printer.lastError = '';
-              updatePrinterErrorUI();
-              return { success: true };
-            }
-            const errMsg = parsed.error || 'Printer Bluetooth gagal merespons perintah cetak.';
-            state.printer.lastError = errMsg;
-            updatePrinterErrorUI();
-            return { success: false, error: errMsg };
-          } catch (ex) {
-            const errMsg = `Kesalahan komunikasi Bluetooth Android: ${ex.message || ex}`;
-            state.printer.lastError = errMsg;
-            updatePrinterErrorUI();
-            return { success: false, error: errMsg };
-          }
-        }
-
-        // Desktop browser preview mode
-        state.printer.lastError = '';
-        updatePrinterErrorUI();
-        return { success: true };
-      }
-
-      function updatePrinterErrorUI() {
-        const alertEl = document.getElementById('printerErrorAlert');
-        const msgEl = document.getElementById('printerErrorMessage');
-        if (!alertEl || !msgEl) return;
-
-        if (state.printer.lastError) {
-          alertEl.classList.remove('hidden');
-          msgEl.textContent = state.printer.lastError;
-        } else {
-          alertEl.classList.add('hidden');
-          msgEl.textContent = '';
-        }
-      }
-
-      // =======================================================================
-      // 6. CORE BUSINESS ACTIONS (CART, ORDERS, KITCHEN, DRAWER)
-      // =======================================================================
-      function getCartGrandTotal() {
-        return state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      }
-
-      function addProductToCart(productId) {
-        const prod = state.menu.find(m => m.id === productId);
-        if (!prod) return;
-
-        const existing = state.cart.find(c => c.productId === productId);
-        if (existing) {
-          existing.qty += 1;
-        } else {
-          state.cart.push({
-            productId: prod.id,
-            name: prod.name,
-            category: prod.category,
-            target: prod.target,
-            price: prod.price,
-            hpp: prod.hpp,
-            qty: 1
-          });
-        }
-        renderProductGrid();
-        renderCartSection();
-      }
-
-      function updateCartItemQty(productId, delta) {
-        const idx = state.cart.findIndex(c => c.productId === productId);
-        if (idx === -1) return;
-        state.cart[idx].qty += delta;
-        if (state.cart[idx].qty <= 0) {
-          state.cart.splice(idx, 1);
-        }
-        renderProductGrid();
-        renderCartSection();
-      }
-
-      function submitNewOrder() {
-        const user = getActiveUser();
-        if (!user || !state.shift.isOpen) {
-          showToast('Buka kasir terlebih dahulu sebelum membuat pesanan.', 'error');
-          return;
-        }
-
-        if (state.cart.length === 0) {
-          showToast('Keranjang masih kosong. Ketuk menu untuk menambah pesanan.', 'error');
-          return;
-        }
-
-        const custInput = document.getElementById('inputCustomerName');
-        const custWarn = document.getElementById('customerNameWarning');
-        const trimmedName = state.customerName.trim();
-
-        if (!trimmedName) {
-          custWarn.classList.remove('hidden');
-          custInput.classList.add('input-error');
-          custInput.focus();
-          return;
-        }
-        custWarn.classList.add('hidden');
-        custInput.classList.remove('input-error');
-
-        const totalAmount = getCartGrandTotal();
-        const totalHpp = state.cart.reduce((s, it) => s + it.hpp * it.qty, 0);
-
-        let paymentStatus = 'belum_bayar';
-        let paymentMethod = null;
-        let cashReceived = 0;
-        let changeAmount = 0;
-
-        if (state.payMode === 'sekarang') {
-          paymentStatus = 'lunas';
-          paymentMethod = state.payMethod;
-          if (paymentMethod === 'TUNAI') {
-            const enteredCash = parseDigits(state.cashReceivedRaw);
-            cashReceived = enteredCash === 0 ? totalAmount : enteredCash;
-            if (cashReceived < totalAmount) {
-              showToast(`Uang diterima kurang ${formatRp(totalAmount - cashReceived)}!`, 'error');
-              document.getElementById('inputCashReceived').focus();
-              return;
-            }
-            changeAmount = cashReceived - totalAmount;
-          } else {
-            cashReceived = totalAmount;
-            changeAmount = 0;
-          }
-        }
-
-        const orderObj = {
-          id: 'ord-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-          shiftId: state.shift.id,
-          orderNumber: state.nextOrderSeq,
-          customerName: trimmedName,
-          cashierName: user.name,
-          createdAt: new Date().toISOString(),
-          // Stored per item with destination target ('bar' or 'dapur') & itemStatus for future split-routing
-          items: state.cart.map(c => ({
-            productId: c.productId,
-            name: c.name,
-            category: c.category,
-            target: c.target,
-            qty: c.qty,
-            price: c.price,
-            hpp: c.hpp,
-            itemStatus: 'masuk'
-          })),
-          totalAmount,
-          totalHpp,
-          paymentStatus,
-          paymentMethod,
-          cashReceived,
-          changeAmount,
-          orderStatus: 'masuk', // 'masuk' -> 'dibuat' -> 'disajikan' -> 'selesai'
-          printCustomerReceipt: state.printCustomerReceipt
-        };
-
-        state.orders.push(orderObj);
-        state.nextOrderSeq += 1;
-        saveToStorage();
-
-        // Build 32-char print payload: Tiket Bar ALWAYS + Struk Pelanggan if checked
-        const barTicket = buildBarTicket32(orderObj);
-        const custReceipt = orderObj.printCustomerReceipt ? buildCustomerReceipt32(orderObj) : null;
-        const fullPayload = custReceipt ? `${barTicket}\n\n\n${custReceipt}` : barTicket;
-
-        const printResult = sendToBluetoothPrinter(fullPayload);
-
-        // Reset cart & form
-        state.cart = [];
-        state.customerName = '';
-        state.cashReceivedRaw = '';
-        custInput.value = '';
-        document.getElementById('inputCashReceived').value = '';
-
-        renderAll();
-
-        if (printResult.success) {
-          showToast(
-            `Order #${orderObj.orderNumber} (${orderObj.customerName}) tersimpan & dicetak!`,
-            'success',
-            {
-              label: 'Lihat Struk/Tiket',
-              onClick: () => openOrderReceiptModal(orderObj, printResult)
-            }
-          );
-        } else {
-          showToast(`Order #${orderObj.orderNumber} tersimpan, namun gagal mencetak!`, 'error');
-          openOrderReceiptModal(orderObj, printResult);
-        }
-      }
-
-      function stepOrderStatus(orderId, direction) {
-        const order = state.orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        const forwardMap = { masuk: 'dibuat', dibuat: 'disajikan', disajikan: 'selesai' };
-        const backwardMap = { dibuat: 'masuk', disajikan: 'dibuat', selesai: 'disajikan' };
-        const nextStatus = direction === 'next' ? forwardMap[order.orderStatus] : backwardMap[order.orderStatus];
-        if (!nextStatus) return;
-
-        order.orderStatus = nextStatus;
-        order.items.forEach(it => { it.itemStatus = nextStatus; });
-        saveToStorage();
-        renderAll();
-
-        const labels = {
-          masuk: 'Pesanan masuk',
-          dibuat: 'Sedang dibuat',
-          disajikan: 'Sudah disajikan',
-          selesai: 'Selesai'
-        };
-        showToast(`Order #${order.orderNumber} → ${labels[nextStatus]}`, 'info');
-      }
-
-      function settleOrderPayment(orderId, method) {
-        const order = state.orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        order.paymentStatus = 'lunas';
-        order.paymentMethod = method;
-        order.cashReceived = order.totalAmount;
-        order.changeAmount = 0;
-        saveToStorage();
-        renderAll();
-        showToast(`Order #${order.orderNumber} (${order.customerName}) lunas via ${method}`, 'success');
-      }
-
-      function getShiftLedger() {
-        const shiftOrders = state.orders.filter(o => o.shiftId === state.shift.id);
-        const cashSales = shiftOrders
-          .filter(o => o.paymentStatus === 'lunas' && o.paymentMethod === 'TUNAI')
-          .reduce((s, o) => s + o.totalAmount, 0);
-        const qrisSales = shiftOrders
-          .filter(o => o.paymentStatus === 'lunas' && o.paymentMethod === 'QRIS')
-          .reduce((s, o) => s + o.totalAmount, 0);
-        const unpaidOrders = shiftOrders.filter(o => o.paymentStatus === 'belum_bayar');
-        const unpaidTotal = unpaidOrders.reduce((s, o) => s + o.totalAmount, 0);
-
-        const moves = state.shift.cashMovements || [];
-        const cashIn = moves.filter(m => m.type === 'masuk').reduce((s, m) => s + m.amount, 0);
-        const cashOut = moves.filter(m => m.type === 'keluar').reduce((s, m) => s + m.amount, 0);
-
-        const openingFloat = Number(state.shift.openingFloat) || 0;
-        const expectedCash = openingFloat + cashSales + cashIn - cashOut;
-
-        return {
-          openingFloat,
-          cashSales,
-          qrisSales,
-          unpaidCount: unpaidOrders.length,
-          unpaidTotal,
-          cashIn,
-          cashOut,
-          expectedCash,
-          totalOrders: shiftOrders.length,
-          activeKitchenCount: shiftOrders.filter(o => o.orderStatus !== 'selesai').length
-        };
-      }
-
-      // =======================================================================
-      // 7. UI RENDER FUNCTIONS
-      // =======================================================================
-      function renderLoginScreen() {
-        const screen = document.getElementById('screenLogin');
-        const user = getActiveUser();
-        if (user) {
-          screen.classList.add('hidden');
-          return;
-        }
-        screen.classList.remove('hidden');
-
-        const statusBadge = document.getElementById('loginShopStatusBadge');
-        if (state.shift.isOpen) {
-          statusBadge.className = 'badge badge-emerald';
-          statusBadge.textContent = 'TOKO BUKA';
-        } else {
-          statusBadge.className = 'badge badge-neutral';
-          statusBadge.textContent = 'TOKO TUTUP';
-        }
-
-        const activeAccounts = state.accounts.filter(a => a.active);
-        if (activeAccounts.length > 0 && !activeAccounts.some(a => a.id === state.selectedLoginUserId)) {
-          state.selectedLoginUserId = activeAccounts[0].id;
-        }
-
-        const listEl = document.getElementById('loginAccountList');
-        listEl.innerHTML = activeAccounts.map(acc => {
-          const isSel = acc.id === state.selectedLoginUserId;
-          const roleBadge = acc.role === 'owner'
-            ? '<span class="badge badge-coffee">Owner</span>'
-            : '<span class="badge badge-sky">Staff</span>';
-          return `
-            <button type="button" class="account-card ${isSel ? 'selected' : ''}" data-pick-login-user="${acc.id}">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <div class="account-avatar">${acc.name.charAt(0).toUpperCase()}</div>
-                <strong style="font-size:16px;">${acc.name}</strong>
-              </div>
-              ${roleBadge}
-            </button>
-          `;
-        }).join('');
-
-        const selectedAcc = activeAccounts.find(a => a.id === state.selectedLoginUserId) || activeAccounts[0];
-        if (selectedAcc) {
-          document.getElementById('loginSelectedUserLabel').textContent =
-            `${selectedAcc.name} (${selectedAcc.role === 'owner' ? 'Owner' : 'Staff'})`;
-        }
-
-        document.querySelectorAll('#loginPinDots .pin-dot').forEach((dot, idx) => {
-          dot.classList.toggle('filled', idx < state.pinDigits.length);
-        });
-      }
-
-      function renderOpenCashierScreen() {
-        const screen = document.getElementById('screenOpenCashier');
-        const user = getActiveUser();
-        if (!user || state.shift.isOpen) {
-          screen.classList.add('hidden');
-          return;
-        }
-        screen.classList.remove('hidden');
-
-        document.getElementById('openShiftUserText').textContent =
-          `${user.name} (${user.role === 'owner' ? 'Owner' : 'Staff'})`;
-        document.getElementById('openShiftPrevNote').innerHTML =
-          `Terisi otomatis sebesar <strong>${formatRp(state.lastLeftInDrawer)}</strong> dari uang yang ditinggalkan saat tutup kasir sebelumnya.`;
-
-        const floatInput = document.getElementById('inputOpeningFloat');
-        if (!floatInput.dataset.prefilled) {
-          floatInput.value = formatDigits(state.lastLeftInDrawer);
-          floatInput.dataset.prefilled = '1';
-        }
-      }
-
-      function renderTopbar() {
-        const user = getActiveUser();
-        document.getElementById('topNextOrderNum').textContent = `#${state.nextOrderSeq}`;
-        document.getElementById('cartOrderSeqBadge').textContent = `#${state.nextOrderSeq}`;
-
-        if (user) {
-          document.getElementById('topUserName').textContent = user.name;
-          const badge = document.getElementById('topUserRoleBadge');
-          badge.textContent = user.role === 'owner' ? 'Owner' : 'Staff';
-          badge.className = user.role === 'owner' ? 'badge badge-coffee' : 'badge badge-sky';
-
-          const kelolaTab = document.getElementById('navTabKelola');
-          kelolaTab.classList.toggle('hidden', user.role !== 'owner');
-        }
-
-        const shopBadge = document.getElementById('topShopBadge');
-        const shiftMeta = document.getElementById('topShiftMeta');
-        if (state.shift.isOpen) {
-          shopBadge.className = 'badge badge-emerald';
-          shopBadge.textContent = 'BUKA';
-          shiftMeta.textContent = `Buka ${formatHHMM(state.shift.openedAt)} (${state.shift.openedBy})`;
-        } else {
-          shopBadge.className = 'badge badge-neutral';
-          shopBadge.textContent = 'TUTUP';
-          shiftMeta.textContent = 'Toko tutup';
-        }
-
-        const activeOrdersCount = state.orders.filter(o => o.orderStatus !== 'selesai').length;
-        const dapurBadge = document.getElementById('tabDapurBadge');
-        dapurBadge.textContent = activeOrdersCount;
-        dapurBadge.classList.toggle('empty', activeOrdersCount === 0);
-
-        const prnDot = document.getElementById('tabPrinterDot');
-        prnDot.classList.toggle('warn', Boolean(state.printer.lastError));
-      }
-
-      function renderProductGrid() {
-        document.querySelectorAll('.cat-pill').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.cat === state.activeCategory);
-        });
-
-        const grid = document.getElementById('productGrid');
-        const items = state.activeCategory === 'Semua'
-          ? state.menu
-          : state.menu.filter(m => m.category === state.activeCategory);
-
-        grid.innerHTML = items.map(prod => {
-          const inCart = state.cart.find(c => c.productId === prod.id);
-          return `
-            <button type="button" class="product-card ${inCart ? 'selected' : ''}" data-add-prod="${prod.id}">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; width:100%;">
-                <span style="font-size:15.5px; font-weight:800; line-height:1.3;">${prod.name}</span>
-                ${inCart ? `<span class="qty-bubble">${inCart.qty}</span>` : ''}
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:14px;">
-                <span style="font-size:14.5px; font-weight:800; color:var(--accent-coffee-dark);">${formatRp(prod.price)}</span>
-                <span class="badge badge-neutral" style="font-size:10px; text-transform:uppercase;">${prod.target}</span>
-              </div>
-            </button>
-          `;
-        }).join('');
-      }
-
-      function renderCartSection() {
-        const emptyEl = document.getElementById('cartEmptyState');
-        const listEl = document.getElementById('cartItemsList');
-        const total = getCartGrandTotal();
-        document.getElementById('cartTotalDisplay').textContent = formatRp(total);
-
-        if (state.cart.length === 0) {
-          emptyEl.classList.remove('hidden');
-          listEl.classList.add('hidden');
-          listEl.innerHTML = '';
-        } else {
-          emptyEl.classList.add('hidden');
-          listEl.classList.remove('hidden');
-          listEl.innerHTML = state.cart.map(item => `
-            <div class="cart-row">
-              <div style="min-width:0; flex:1;">
-                <div style="font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
-                <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">
-                  ${formatRp(item.price)} · <strong style="color:var(--text-espresso);">${formatRp(item.price * item.qty)}</strong>
-                </div>
-              </div>
-              <div class="stepper-group">
-                <button type="button" class="step-btn dec" data-cart-step="dec" data-prod-id="${item.productId}" aria-label="Kurang">−</button>
-                <span style="min-width:24px; text-align:center; font-weight:900; font-size:16px;">${item.qty}</span>
-                <button type="button" class="step-btn inc" data-cart-step="inc" data-prod-id="${item.productId}" aria-label="Tambah">+</button>
-              </div>
-            </div>
-          `).join('');
-        }
-
-        document.querySelectorAll('[data-pay-mode]').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.payMode === state.payMode);
-        });
-        document.querySelectorAll('[data-pay-method]').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.payMethod === state.payMethod);
-        });
-
-        const secPayNow = document.getElementById('sectionPayNow');
-        const secPayLater = document.getElementById('sectionPayLaterHint');
-        const submitBtn = document.getElementById('btnSubmitOrder');
-
-        if (state.payMode === 'sekarang') {
-          secPayNow.classList.remove('hidden');
-          secPayLater.classList.add('hidden');
-          submitBtn.textContent = 'Simpan & Bayar';
-        } else {
-          secPayNow.classList.add('hidden');
-          secPayLater.classList.remove('hidden');
-          submitBtn.textContent = 'Simpan Pesanan';
-        }
-
-        const secCash = document.getElementById('sectionCashInput');
-        const secQris = document.getElementById('sectionQrisHint');
-        if (state.payMethod === 'TUNAI') {
-          secCash.classList.remove('hidden');
-          secQris.classList.add('hidden');
-          updateChangeBanner();
-        } else {
-          secCash.classList.add('hidden');
-          secQris.classList.remove('hidden');
-        }
-      }
-
-      function updateChangeBanner() {
-        const total = getCartGrandTotal();
-        const received = parseDigits(state.cashReceivedRaw);
-        const clearBtn = document.getElementById('btnClearCash');
-        const banner = document.getElementById('changeBanner');
-        const label = document.getElementById('changeLabel');
-        const value = document.getElementById('changeValue');
-
-        clearBtn.classList.toggle('hidden', received === 0);
-
-        if (total === 0 || received === 0) {
-          banner.classList.add('hidden');
-          return;
-        }
-
-        banner.classList.remove('hidden');
-        if (received >= total) {
-          const change = received - total;
-          banner.style.background = 'var(--emerald-bg)';
-          banner.style.border = '1.5px solid var(--emerald-border)';
-          banner.style.color = 'var(--emerald)';
-          label.textContent = change === 0 ? 'UANG PAS · KEMBALIAN' : 'KEMBALIAN';
-          value.textContent = formatRp(change);
-        } else {
-          const short = total - received;
-          banner.style.background = 'var(--red-bg)';
-          banner.style.border = '1.5px solid var(--red-border)';
-          banner.style.color = 'var(--red)';
-          label.textContent = 'UANG KURANG';
-          value.textContent = formatRp(short);
-        }
-      }
-
-      function renderDapurTab() {
-        const activeOrders = state.orders
-          .filter(o => o.orderStatus !== 'selesai')
-          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-        document.getElementById('dapurActiveSubtitle').textContent =
-          `${activeOrders.length} pesanan · paling lama di kiri atas`;
-
-        const emptyActive = document.getElementById('dapurEmptyActive');
-        const activeGrid = document.getElementById('dapurActiveGrid');
-
-        if (activeOrders.length === 0) {
-          emptyActive.classList.remove('hidden');
-          activeGrid.innerHTML = '';
-        } else {
-          emptyActive.classList.add('hidden');
-          activeGrid.innerHTML = activeOrders.map(ord => {
-            const stMap = {
-              masuk: {
-                cardCls: 'st-masuk',
-                badgeCls: 'badge-sky',
-                badgeLabel: 'Pesanan masuk',
-                actionText: 'Mulai buat',
-                actionBtnCls: 'btn-espresso',
-                canBack: false
-              },
-              dibuat: {
-                cardCls: 'st-dibuat',
-                badgeCls: 'badge-amber',
-                badgeLabel: 'Sedang dibuat',
-                actionText: 'Sudah disajikan',
-                actionBtnCls: 'btn-primary',
-                canBack: true
-              },
-              disajikan: {
-                cardCls: 'st-disajikan',
-                badgeCls: 'badge-emerald',
-                badgeLabel: 'Sudah disajikan',
-                actionText: 'Selesai',
-                actionBtnCls: 'btn-emerald',
-                canBack: true
-              }
-            }[ord.orderStatus];
-
-            const payBadge = ord.paymentStatus === 'lunas'
-              ? `<span class="badge badge-emerald">Lunas - ${ord.paymentMethod}</span>`
-              : `<span class="badge badge-red">Belum bayar</span>`;
-
-            const itemsHtml = ord.items.map(it => {
-              const destPill = it.target === 'dapur'
-                ? '<span class="badge badge-coffee" style="font-size:10px; padding:2px 7px;">[DAPUR]</span>'
-                : '<span class="badge badge-neutral" style="font-size:10px; padding:2px 7px;">[BAR]</span>';
-              return `
-                <li style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0;">
-                  <span style="font-size:14.5px;"><strong style="color:var(--text-muted);">${it.qty}×</strong> <strong>${it.name}</strong></span>
-                  ${destPill}
-                </li>
-              `;
-            }).join('');
-
-            const quickSettleHtml = ord.paymentStatus === 'belum_bayar'
-              ? `
-                <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                  <span style="font-size:12px; color:var(--text-muted); font-weight:700;">Lunasi:</span>
-                  <div style="display:flex; gap:6px;">
-                    <button type="button" class="btn btn-soft btn-sm" data-settle-id="${ord.id}" data-settle-method="TUNAI">Lunas Tunai</button>
-                    <button type="button" class="btn btn-soft btn-sm" data-settle-id="${ord.id}" data-settle-method="QRIS">Lunas QRIS</button>
-                  </div>
-                </div>
-              `
-              : '';
-
-            return `
-              <article class="kitchen-card ${stMap.cardCls}">
-                <div>
-                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
-                    <div>
-                      <div style="font-size:18.5px; font-weight:900;">
-                        <span style="color:var(--accent-coffee);">#${ord.orderNumber}</span> ${ord.customerName}
-                      </div>
-                      <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                        ${formatHHMM(ord.createdAt)} · ${elapsedMinutesText(ord.createdAt)}
-                      </div>
-                    </div>
-                    <span class="badge ${stMap.badgeCls}">${stMap.badgeLabel}</span>
-                  </div>
-
-                  <ul style="list-style:none; margin:14px 0 0; padding:0 0 12px; border-bottom:1px solid var(--border);">
-                    ${itemsHtml}
-                  </ul>
-
-                  <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                    ${payBadge}
-                    <strong style="font-size:15.5px;">${formatRp(ord.totalAmount)}</strong>
-                  </div>
-
-                  ${quickSettleHtml}
-                </div>
-
-                <div style="margin-top:14px;">
-                  <button type="button" class="btn ${stMap.actionBtnCls} btn-block" data-step-dir="next" data-order-id="${ord.id}">
-                    ${stMap.actionText}
-                  </button>
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12.5px;">
-                    ${stMap.canBack
-                      ? `<button type="button" data-step-dir="prev" data-order-id="${ord.id}" style="color:var(--text-muted); text-decoration:underline; font-weight:700;">Kembali</button>`
-                      : `<span></span>`
-                    }
-                    <button type="button" data-inspect-order="${ord.id}" style="color:var(--accent-coffee); text-decoration:underline; font-weight:800;">
-                      Lihat / Cetak Ulang
-                    </button>
-                  </div>
-                </div>
-              </article>
-            `;
-          }).join('');
-        }
-
-        // Section 2: Selesai Hari Ini
-        const completedOrders = state.orders
-          .filter(o => o.orderStatus === 'selesai')
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        document.getElementById('dapurCompletedSubtitle').textContent = `${completedOrders.length} selesai`;
-        const emptyDone = document.getElementById('dapurEmptyCompleted');
-        const doneList = document.getElementById('dapurCompletedList');
-
-        if (completedOrders.length === 0) {
-          emptyDone.classList.remove('hidden');
-          doneList.innerHTML = '';
-        } else {
-          emptyDone.classList.add('hidden');
-          doneList.innerHTML = completedOrders.map(ord => {
-            const summaryStr = ord.items.map(i => `${i.qty}× ${i.name}`).join(', ');
-            const payActions = ord.paymentStatus === 'belum_bayar'
-              ? `
-                <span class="badge badge-red">Belum bayar</span>
-                <button type="button" class="btn btn-outline btn-sm" data-settle-id="${ord.id}" data-settle-method="TUNAI">Lunas tunai</button>
-                <button type="button" class="btn btn-outline btn-sm" data-settle-id="${ord.id}" data-settle-method="QRIS">Lunas QRIS</button>
-              `
-              : `<span class="badge badge-emerald">Lunas - ${ord.paymentMethod}</span>`;
-
-            return `
-              <div class="done-order-row">
-                <div style="min-width:210px; flex:1;">
-                  <div style="font-weight:900; font-size:15.5px;">
-                    #${ord.orderNumber} ${ord.customerName}
-                    <span style="font-weight:600; font-size:12px; color:var(--text-muted);">· ${formatHHMM(ord.createdAt)}</span>
-                  </div>
-                  <div style="font-size:13px; color:var(--text-muted); margin-top:3px;">${summaryStr}</div>
-                  <div style="margin-top:8px; display:flex; gap:12px; align-items:center;">
-                    <button type="button" class="btn btn-soft btn-sm" data-step-dir="prev" data-order-id="${ord.id}">Buka lagi</button>
-                    <button type="button" data-inspect-order="${ord.id}" style="font-size:12.5px; color:var(--accent-coffee); text-decoration:underline; font-weight:800;">Lihat / Cetak Ulang</button>
-                  </div>
-                </div>
-                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
-                  <strong style="font-size:15.5px; margin-right:4px;">${formatRp(ord.totalAmount)}</strong>
-                  ${payActions}
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      function renderLaciKasTab() {
-        document.querySelectorAll('[data-cash-type]').forEach(btn => {
-          const active = btn.dataset.cashType === state.cashMoveType;
-          btn.classList.toggle('active', active);
-          btn.style.color = active
-            ? (state.cashMoveType === 'keluar' ? 'var(--red)' : 'var(--emerald)')
-            : 'var(--text-muted)';
-        });
-
-        const moves = state.shift.cashMovements || [];
-        document.getElementById('cashMoveCountBadge').textContent = `${moves.length} catatan`;
-        const emptyEl = document.getElementById('cashMoveEmpty');
-        const listEl = document.getElementById('cashMoveList');
-
-        if (moves.length === 0) {
-          emptyEl.classList.remove('hidden');
-          listEl.classList.add('hidden');
-          listEl.innerHTML = '';
-        } else {
-          emptyEl.classList.add('hidden');
-          listEl.classList.remove('hidden');
-          listEl.innerHTML = moves.map(m => {
-            const isIn = m.type === 'masuk';
-            return `
-              <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:14px; padding:11px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                <div style="min-width:0; flex:1;">
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="badge ${isIn ? 'badge-emerald' : 'badge-red'}">${isIn ? 'Kas Masuk' : 'Kas Keluar'}</span>
-                    <span style="font-size:12px; color:var(--text-muted);">${formatHHMM(m.time)} · ${m.userName}</span>
-                  </div>
-                  <div style="font-size:13.5px; font-weight:700; margin-top:4px;">${m.reason}</div>
-                </div>
-                <strong style="font-size:14.5px; color:${isIn ? 'var(--emerald)' : 'var(--red)'}; white-space:nowrap;">
-                  ${isIn ? '+' : '−'} ${formatRp(m.amount)}
-                </strong>
-              </div>
-            `;
-          }).join('');
-        }
-
-        const ledger = getShiftLedger();
-        const activeUser = getActiveUser();
-        if (state.shift.openedAt) {
-          document.getElementById('laciHeaderMeta').textContent =
-            `Dibuka ${formatDDMMYYYY_HHMM(state.shift.openedAt)} oleh ${state.shift.openedBy}`;
-          document.getElementById('ledgerOpenInfo').textContent =
-            `${formatHHMM(state.shift.openedAt)} · ${activeUser ? activeUser.name : state.shift.openedBy}`;
-        }
-
-        const unpaidWarn = document.getElementById('laciUnpaidWarning');
-        if (ledger.unpaidCount > 0) {
-          unpaidWarn.classList.remove('hidden');
-          document.getElementById('laciUnpaidWarningTitle').textContent =
-            `Ada ${ledger.unpaidCount} pesanan Belum Bayar (${formatRp(ledger.unpaidTotal)})`;
-        } else {
-          unpaidWarn.classList.add('hidden');
-        }
-
-        document.getElementById('ledgerOpeningFloat').textContent = formatRp(ledger.openingFloat);
-        document.getElementById('ledgerCashSales').textContent = `+ ${formatRp(ledger.cashSales)}`;
-        document.getElementById('ledgerQrisSales').textContent = formatRp(ledger.qrisSales);
-        document.getElementById('ledgerUnpaidCount').textContent = ledger.unpaidCount;
-        document.getElementById('ledgerUnpaidTotal').textContent = formatRp(ledger.unpaidTotal);
-        document.getElementById('ledgerCashIn').textContent = `+ ${formatRp(ledger.cashIn)}`;
-        document.getElementById('ledgerCashOut').textContent = `− ${formatRp(ledger.cashOut)}`;
-        document.getElementById('ledgerExpectedCash').textContent = formatRp(ledger.expectedCash);
-
-        updateDrawerCloseCalculation();
-      }
-
-      function updateDrawerCloseCalculation() {
-        const ledger = getShiftLedger();
-        const actualRaw = document.getElementById('inputActualDrawerCash').value.trim();
-        const leftRaw = document.getElementById('inputLeftForTomorrow').value;
-
-        const actual = parseDigits(actualRaw);
-        const leftTomorrow = parseDigits(leftRaw);
-
-        const varBox = document.getElementById('varianceBox');
-        const varText = document.getElementById('varianceText');
-        const depText = document.getElementById('depositText');
-
-        if (!actualRaw) {
-          varBox.style.background = 'var(--bg-cream)';
-          varBox.style.borderColor = 'var(--border)';
-          varText.style.color = 'var(--text-muted)';
-          varText.textContent = 'Isi uang aktual';
-          depText.textContent = 'Rp 0';
-          return;
-        }
-
-        const diff = actual - ledger.expectedCash;
-        if (diff === 0) {
-          varBox.style.background = 'var(--emerald-bg)';
-          varBox.style.borderColor = 'var(--emerald-border)';
-          varText.style.color = 'var(--emerald)';
-          varText.textContent = 'Pas (Rp 0)';
-        } else if (diff > 0) {
-          varBox.style.background = 'var(--sky-bg)';
-          varBox.style.borderColor = 'var(--sky-border)';
-          varText.style.color = 'var(--sky)';
-          varText.textContent = `Lebih +${formatRp(diff)}`;
-        } else {
-          varBox.style.background = 'var(--red-bg)';
-          varBox.style.borderColor = 'var(--red-border)';
-          varText.style.color = 'var(--red)';
-          varText.textContent = `Kurang −${formatRp(Math.abs(diff))}`;
-        }
-
-        const deposit = Math.max(0, actual - leftTomorrow);
-        depText.textContent = formatRp(deposit);
-      }
-
-      function renderPrinterTab() {
-        const banner = document.getElementById('printerModeBanner');
-        if (state.printer.isAndroidBridge) {
-          banner.className = 'alert-box alert-green';
-          banner.innerHTML = '<strong>Android Bluetooth SPP Aktif:</strong> Terhubung ke modul Bluetooth Classic perangkat tablet Android.';
-        } else {
-          banner.className = 'alert-box alert-amber';
-          banner.innerHTML = '<strong>Mode Browser Pratinjau</strong> — Android Bluetooth aktif otomatis saat dipasang sebagai APK.';
-        }
-
-        const listEl = document.getElementById('pairedDevicesList');
-        if (state.printer.pairedPrinters.length === 0) {
-          listEl.innerHTML = `
-            <div class="alert-box alert-amber">
-              Belum ada perangkat Bluetooth yang dipasangkan (paired) di tablet. Pasangkan <strong>VSC MP-58A</strong> di Pengaturan Bluetooth tablet terlebih dahulu, lalu tekan <strong>Muat Ulang Daftar Bluetooth</strong>.
-            </div>
-          `;
-        } else {
-          listEl.innerHTML = state.printer.pairedPrinters.map(dev => {
-            const isSelected = dev.address === state.printer.selectedAddress;
-            return `
-              <button type="button" data-select-bt="${dev.address}" data-select-bt-name="${dev.name}"
-                style="width:100%; min-height:62px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; border-radius:16px; border:1.5px solid ${isSelected ? 'var(--accent-coffee)' : 'var(--border)'}; background:${isSelected ? 'var(--accent-coffee-tint)' : 'var(--surface)'}; text-align:left;">
-                <div>
-                  <div style="font-weight:800; font-size:15px;">${dev.name}</div>
-                  <div class="mono" style="font-size:12px; color:var(--text-muted); margin-top:2px;">MAC: ${dev.address}</div>
-                </div>
-                <span class="badge ${isSelected ? 'badge-emerald' : 'badge-neutral'}">${isSelected ? 'Terpilih' : 'Pilih'}</span>
-              </button>
-            `;
-          }).join('');
-        }
-
-        updatePrinterErrorUI();
-        document.getElementById('printerPreviewPre').textContent = state.printer.lastPayload || buildTestPrint32();
-      }
-
-      function renderKelolaTab() {
-        document.querySelectorAll('[data-kelola-sub]').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.kelolaSub === state.kelolaSubTab);
-        });
-        document.getElementById('kelola-sub-users').classList.toggle('hidden', state.kelolaSubTab !== 'users');
-        document.getElementById('kelola-sub-menu').classList.toggle('hidden', state.kelolaSubTab !== 'menu');
-        document.getElementById('kelola-sub-shifts').classList.toggle('hidden', state.kelolaSubTab !== 'shifts');
-
-        // 1. Users List
-        const currentUser = getActiveUser();
-        const usersListEl = document.getElementById('manageUsersList');
-        usersListEl.innerHTML = state.accounts.map(acc => {
-          const isSelf = currentUser && currentUser.id === acc.id;
-          return `
-            <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:16px; padding:13px 16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px;">
-              <div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <strong style="font-size:15.5px;">${acc.name}</strong>
-                  <span class="badge ${acc.role === 'owner' ? 'badge-coffee' : 'badge-sky'}">${acc.role === 'owner' ? 'Owner' : 'Staff'}</span>
-                  <span class="badge ${acc.active ? 'badge-emerald' : 'badge-neutral'}">${acc.active ? 'Aktif' : 'Nonaktif'}</span>
-                </div>
-                <div style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">
-                  PIN: <code class="mono" style="background:#FFFFFF; padding:2px 7px; border-radius:6px; border:1px solid var(--border); font-weight:800;">${acc.pin}</code>
-                </div>
-              </div>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <button type="button" class="btn btn-outline btn-sm" data-open-edit-pin="${acc.id}">Ubah PIN</button>
-                ${isSelf
-                  ? `<span style="font-size:12px; color:var(--text-muted); font-weight:700;">Sedang Login</span>`
-                  : `<button type="button" class="btn btn-outline btn-sm" data-toggle-user="${acc.id}" style="color:${acc.active ? 'var(--red)' : 'var(--emerald)'};">${acc.active ? 'Nonaktifkan' : 'Aktifkan'}</button>`
-                }
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        // 2. Menu & HPP List
-        document.getElementById('manageMenuCount').textContent = `${state.menu.length} item`;
-        const menuListEl = document.getElementById('manageMenuList');
-        menuListEl.innerHTML = state.menu.map(item => {
-          const margin = item.price - item.hpp;
-          return `
-            <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:15px; padding:12px 15px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px;">
-              <div>
-                <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
-                  <strong style="font-size:14.5px;">${item.name}</strong>
-                  <span class="badge badge-neutral" style="font-size:10.5px;">${item.category}</span>
-                  <span class="badge ${item.target === 'dapur' ? 'badge-coffee' : 'badge-sky'}" style="font-size:10.5px; text-transform:uppercase;">${item.target}</span>
-                </div>
-                <div style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">
-                  Jual: <strong style="color:var(--text-espresso);">${formatRp(item.price)}</strong> · HPP: <strong>${formatRp(item.hpp)}</strong> · Laba: <strong style="color:var(--emerald);">${formatRp(margin)}</strong>
-                </div>
-              </div>
-              <button type="button" class="btn btn-outline btn-sm" data-edit-menu-id="${item.id}">Edit</button>
-            </div>
-          `;
-        }).join('');
-
-        // 3. Shift Archive List
-        document.getElementById('archiveShiftBadge').textContent = `${state.shiftArchive.length} shift`;
-        const archContainer = document.getElementById('archiveShiftContainer');
-        if (state.shiftArchive.length === 0) {
-          archContainer.innerHTML = `<div style="text-align:center; padding:28px; color:var(--text-muted); font-size:13.5px;">Belum ada laporan tutup kasir yang tersimpan.</div>`;
-        } else {
-          archContainer.innerHTML = state.shiftArchive.map((sh, idx) => {
-            const varLabel = sh.variance === 0
-              ? `<span style="color:var(--emerald); font-weight:800;">Pas (Rp 0)</span>`
-              : sh.variance > 0
-                ? `<span style="color:var(--sky); font-weight:800;">Lebih +${formatRp(sh.variance)}</span>`
-                : `<span style="color:var(--red); font-weight:800;">Kurang −${formatRp(Math.abs(sh.variance))}</span>`;
-
-            return `
-              <div style="background:var(--bg-cream); border:1px solid var(--border); border-radius:16px; padding:15px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
-                <div style="font-size:13px; display:flex; flex-direction:column; gap:4px;">
-                  <div style="font-size:15px; font-weight:900;">Tutup Kasir: ${formatDDMMYYYY_HHMM(sh.closedAt)}</div>
-                  <div style="color:var(--text-muted);">Buka: ${formatDDMMYYYY_HHMM(sh.openedAt)} (${sh.openedBy}) · Tutup oleh: <strong>${sh.closedBy}</strong> · ${sh.totalOrders} order</div>
-                  <div>Tunai: <strong>${formatRp(sh.cashSales)}</strong> · QRIS: <strong>${formatRp(sh.qrisSales)}</strong> · Selisih: ${varLabel} · Disetor: <strong style="color:var(--emerald);">${formatRp(sh.depositedCash)}</strong></div>
-                </div>
-                <button type="button" class="btn btn-outline btn-sm" data-view-archive-idx="${idx}">Lihat Struk Rekap</button>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      function renderAll() {
-        renderLoginScreen();
-        renderOpenCashierScreen();
-        renderTopbar();
-        renderProductGrid();
-        renderCartSection();
-        renderDapurTab();
-        renderLaciKasTab();
-        renderPrinterTab();
-        renderKelolaTab();
-      }
-
-      // =======================================================================
-      // 8. MODALS & TOAST HELPERS
-      // =======================================================================
-      function openOrderReceiptModal(order, printRes) {
-        state.modalReceiptCtx = { order, recapText: null, lockAfterClose: false };
-
-        const modal = document.getElementById('modalReceipt');
-        const badge = document.getElementById('modalPrintBadge');
-        const errBox = document.getElementById('modalReceiptErrorBox');
-        const sheets = document.getElementById('modalReceiptSheets');
-
-        document.getElementById('modalPrinterDevice').textContent = state.printer.selectedName || 'VSC MP-58A';
-        document.getElementById('modalReceiptTitle').textContent = `Order #${order.orderNumber} · ${order.customerName}`;
-
-        if (printRes.success) {
-          badge.className = 'badge badge-emerald';
-          badge.textContent = 'Terkirim ke Printer';
-          errBox.classList.add('hidden');
-        } else {
-          badge.className = 'badge badge-red';
-          badge.textContent = 'Gagal Mencetak';
-          errBox.classList.remove('hidden');
-          document.getElementById('modalReceiptErrorText').textContent = printRes.error;
-        }
-
-        const barText = buildBarTicket32(order);
-        let html = `
-          <div class="thermal-paper">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <span style="font-size:11.5px; font-weight:800; color:var(--accent-coffee);">1. TIKET BAR (WAJIB)</span>
-              <span class="mono" style="font-size:11px; color:var(--text-muted);">32 kol</span>
-            </div>
-            <pre class="thermal-text">${barText}</pre>
-          </div>
-        `;
-
-        if (order.printCustomerReceipt) {
-          const custText = buildCustomerReceipt32(order);
-          html += `
-            <div class="thermal-paper">
-              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span style="font-size:11.5px; font-weight:800; color:var(--text-espresso);">2. STRUK PELANGGAN</span>
-                <span class="mono" style="font-size:11px; color:var(--text-muted);">32 kol</span>
-              </div>
-              <pre class="thermal-text">${custText}</pre>
-            </div>
-          `;
-        }
-
-        sheets.innerHTML = html;
-        document.getElementById('btnCloseReceiptModalBottom').textContent = 'Selesai & Tutup';
-        modal.classList.remove('hidden');
-      }
-
-      function openRecapReceiptModal(recapText, printRes, lockAfter) {
-        state.modalReceiptCtx = { order: null, recapText, lockAfterClose: lockAfter };
-
-        const modal = document.getElementById('modalReceipt');
-        const badge = document.getElementById('modalPrintBadge');
-        const errBox = document.getElementById('modalReceiptErrorBox');
-        const sheets = document.getElementById('modalReceiptSheets');
-
-        document.getElementById('modalPrinterDevice').textContent = state.printer.selectedName || 'VSC MP-58A';
-        document.getElementById('modalReceiptTitle').textContent = 'Rekap Tutup Kasir (58mm)';
-
-        if (printRes.success) {
-          badge.className = 'badge badge-emerald';
-          badge.textContent = lockAfter ? 'Tercetak · Kasir Ditutup' : 'Arsip Rekap Shift';
-          errBox.classList.add('hidden');
-        } else {
-          badge.className = 'badge badge-red';
-          badge.textContent = 'Gagal Cetak Rekap';
-          errBox.classList.remove('hidden');
-          document.getElementById('modalReceiptErrorText').textContent = printRes.error;
-        }
-
-        sheets.innerHTML = `
-          <div class="thermal-paper">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <span style="font-size:11.5px; font-weight:800; color:var(--accent-coffee);">REKAP TUTUP KASIR</span>
-              <span class="mono" style="font-size:11px; color:var(--text-muted);">32 kol</span>
-            </div>
-            <pre class="thermal-text">${recapText}</pre>
-          </div>
-        `;
-
-        document.getElementById('btnCloseReceiptModalBottom').textContent =
-          lockAfter ? 'Selesai & Kembali ke Login PIN' : 'Tutup';
-        modal.classList.remove('hidden');
-      }
-
-      function closeReceiptModal() {
-        document.getElementById('modalReceipt').classList.add('hidden');
-        if (state.modalReceiptCtx.lockAfterClose) {
-          state.modalReceiptCtx.lockAfterClose = false;
-          document.getElementById('inputOpeningFloat').dataset.prefilled = '';
-          state.activeUserId = null;
-          state.pinDigits = '';
-          renderAll();
-          showToast('Kasir telah ditutup. Layar dikunci ke Login PIN.', 'info');
-        }
-      }
-
-      function showToast(message, type = 'info', action = null) {
-        const container = document.getElementById('toastContainer');
-        const banner = document.createElement('div');
-        banner.className = `toast-banner ${type === 'success' ? 't-success' : type === 'error' ? 't-error' : ''}`;
-
-        const textSpan = document.createElement('span');
-        textSpan.textContent = message;
-        banner.appendChild(textSpan);
-
-        if (action && typeof action.onClick === 'function') {
-          const actBtn = document.createElement('button');
-          actBtn.type = 'button';
-          actBtn.textContent = action.label;
-          actBtn.style.cssText = 'background:#FFFFFF; color:#231F1E; padding:6px 11px; border-radius:10px; font-size:12px; font-weight:800; white-space:nowrap; min-height:32px;';
-          actBtn.addEventListener('click', () => {
-            banner.remove();
-            action.onClick();
-          });
-          banner.appendChild(actBtn);
-        }
-
-        container.appendChild(banner);
-        setTimeout(() => {
-          if (!banner.parentNode) return;
-          banner.style.opacity = '0';
-          banner.style.transform = 'translateY(8px)';
-          setTimeout(() => banner.remove(), 220);
-        }, action ? 4200 : 2800);
-      }
-
-      // =======================================================================
-      // 9. EVENT BINDINGS
-      // =======================================================================
-      function switchMainTab(tabName) {
-        state.activeTab = tabName;
-        document.querySelectorAll('.nav-tab').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.tab === tabName);
-        });
-        document.querySelectorAll('.tab-panel').forEach(panel => {
-          panel.classList.toggle('hidden', panel.id !== `panel-${tabName}`);
-        });
-        if (tabName === 'dapur') renderDapurTab();
-        if (tabName === 'laci') renderLaciKasTab();
-        if (tabName === 'printer') renderPrinterTab();
-        if (tabName === 'kelola') renderKelolaTab();
-      }
-
-      function attemptPinLogin() {
-        const acc = state.accounts.find(a => a.id === state.selectedLoginUserId && a.active);
-        if (!acc) return;
-
-        if (state.pinDigits !== acc.pin) {
-          const errEl = document.getElementById('loginErrorAlert');
-          errEl.textContent = `PIN salah untuk ${acc.name}. Silakan coba lagi.`;
-          errEl.classList.remove('hidden');
-          state.pinDigits = '';
-          renderLoginScreen();
-          return;
-        }
-
-        state.activeUserId = acc.id;
-        state.pinDigits = '';
-        if (acc.role !== 'owner' && state.activeTab === 'kelola') {
-          switchMainTab('kasir');
-        }
-        renderAll();
-        showToast(`Selamat bertugas, ${acc.name}!`, 'success');
-      }
-
-      function bindAllEvents() {
-        // --- PIN Login Screen ---
-        document.getElementById('loginAccountList').addEventListener('click', e => {
-          const btn = e.target.closest('[data-pick-login-user]');
-          if (!btn) return;
-          state.selectedLoginUserId = btn.dataset.pickLoginUser;
-          state.pinDigits = '';
-          document.getElementById('loginErrorAlert').classList.add('hidden');
-          renderLoginScreen();
-        });
-
-        document.querySelectorAll('[data-digit]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            if (state.pinDigits.length >= 4) return;
-            state.pinDigits += btn.dataset.digit;
-            document.getElementById('loginErrorAlert').classList.add('hidden');
-            renderLoginScreen();
-            if (state.pinDigits.length === 4) {
-              setTimeout(attemptPinLogin, 110);
-            }
-          });
-        });
-
-        document.getElementById('btnPinBackspace').addEventListener('click', () => {
-          state.pinDigits = state.pinDigits.slice(0, -1);
-          renderLoginScreen();
-        });
-
-        document.getElementById('btnPinClearAll').addEventListener('click', () => {
-          state.pinDigits = '';
-          document.getElementById('loginErrorAlert').classList.add('hidden');
-          renderLoginScreen();
-        });
-
-        // Physical keyboard support on PIN screen
-        document.addEventListener('keydown', e => {
-          if (getActiveUser()) return;
-          if (/^[0-9]$/.test(e.key)) {
-            e.preventDefault();
-            if (state.pinDigits.length < 4) {
-              state.pinDigits += e.key;
-              renderLoginScreen();
-              if (state.pinDigits.length === 4) setTimeout(attemptPinLogin, 110);
-            }
-          } else if (e.key === 'Backspace') {
-            e.preventDefault();
-            state.pinDigits = state.pinDigits.slice(0, -1);
-            renderLoginScreen();
-          }
-        });
-
-        // --- Lock / Switch Account ---
-        function lockToPinScreen() {
-          const u = getActiveUser();
-          if (u && u.active) state.selectedLoginUserId = u.id;
-          state.activeUserId = null;
-          state.pinDigits = '';
-          renderAll();
-        }
-        document.getElementById('btnLockAccount').addEventListener('click', lockToPinScreen);
-        document.getElementById('btnSwitchUserFromOpen').addEventListener('click', lockToPinScreen);
-
-        // --- Buka Kasir ---
-        const floatInput = document.getElementById('inputOpeningFloat');
-        floatInput.addEventListener('input', e => {
-          const digits = parseDigits(e.target.value);
-          e.target.value = digits > 0 ? formatDigits(digits) : '0';
-        });
-
-        document.getElementById('btnOpenStoreSubmit').addEventListener('click', () => {
-          const user = getActiveUser();
-          if (!user) return;
-          const openingFloat = parseDigits(floatInput.value);
-          const openingNote = document.getElementById('inputOpeningNote').value.trim();
-
-          state.shift = {
-            id: 'shift-' + Date.now(),
-            isOpen: true,
-            openedAt: new Date().toISOString(),
-            openedBy: user.name,
-            openingFloat,
-            openingNote,
-            cashMovements: []
-          };
-
-          // Reset sequential order counter to #1 and archive previous shift completed orders
-          state.nextOrderSeq = 1;
-          state.orders = state.orders.filter(o => o.orderStatus !== 'selesai');
-          document.getElementById('inputOpeningNote').value = '';
-
-          saveToStorage();
-          switchMainTab('kasir');
-          renderAll();
-          showToast(`Toko dibuka! Modal awal ${formatRp(openingFloat)} · Order dimulai dari #1.`, 'success');
-        });
-
-        // --- Main Tabs ---
-        document.querySelectorAll('.nav-tab').forEach(btn => {
-          btn.addEventListener('click', () => switchMainTab(btn.dataset.tab));
-        });
-
-        // --- Tab Kasir ---
-        document.querySelectorAll('.cat-pill').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.activeCategory = btn.dataset.cat;
-            renderProductGrid();
-          });
-        });
-
-        document.getElementById('productGrid').addEventListener('click', e => {
-          const card = e.target.closest('[data-add-prod]');
-          if (card) addProductToCart(card.dataset.addProd);
-        });
-
-        document.getElementById('cartItemsList').addEventListener('click', e => {
-          const stepBtn = e.target.closest('[data-cart-step]');
-          if (!stepBtn) return;
-          updateCartItemQty(stepBtn.dataset.prodId, stepBtn.dataset.cartStep === 'inc' ? 1 : -1);
-        });
-
-        const custInput = document.getElementById('inputCustomerName');
-        custInput.addEventListener('input', e => {
-          state.customerName = e.target.value;
-          if (state.customerName.trim()) {
-            document.getElementById('customerNameWarning').classList.add('hidden');
-            custInput.classList.remove('input-error');
-          }
-        });
-
-        document.querySelectorAll('[data-pay-mode]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.payMode = btn.dataset.payMode;
-            renderCartSection();
-          });
-        });
-
-        document.querySelectorAll('[data-pay-method]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.payMethod = btn.dataset.payMethod;
-            renderCartSection();
-          });
-        });
-
-        const cashInput = document.getElementById('inputCashReceived');
-        cashInput.addEventListener('input', e => {
-          const digits = parseDigits(e.target.value);
-          state.cashReceivedRaw = digits > 0 ? String(digits) : '';
-          e.target.value = digits > 0 ? formatDigits(digits) : '';
-          updateChangeBanner();
-        });
-
-        document.getElementById('btnClearCash').addEventListener('click', () => {
-          state.cashReceivedRaw = '';
-          cashInput.value = '';
-          updateChangeBanner();
-        });
-
-        document.querySelectorAll('[data-quick-amt]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const amt = btn.dataset.quickAmt === 'exact' ? getCartGrandTotal() : parseInt(btn.dataset.quickAmt, 10);
-            state.cashReceivedRaw = amt > 0 ? String(amt) : '';
-            cashInput.value = amt > 0 ? formatDigits(amt) : '';
-            updateChangeBanner();
-          });
-        });
-
-        document.getElementById('chkPrintCustomerReceipt').addEventListener('change', e => {
-          state.printCustomerReceipt = e.target.checked;
-        });
-
-        document.getElementById('btnSubmitOrder').addEventListener('click', submitNewOrder);
-
-        // --- Tab Dapur ---
-        document.getElementById('panel-dapur').addEventListener('click', e => {
-          const stepBtn = e.target.closest('[data-step-dir]');
-          if (stepBtn) {
-            stepOrderStatus(stepBtn.dataset.orderId, stepBtn.dataset.stepDir);
-            return;
-          }
-          const settleBtn = e.target.closest('[data-settle-id]');
-          if (settleBtn) {
-            settleOrderPayment(settleBtn.dataset.settleId, settleBtn.dataset.settleMethod);
-            return;
-          }
-          const inspectBtn = e.target.closest('[data-inspect-order]');
-          if (inspectBtn) {
-            const ord = state.orders.find(o => o.id === inspectBtn.dataset.inspectOrder);
-            if (ord) openOrderReceiptModal(ord, { success: true });
-          }
-        });
-
-        // --- Tab Laci Kas ---
-        document.querySelectorAll('[data-cash-type]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.cashMoveType = btn.dataset.cashType;
-            renderLaciKasTab();
-          });
-        });
-
-        const cashMoveAmtInput = document.getElementById('inputCashMoveAmount');
-        cashMoveAmtInput.addEventListener('input', e => {
-          const digits = parseDigits(e.target.value);
-          e.target.value = digits > 0 ? formatDigits(digits) : '';
-        });
-
-        document.getElementById('btnRecordCashMove').addEventListener('click', () => {
-          const user = getActiveUser();
-          if (!user || !state.shift.isOpen) return;
-          const amount = parseDigits(cashMoveAmtInput.value);
-          const reasonInput = document.getElementById('inputCashMoveReason');
-          const reason = reasonInput.value.trim();
-
-          if (amount <= 0) {
-            showToast('Masukkan nominal kas lebih dari Rp 0.', 'error');
-            cashMoveAmtInput.focus();
-            return;
-          }
-          if (!reason) {
-            showToast('Alasan transaksi kas wajib diisi.', 'error');
-            reasonInput.focus();
-            return;
-          }
-
-          state.shift.cashMovements.unshift({
-            id: 'cm-' + Date.now(),
-            time: new Date().toISOString(),
-            type: state.cashMoveType,
-            amount,
-            reason,
-            userName: user.name
-          });
-
-          cashMoveAmtInput.value = '';
-          reasonInput.value = '';
-          saveToStorage();
-          renderLaciKasTab();
-          showToast(`${state.cashMoveType === 'masuk' ? 'Kas Masuk' : 'Kas Keluar'} ${formatRp(amount)} dicatat.`, 'success');
-        });
-
-        const actualCashInput = document.getElementById('inputActualDrawerCash');
-        actualCashInput.addEventListener('input', e => {
-          const digits = parseDigits(e.target.value);
-          e.target.value = e.target.value.trim() === '' ? '' : formatDigits(digits);
-          updateDrawerCloseCalculation();
-        });
-
-        const leftTomorrowInput = document.getElementById('inputLeftForTomorrow');
-        leftTomorrowInput.addEventListener('input', e => {
-          const digits = parseDigits(e.target.value);
-          e.target.value = formatDigits(digits);
-          updateDrawerCloseCalculation();
-        });
-
-        document.getElementById('btnFillExactCash').addEventListener('click', () => {
-          const ledger = getShiftLedger();
-          actualCashInput.value = formatDigits(ledger.expectedCash);
-          updateDrawerCloseCalculation();
-        });
-
-        document.getElementById('btnOpenCloseShiftConfirm').addEventListener('click', () => {
-          const rawActual = actualCashInput.value.trim();
-          if (!rawActual) {
-            showToast('Masukkan jumlah uang aktual di laci terlebih dahulu.', 'error');
-            actualCashInput.focus();
-            return;
-          }
-          const actual = parseDigits(rawActual);
-          const leftTomorrow = parseDigits(leftTomorrowInput.value);
-          if (leftTomorrow > actual) {
-            showToast('Uang ditinggalkan untuk besok tidak boleh melebihi uang aktual di laci.', 'error');
-            leftTomorrowInput.focus();
-            return;
-          }
-
-          const ledger = getShiftLedger();
-          const warnBox = document.getElementById('confirmCloseShiftWarnings');
-          const warns = [];
-          if (ledger.activeKitchenCount > 0) {
-            warns.push(`• Masih ada ${ledger.activeKitchenCount} pesanan aktif di Dapur.`);
-          }
-          if (ledger.unpaidCount > 0) {
-            warns.push(`• Masih ada ${ledger.unpaidCount} pesanan Belum Bayar (${formatRp(ledger.unpaidTotal)}).`);
-          }
-
-          if (warns.length > 0) {
-            warnBox.innerHTML = `<strong>Perhatian:</strong><br>${warns.join('<br>')}`;
-            warnBox.classList.remove('hidden');
-          } else {
-            warnBox.classList.add('hidden');
-          }
-
-          document.getElementById('modalConfirmCloseShift').classList.remove('hidden');
-        });
-
-        function hideConfirmCloseShiftModal() {
-          document.getElementById('modalConfirmCloseShift').classList.add('hidden');
-        }
-        document.getElementById('btnCloseConfirmShiftTop').addEventListener('click', hideConfirmCloseShiftModal);
-        document.getElementById('btnCloseConfirmShiftCancel').addEventListener('click', hideConfirmCloseShiftModal);
-
-        document.getElementById('btnConfirmCloseShiftDo').addEventListener('click', () => {
-          const user = getActiveUser();
-          if (!user) return;
-          const actualCash = parseDigits(actualCashInput.value);
-          const leftForTomorrow = parseDigits(leftTomorrowInput.value);
-          const depositedCash = Math.max(0, actualCash - leftForTomorrow);
-          const ledger = getShiftLedger();
-          const closedAt = new Date().toISOString();
-
-          const recap = {
-            id: state.shift.id || ('shift-' + Date.now()),
-            openedAt: state.shift.openedAt || closedAt,
-            openedBy: state.shift.openedBy || user.name,
-            closedAt,
-            closedBy: user.name,
-            openingFloat: ledger.openingFloat,
-            cashSales: ledger.cashSales,
-            qrisSales: ledger.qrisSales,
-            unpaidTotal: ledger.unpaidTotal,
-            cashIn: ledger.cashIn,
-            cashOut: ledger.cashOut,
-            expectedCash: ledger.expectedCash,
-            actualCash,
-            variance: actualCash - ledger.expectedCash,
-            leftForTomorrow,
-            depositedCash,
-            totalOrders: ledger.totalOrders
-          };
-
-          state.lastLeftInDrawer = leftForTomorrow;
-          state.shiftArchive.unshift(recap);
-          state.shift.isOpen = false;
-          state.shift.cashMovements = [];
-          actualCashInput.value = '';
-          saveToStorage();
-
-          hideConfirmCloseShiftModal();
-
-          const recapText = buildShiftRecap32(recap);
-          const printRes = sendToBluetoothPrinter(recapText);
-          openRecapReceiptModal(recapText, printRes, true);
-        });
-
-        // --- Tab Printer ---
-        document.getElementById('btnReloadBluetooth').addEventListener('click', () => {
-          reloadPairedBluetoothPrinters(true);
-          renderPrinterTab();
-        });
-
-        document.getElementById('pairedDevicesList').addEventListener('click', e => {
-          const btn = e.target.closest('[data-select-bt]');
-          if (!btn) return;
-          state.printer.selectedAddress = btn.dataset.selectBt;
-          state.printer.selectedName = btn.dataset.selectBtName;
-          saveToStorage();
-          renderPrinterTab();
-          showToast(`Printer dipilih: ${state.printer.selectedName}`, 'success');
-        });
-
-        document.getElementById('btnTestPrint32').addEventListener('click', () => {
-          const testText = buildTestPrint32();
-          const res = sendToBluetoothPrinter(testText);
-          renderTopbar();
-          if (res.success) {
-            showToast(`Tes cetak 32 karakter berhasil dikirim ke ${state.printer.selectedName}`, 'success');
-          } else {
-            showToast('Tes cetak gagal! Periksa kotak pesan error di layar Printer.', 'error');
-          }
-        });
-
-        document.getElementById('btnRetryLastPrint').addEventListener('click', () => {
-          const payload = state.printer.lastPayload || buildTestPrint32();
-          const res = sendToBluetoothPrinter(payload);
-          renderTopbar();
-          if (res.success) {
-            showToast('Cetak ulang berhasil!', 'success');
-          } else {
-            showToast('Masih gagal mencetak: ' + res.error, 'error');
-          }
-        });
-
-        // --- Tab Kelola (Owner Only) ---
-        document.querySelectorAll('[data-kelola-sub]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.kelolaSubTab = btn.dataset.kelolaSub;
-            renderKelolaTab();
-          });
-        });
-
-        document.getElementById('btnCreateUser').addEventListener('click', () => {
-          const nameInput = document.getElementById('inputNewUserName');
-          const roleSelect = document.getElementById('selectNewUserRole');
-          const pinInput = document.getElementById('inputNewUserPin');
-
-          const name = nameInput.value.trim();
-          const role = roleSelect.value;
-          const pin = pinInput.value.trim();
-
-          if (!name) {
-            showToast('Nama user wajib diisi.', 'error');
-            nameInput.focus();
-            return;
-          }
-          if (!/^\d{4}$/.test(pin)) {
-            showToast('PIN harus tepat 4 digit angka.', 'error');
-            pinInput.focus();
-            return;
-          }
-
-          state.accounts.push({
-            id: 'usr-' + Date.now(),
-            name,
-            role,
-            pin,
-            active: true
-          });
-          nameInput.value = '';
-          pinInput.value = '';
-          saveToStorage();
-          renderKelolaTab();
-          showToast(`User ${name} (${role === 'owner' ? 'Owner' : 'Staff'}) ditambahkan.`, 'success');
-        });
-
-        document.getElementById('manageUsersList').addEventListener('click', e => {
-          const editBtn = e.target.closest('[data-open-edit-pin]');
-          if (editBtn) {
-            const acc = state.accounts.find(a => a.id === editBtn.dataset.openEditPin);
-            if (!acc) return;
-            state.editingPinUserId = acc.id;
-            document.getElementById('editPinUserDesc').textContent = `Masukkan 4 digit PIN baru untuk ${acc.name}`;
-            document.getElementById('inputEditUserPinVal').value = '';
-            document.getElementById('modalEditUserPin').classList.remove('hidden');
-            document.getElementById('inputEditUserPinVal').focus();
-            return;
-          }
-
-          const toggleBtn = e.target.closest('[data-toggle-user]');
-          if (toggleBtn) {
-            const acc = state.accounts.find(a => a.id === toggleBtn.dataset.toggleUser);
-            if (!acc) return;
-            acc.active = !acc.active;
-            saveToStorage();
-            renderKelolaTab();
-            showToast(`User ${acc.name} ${acc.active ? 'diaktifkan' : 'dinonaktifkan'}.`, 'info');
-          }
-        });
-
-        function hideEditPinModal() {
-          document.getElementById('modalEditUserPin').classList.add('hidden');
-        }
-        document.getElementById('btnCloseEditPinTop').addEventListener('click', hideEditPinModal);
-        document.getElementById('btnCloseEditPinCancel').addEventListener('click', hideEditPinModal);
-
-        document.getElementById('btnSaveUserPin').addEventListener('click', () => {
-          const newPin = document.getElementById('inputEditUserPinVal').value.trim();
-          if (!/^\d{4}$/.test(newPin)) {
-            showToast('PIN baru harus tepat 4 digit angka.', 'error');
-            return;
-          }
-          const acc = state.accounts.find(a => a.id === state.editingPinUserId);
-          if (acc) {
-            acc.pin = newPin;
-            saveToStorage();
-            renderKelolaTab();
-            showToast(`PIN untuk ${acc.name} diperbarui.`, 'success');
-          }
-          hideEditPinModal();
-        });
-
-        // Menu & HPP Form
-        const priceInput = document.getElementById('inputMenuPrice');
-        const hppInput = document.getElementById('inputMenuHpp');
-        priceInput.addEventListener('input', e => {
-          const d = parseDigits(e.target.value);
-          e.target.value = d > 0 ? formatDigits(d) : '';
-        });
-        hppInput.addEventListener('input', e => {
-          const d = parseDigits(e.target.value);
-          e.target.value = d > 0 ? formatDigits(d) : '';
-        });
-
-        function resetMenuEditor() {
-          document.getElementById('editMenuId').value = '';
-          document.getElementById('menuFormTitle').textContent = 'Tambah Menu Baru';
-          document.getElementById('btnResetMenuForm').classList.add('hidden');
-          document.getElementById('inputMenuName').value = '';
-          document.getElementById('selectMenuCat').value = 'Kopi';
-          document.getElementById('selectMenuTarget').value = 'bar';
-          priceInput.value = '';
-          hppInput.value = '';
-        }
-
-        document.getElementById('btnResetMenuForm').addEventListener('click', resetMenuEditor);
-
-        document.getElementById('btnSaveMenuProduct').addEventListener('click', () => {
-          const editId = document.getElementById('editMenuId').value.trim();
-          const name = document.getElementById('inputMenuName').value.trim();
-          const category = document.getElementById('selectMenuCat').value;
-          const target = document.getElementById('selectMenuTarget').value;
-          const price = parseDigits(priceInput.value);
-          const hpp = parseDigits(hppInput.value);
-
-          if (!name) {
-            showToast('Nama produk wajib diisi.', 'error');
-            document.getElementById('inputMenuName').focus();
-            return;
-          }
-          if (price <= 0) {
-            showToast('Harga jual harus lebih dari Rp 0.', 'error');
-            priceInput.focus();
-            return;
-          }
-
-          if (editId) {
-            const existing = state.menu.find(m => m.id === editId);
-            if (existing) {
-              existing.name = name;
-              existing.category = category;
-              existing.target = target;
-              existing.price = price;
-              existing.hpp = hpp;
-            }
-            showToast(`Menu "${name}" diperbarui.`, 'success');
-          } else {
-            state.menu.push({
-              id: 'menu-' + Date.now(),
-              name,
-              category,
-              target,
-              price,
-              hpp
-            });
-            showToast(`Menu "${name}" ditambahkan.`, 'success');
-          }
-
-          saveToStorage();
-          resetMenuEditor();
-          renderProductGrid();
-          renderKelolaTab();
-        });
-
-        document.getElementById('manageMenuList').addEventListener('click', e => {
-          const editBtn = e.target.closest('[data-edit-menu-id]');
-          if (!editBtn) return;
-          const prod = state.menu.find(m => m.id === editBtn.dataset.editMenuId);
-          if (!prod) return;
-
-          document.getElementById('editMenuId').value = prod.id;
-          document.getElementById('menuFormTitle').textContent = `Edit Menu: ${prod.name}`;
-          document.getElementById('btnResetMenuForm').classList.remove('hidden');
-          document.getElementById('inputMenuName').value = prod.name;
-          document.getElementById('selectMenuCat').value = prod.category;
-          document.getElementById('selectMenuTarget').value = prod.target;
-          priceInput.value = formatDigits(prod.price);
-          hppInput.value = formatDigits(prod.hpp);
-          document.getElementById('inputMenuName').focus();
-        });
-
-        document.getElementById('archiveShiftContainer').addEventListener('click', e => {
-          const btn = e.target.closest('[data-view-archive-idx]');
-          if (!btn) return;
-          const idx = parseInt(btn.dataset.viewArchiveIdx, 10);
-          const recap = state.shiftArchive[idx];
-          if (!recap) return;
-          openRecapReceiptModal(buildShiftRecap32(recap), { success: true }, false);
-        });
-
-        // --- Receipt Modal Buttons ---
-        document.getElementById('btnModalReprint').addEventListener('click', () => {
-          if (state.modalReceiptCtx.recapText) {
-            const res = sendToBluetoothPrinter(state.modalReceiptCtx.recapText);
-            openRecapReceiptModal(state.modalReceiptCtx.recapText, res, state.modalReceiptCtx.lockAfterClose);
-            if (res.success) showToast('Rekap tutup kasir dicetak ulang.', 'success');
-            return;
-          }
-          if (state.modalReceiptCtx.order) {
-            const ord = state.modalReceiptCtx.order;
-            const bar = buildBarTicket32(ord);
-            const cust = ord.printCustomerReceipt ? buildCustomerReceipt32(ord) : null;
-            const payload = cust ? `${bar}\n\n\n${cust}` : bar;
-            const res = sendToBluetoothPrinter(payload);
-            openOrderReceiptModal(ord, res);
-            if (res.success) showToast('Perintah cetak ulang dikirim.', 'success');
-          }
-        });
-
-        document.getElementById('btnCloseReceiptModalTop').addEventListener('click', closeReceiptModal);
-        document.getElementById('btnCloseReceiptModalBottom').addEventListener('click', closeReceiptModal);
-
-        // Refresh elapsed minutes in Dapur every 30s
-        setInterval(() => {
-          if (state.activeTab === 'dapur' && getActiveUser()) {
-            renderDapurTab();
-          }
-        }, 30000);
-      }
-
-      // =======================================================================
-      // 10. INITIALIZE APP
-      // =======================================================================
-      loadFromStorage();
-      bindAllEvents();
-      renderAll();
-    })();
-  </script>
-</body>
-</html>
+      <div class="card">
+        <div class="card-title">
+          <span>Riwayat Transaksi</span>
+          <span style="font-size:11px; color:var(--danger); font-weight:700;">*Hapus/Void terkunci khusus
