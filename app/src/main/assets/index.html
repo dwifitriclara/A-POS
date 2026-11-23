@@ -2791,6 +2791,45 @@
 
     updateReceiptPreviewFont();
   })();
+// === OTOMATIS SISIPKAN PERINTAH FONT ESC/POS SAAT CETAK BLUETOOTH ===
+  (function hookBluetoothFontMode() {
+    if (!window.AndroidPrinter || typeof window.AndroidPrinter.printRawBase64 !== 'function') return;
+    if (window.AndroidPrinter._fontHooked) return;
+
+    const origPrint = window.AndroidPrinter.printRawBase64.bind(window.AndroidPrinter);
+    window.AndroidPrinter.printRawBase64 = function(base64Data) {
+      try {
+        const fontMode = localStorage.getItem('pos_receipt_font_mode') || 'FONT_B';
+        // ESC M 1 (Font B kecil 58mm) | ESC M 0 (Font A standar) | GS ! 0x01 (Tinggi 2x)
+        let prefix = [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];
+        if (fontMode === 'FONT_A') {
+          prefix = [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00];
+        } else if (fontMode === 'FONT_A_TALL') {
+          prefix = [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01];
+        }
+
+        const rawBin = atob(base64Data);
+        const origBytes = new Uint8Array(rawBin.length);
+        for (let i = 0; i < rawBin.length; i++) origBytes[i] = rawBin.charCodeAt(i);
+
+        // Sisipkan perintah font setelah ESC @ (0x1B 0x40) jika ada, atau di awal data
+        const hasInit = origBytes.length >= 2 && origBytes[0] === 0x1B && origBytes[1] === 0x40;
+        const head = hasInit ? [0x1B, 0x40, ...prefix] : [...prefix];
+        const body = hasInit ? origBytes.slice(2) : origBytes;
+
+        const merged = new Uint8Array(head.length + body.length);
+        merged.set(head, 0);
+        merged.set(body, head.length);
+
+        let outBin = '';
+        for (let i = 0; i < merged.length; i++) outBin += String.fromCharCode(merged[i]);
+        return origPrint(btoa(outBin));
+      } catch (e) {
+        return origPrint(base64Data);
+      }
+    };
+    window.AndroidPrinter._fontHooked = true;
+  })();
 </script>
 </body>
 </html>
