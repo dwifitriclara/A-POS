@@ -476,4 +476,1763 @@
       <div class="card">
         <div class="card-title">
           <span>Riwayat Transaksi</span>
-          <span style="font-size:11px; color:var(--danger); font-weight:700;">*Hapus/Void terkunci khusus
+          <span style="font-size:11px; color:var(--danger); font-weight:700;">*Hapus/Void terkunci khusus Owner</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>No Order</th>
+                <th>Waktu</th>
+                <th>Kasir</th>
+                <th>Tipe / Metode</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="transactionHistoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span style="color:var(--danger);">Log Audit Void / Pembatalan (Anti-Fraud)</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu Void</th>
+                <th>No Order</th>
+                <th>Kasir Bertugas</th>
+                <th>Diotorisasi Oleh</th>
+                <th>Alasan Pembatalan</th>
+                <th>Nominal</th>
+              </tr>
+            </thead>
+            <tbody id="voidLogBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: PRINTER & LOGO ==================== -->
+    <section id="tab-printer" class="tab-pane">
+      <div class="printer-layout">
+        <div>
+          <!-- BLUETOOTH CONNECTION -->
+          <div class="card">
+            <div class="card-title">
+              <span>1. Koneksi Printer Thermal 58mm</span>
+              <button class="btn btn-outline btn-sm" onclick="scanBluetoothDevices()">Muat Ulang Bluetooth</button>
+            </div>
+            <div id="btStatusBox" style="font-size:12px; padding:9px 11px; border-radius:8px; background:var(--surface-alt); margin-bottom:10px;">
+              Memeriksa modul Bluetooth...
+            </div>
+            <div id="btDeviceList"></div>
+            <div class="grid-2" style="margin-top:8px;">
+              <button class="btn btn-primary" onclick="testPrintReceipt()">Tes Cetak Struk</button>
+              <button class="btn btn-outline" onclick="testPrintKitchen()">Tes Cetak Dapur</button>
+            </div>
+          </div>
+
+          <!-- LOGO UPLOAD & 1-BIT MONOCHROME -->
+          <div class="card">
+            <div class="card-title">
+              <span>2. Logo Struk (Monokrom 1-Bit)</span>
+              <label style="display:inline-flex; align-items:center; gap:6px; margin:0; cursor:pointer; color:var(--primary);">
+                <input type="checkbox" id="logoEnabledCheck" style="width:auto;" onchange="updatePrinterSettings()" />
+                Aktifkan Logo
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Pilih Gambar Logo (PNG/JPG)</label>
+              <input type="file" id="logoFileInput" accept="image/*" onchange="handleLogoUpload(event)" />
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Lebar Logo: <span id="logoWidthVal">220</span> px</label>
+                <input type="range" id="logoWidthRange" min="100" max="384" step="8" value="220" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Ketajaman Hitam-Putih: <span id="logoThreshVal">140</span></label>
+                <input type="range" id="logoThreshRange" min="60" max="220" step="5" value="140" oninput="updatePrinterSettings()" />
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="clearLogo()">Hapus Logo</button>
+          </div>
+
+          <!-- ADJUSTABLE PRINTING AREA & STORE TEXT -->
+          <div class="card">
+            <div class="card-title"><span>3. Area Cetak & Profil Resto</span></div>
+            <div class="grid-3">
+              <div class="form-group">
+                <label>Lebar Karakter</label>
+                <input type="number" id="charWidthInput" min="24" max="42" value="32" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Margin Kiri (Spasi)</label>
+                <input type="number" id="marginLeftInput" min="0" max="6" value="0" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Spasi Sobek Bawah</label>
+                <input type="number" id="feedLinesInput" min="1" max="8" value="3" oninput="updatePrinterSettings()" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Nama Kedai (Header Besar)</label>
+                <input type="text" id="storeNameInput" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Nama Cabang</label>
+                <input type="text" id="branchNameInput" oninput="updatePrinterSettings()" />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Alamat</label>
+                <input type="text" id="addressInput" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Instagram / WhatsApp</label>
+                <input type="text" id="contactInput" oninput="updatePrinterSettings()" />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Footer Baris 1</label>
+                <input type="text" id="footer1Input" oninput="updatePrinterSettings()" />
+              </div>
+              <div class="form-group">
+                <label>Footer Baris 2</label>
+                <input type="text" id="footer2Input" oninput="updatePrinterSettings()" />
+              </div>
+            </div>
+            <button class="btn btn-success btn-block" onclick="saveAllState(true)">Simpan Pengaturan Struk</button>
+          </div>
+        </div>
+
+        <!-- LIVE THERMAL PREVIEW -->
+        <div class="card" style="position:sticky; top:70px;">
+          <div class="card-title">
+            <span>Pratinjau Output Thermal 58mm</span>
+            <span class="badge badge-neutral" id="rulerBadge">32 kolom</span>
+          </div>
+          <div class="thermal-paper-wrap">
+            <div class="thermal-paper">
+              <div class="preview-logo-box" id="previewLogoContainer">
+                <canvas id="logoCanvas"></canvas>
+              </div>
+              <div id="receiptPreviewText"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: KELOLA ==================== -->
+    <section id="tab-kelola" class="tab-pane">
+      <div class="subtabs">
+        <button class="subtab-btn active" onclick="switchSubtab('menu', this)">Daftar Menu & HPP</button>
+        <button class="subtab-btn" onclick="switchSubtab('users', this)">User & Hak Akses</button>
+        <button class="subtab-btn" onclick="switchSubtab('qris', this)">Input QRIS</button>
+        <button class="subtab-btn" onclick="switchSubtab('cloud', this)">Sinkronisasi Cloud</button>
+        <button class="subtab-btn" onclick="switchSubtab('reset', this)">Reset Data</button>
+      </div>
+
+      <!-- SUBTAB MENU -->
+      <div id="subtab-menu" class="subtab-pane">
+        <div class="card">
+          <div class="card-title"><span>Tambah / Edit Menu</span></div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Nama Menu</label>
+              <input type="text" id="newMenuName" placeholder="Contoh: Kopi Susu Segi" />
+            </div>
+            <div class="form-group">
+              <label>Kategori</label>
+              <select id="newMenuCat">
+                <option value="Kopi">Kopi</option>
+                <option value="Non-Kopi">Non-Kopi</option>
+                <option value="Makanan">Makanan</option>
+                <option value="Snack">Snack</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Harga Jual (Rp)</label>
+              <input type="number" id="newMenuPrice" placeholder="18000" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>HPP / Modal (Rp)</label>
+              <input type="number" id="newMenuHpp" placeholder="7500" />
+            </div>
+            <div class="form-group" style="display:flex; align-items:flex-end;">
+              <button class="btn btn-primary btn-block" onclick="addMenuItem()">+ Simpan Menu</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>Daftar Menu Aktif</span></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Menu</th>
+                  <th>Kategori</th>
+                  <th>Harga Jual</th>
+                  <th>HPP</th>
+                  <th>Margin</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="manageMenuBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB USERS & PERMISSIONS -->
+      <div id="subtab-users" class="subtab-pane" style="display:none;">
+        <div class="card">
+          <div class="card-title"><span>Tambah / Atur Akun Staf & Hak Akses</span></div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Nama User</label>
+              <input type="text" id="newUserName" placeholder="Nama Kasir / Barista" />
+            </div>
+            <div class="form-group">
+              <label>Peran Utama</label>
+              <select id="newUserRole">
+                <option value="Kasir">Kasir</option>
+                <option value="Owner">Owner (Akses Penuh)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>PIN Login (4 Angka)</label>
+              <input type="password" id="newUserPin" maxlength="4" placeholder="1234" />
+            </div>
+          </div>
+
+          <label style="margin-bottom:8px;">Hak Akses Spesifik untuk Akun Ini:</label>
+          <div class="grid-2" style="background:var(--surface-alt); padding:12px; border-radius:10px; margin-bottom:12px;">
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--text);">
+              <input type="checkbox" id="permKasir" checked style="width:auto;" /> Input Pesanan (Tab Kasir)
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--text);">
+              <input type="checkbox" id="permDapur" checked style="width:auto;" /> Akses Antrean Dapur
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--text);">
+              <input type="checkbox" id="permDiskon" style="width:auto;" /> Beri Diskon Manual
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--text);">
+              <input type="checkbox" id="permLaci" style="width:auto;" /> Akses Laci Kas & Laporan
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--text);">
+              <input type="checkbox" id="permKelola" style="width:auto;" /> Akses Tab Printer & Kelola
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin:0; color:var(--danger);">
+              <input type="checkbox" disabled style="width:auto;" /> Hapus / Void Pesanan (Khusus Owner)
+            </label>
+          </div>
+          <button class="btn btn-primary" onclick="addUserAccount()">Simpan Akun User</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>Daftar User Terdaftar</span></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Role</th>
+                  <th>PIN</th>
+                  <th>Hak Akses</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="userListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB QRIS -->
+      <div id="subtab-qris" class="subtab-pane" style="display:none;">
+        <div class="card">
+          <div class="card-title"><span>Pengaturan Gambar QRIS Pembayaran (100% Offline)</span></div>
+          <div class="form-group">
+            <label>Upload Foto / Gambar Kode QRIS SEGI COFFEE</label>
+            <input type="file" accept="image/*" onchange="handleQrisUpload(event)" />
+          </div>
+          <div id="qrisPreviewBox" style="text-align:center; padding:16px; background:var(--surface-alt); border-radius:10px;">
+            <p style="font-size:13px; color:var(--muted);">Belum ada gambar QRIS diunggah.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB CLOUD SYNC -->
+      <div id="subtab-cloud" class="subtab-pane" style="display:none;">
+        <div class="card">
+          <div class="card-title">
+            <span>Sinkronisasi Multi-Device (Offline-First Cloud)</span>
+            <span class="badge badge-success" id="cloudDiagBadge">Siap Offline</span>
+          </div>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.45;">
+            Data transaksi selalu disimpan di memori perangkat terlebih dahulu agar tetap berjalan lancar saat internet mati, lalu otomatis disinkronkan ke Firebase Firestore saat terhubung ke internet.
+          </p>
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Kode Perangkat (Anti-Bentrok)</label>
+              <input type="text" id="deviceCodeInput" placeholder="TAB1" />
+            </div>
+            <div class="form-group">
+              <label>Firebase Project ID</label>
+              <input type="text" id="fbProjectIdInput" placeholder="segi-coffee-pos" />
+            </div>
+            <div class="form-group">
+              <label>Firebase Web API Key</label>
+              <input type="text" id="fbApiKeyInput" placeholder="AIzaSy..." />
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveCloudConfig()">Simpan & Sinkronkan Sekarang</button>
+            <button class="btn btn-outline" onclick="exportBackupJson()">Unduh Backup JSON</button>
+            <label class="btn btn-outline" style="margin:0; cursor:pointer;">
+              Pulihkan Backup JSON
+              <input type="file" accept=".json" style="display:none;" onchange="importBackupJson(event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB RESET -->
+      <div id="subtab-reset" class="subtab-pane" style="display:none;">
+        <div class="card">
+          <div class="card-title"><span style="color:var(--danger);">Reset Data Transaksi Uji Coba</span></div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">
+            Menghapus seluruh riwayat transaksi, antrean dapur, dan mengembalikan nomor order ke <strong>#0001</strong>. Daftar menu, logo, QRIS, dan akun staf tetap aman.
+          </p>
+          <button class="btn btn-danger" onclick="resetTransactions()">Reset Transaksi Sekarang</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL: ITEM NOTE ==================== -->
+  <div class="modal-backdrop" id="noteModal">
+    <div class="modal-box">
+      <div class="modal-title" id="noteModalTitle">Catatan Varian Menu</div>
+      <div class="form-group">
+        <label>Catatan untuk Barista / Dapur</label>
+        <input type="text" id="itemNoteInput" placeholder="Contoh: Less sugar, Extra ice, Oat milk..." />
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="btn btn-outline btn-sm" onclick="appendQuickNote('Less Sugar')">Less Sugar</button>
+        <button class="btn btn-outline btn-sm" onclick="appendQuickNote('No Sugar')">No Sugar</button>
+        <button class="btn btn-outline btn-sm" onclick="appendQuickNote('Less Ice')">Less Ice</button>
+        <button class="btn btn-outline btn-sm" onclick="appendQuickNote('Extra Shot')">Extra Shot</button>
+      </div>
+      <div class="grid-2">
+        <button class="btn btn-outline" onclick="closeModal('noteModal')">Batal</button>
+        <button class="btn btn-primary" onclick="saveItemNote()">Simpan Catatan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CHECKOUT (CASH & QRIS) ==================== -->
+  <div class="modal-backdrop" id="checkoutModal">
+    <div class="modal-box">
+      <div class="modal-title" id="checkoutModalTitle">Pembayaran</div>
+      <div style="background:var(--surface-alt); padding:12px; border-radius:10px; text-align:center; margin-bottom:12px;">
+        <div style="font-size:12px; color:var(--muted);">Total Tagihan</div>
+        <div style="font-size:24px; font-weight:900; color:var(--primary);" id="checkoutTotalDisplay">Rp 0</div>
+      </div>
+
+      <!-- CASH SECTION -->
+      <div id="cashPaymentSection">
+        <div class="form-group">
+          <label>Uang Diterima (Rp)</label>
+          <input type="number" id="cashReceivedInput" oninput="calculateChange()" />
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <button class="btn btn-outline btn-sm" onclick="setQuickCash('EXACT')">Uang Pas</button>
+          <button class="btn btn-outline btn-sm" onclick="setQuickCash(20000)">20.000</button>
+          <button class="btn btn-outline btn-sm" onclick="setQuickCash(50000)">50.000</button>
+          <button class="btn btn-outline btn-sm" onclick="setQuickCash(100000)">100.000</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:800; padding:10px; background:var(--success-bg); color:var(--success); border-radius:8px; margin-bottom:14px;">
+          <span>Kembalian</span>
+          <span id="cashChangeDisplay">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- QRIS SECTION -->
+      <div id="qrisPaymentSection" style="display:none; text-align:center; margin-bottom:14px;">
+        <div id="checkoutQrisImageWrap" style="background:#FFF; padding:12px; border:1.5px solid var(--border); border-radius:12px;"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;">
+          Tunjukkan layar ini ke pelanggan untuk scan QRIS, lalu tekan konfirmasi setelah pembayaran masuk.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <button class="btn btn-outline" onclick="closeModal('checkoutModal')">Batal</button>
+        <button class="btn btn-success" onclick="confirmPayment()">Konfirmasi & Cetak Dapur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: POST-PAYMENT (WAJIB DAPUR + OPSIONAL PELANGGAN) ==================== -->
+  <div class="modal-backdrop" id="postPaymentModal">
+    <div class="modal-box" style="text-align:center;">
+      <div style="width:48px; height:48px; border-radius:50%; background:var(--success-bg); color:var(--success); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; margin:0 auto 10px;">✓</div>
+      <div class="modal-title">Transaksi Berhasil!</div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:10px;" id="postPaymentSummary">
+        Struk dapur otomatis dikirim ke printer.
+      </p>
+      <div style="background:var(--surface-alt); padding:10px; border-radius:9px; margin-bottom:14px; font-weight:800; font-size:15px;" id="postPaymentChange">
+        Kembalian: Rp 0
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-primary btn-block" onclick="printCustomerReceiptFromLast()">
+          Cetak Struk Pelanggan (Opsional)
+        </button>
+        <button class="btn btn-outline btn-block" onclick="closeModal('postPaymentModal')">
+          Selesai / Tanpa Struk Pelanggan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ACCOUNT SWITCH / LOGIN ==================== -->
+  <div class="modal-backdrop" id="accountModal">
+    <div class="modal-box">
+      <div class="modal-title">Pilih Akun & Masukkan PIN</div>
+      <div class="form-group">
+        <label>Pilih Akun Pengguna</label>
+        <select id="loginUserSelect"></select>
+      </div>
+      <div class="form-group">
+        <label>Masukkan PIN (4 Angka)</label>
+        <input type="password" id="loginPinInput" maxlength="4" placeholder="••••" />
+      </div>
+      <div class="grid-2">
+        <button class="btn btn-outline" onclick="closeModal('accountModal')">Batal</button>
+        <button class="btn btn-primary" onclick="submitLogin()">Masuk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: OWNER VOID AUTHORIZATION (ANTI-FRAUD) ==================== -->
+  <div class="modal-backdrop" id="voidModal">
+    <div class="modal-box">
+      <div class="modal-title" style="color:var(--danger);">Otorisasi Hapus / Void Pesanan</div>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">
+        Hanya <strong>Owner</strong> yang dapat membatalkan pesanan. Tindakan ini dicatat ke Log Audit Void.
+      </p>
+      <div class="form-group">
+        <label>PIN Owner</label>
+        <input type="password" id="voidOwnerPin" maxlength="4" placeholder="Masukkan PIN Owner" />
+      </div>
+      <div class="form-group">
+        <label>Alasan Pembatalan (Wajib Diisi)</label>
+        <input type="text" id="voidReasonInput" placeholder="Contoh: Salah input varian / Pelanggan batal" />
+      </div>
+      <div class="grid-2">
+        <button class="btn btn-outline" onclick="closeModal('voidModal')">Batal</button>
+        <button class="btn btn-danger" onclick="confirmVoidOrder()">Batalkan Pesanan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toastBox"></div>
+
+  <script>
+    const STORAGE_KEY = "apos_segi_coffee_v1";
+
+    const DEFAULT_STATE = {
+      orderCounter: 1,
+      openingCash: 200000,
+      activeUserId: "u-owner",
+      selectedBtMac: "",
+      printer: {
+        storeName: "SEGI COFFEE",
+        branchName: "Cabang Utama",
+        address: "Jl. Kopi Nikmat No. 1, Batam",
+        contact: "IG: @segicoffee",
+        footer1: "Terima kasih sudah singgah.",
+        footer2: "Selamat menikmati kopi Anda!",
+        charWidth: 32,
+        marginLeft: 0,
+        feedLines: 3,
+        logoEnabled: true,
+        logoDataUrl: "",
+        logoWidth: 220,
+        logoThreshold: 140
+      },
+      qrisDataUrl: "",
+      cloud: {
+        deviceCode: "TAB1",
+        projectId: "",
+        apiKey: "",
+        lastSync: ""
+      },
+      users: [
+        {
+          id: "u-owner",
+          name: "Owner Segi",
+          role: "Owner",
+          pin: "1234",
+          perms: { kasir: true, dapur: true, diskon: true, laci: true, kelola: true }
+        },
+        {
+          id: "u-kasir",
+          name: "Kasir 1",
+          role: "Kasir",
+          pin: "0000",
+          perms: { kasir: true, dapur: true, diskon: false, laci: false, kelola: false }
+        }
+      ],
+      menu: [
+        { id: "m1", name: "Kopi Susu Segi", category: "Kopi", price: 18000, hpp: 7000 },
+        { id: "m2", name: "Americano", category: "Kopi", price: 15000, hpp: 5000 },
+        { id: "m3", name: "Caffe Latte", category: "Kopi", price: 20000, hpp: 8000 },
+        { id: "m4", name: "Caramel Macchiato", category: "Kopi", price: 23000, hpp: 9000 },
+        { id: "m5", name: "Matcha Latte", category: "Non-Kopi", price: 22000, hpp: 8500 },
+        { id: "m6", name: "Chocolate Signature", category: "Non-Kopi", price: 20000, hpp: 8000 },
+        { id: "m7", name: "Rice Bowl Ayam Sambal Matah", category: "Makanan", price: 25000, hpp: 12000 },
+        { id: "m8", name: "Croissant Butter", category: "Snack", price: 16000, hpp: 7500 }
+      ],
+      orders: [],
+      voidLogs: [],
+      syncQueue: []
+    };
+
+    let state = loadState();
+    let cart = [];
+    let currentOrderType = "DINE IN";
+    let selectedCategory = "Semua";
+    let editingNoteIndex = -1;
+    let currentPaymentMethod = "CASH";
+    let lastCompletedOrder = null;
+    let pendingVoidOrderId = null;
+    let cachedLogoEscPos = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+        const parsed = JSON.parse(raw);
+        return {
+          ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
+          ...parsed,
+          printer: { ...DEFAULT_STATE.printer, ...(parsed.printer || {}) },
+          cloud: { ...DEFAULT_STATE.cloud, ...(parsed.cloud || {}) }
+        };
+      } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_STATE));
+      }
+    }
+
+    function saveAllState(notify = false) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (notify) showToast("Pengaturan berhasil disimpan!");
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById("toastBox");
+      box.textContent = msg;
+      box.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { box.style.display = "none"; }, 2600);
+    }
+
+    function formatRp(num) {
+      return "Rp " + (Number(num) || 0).toLocaleString("id-ID");
+    }
+
+    function getActiveUser() {
+      return state.users.find(u => u.id === state.activeUserId) || state.users[0];
+    }
+
+    function getBridge() {
+      return window.AndroidPrinter || window.BluetoothPrinter || window.Android || null;
+    }
+
+    /* ==================== NAVIGATION & RBAC ==================== */
+    function applyUserPermissions() {
+      const user = getActiveUser();
+      const isOwner = user.role === "Owner";
+      document.getElementById("activeUserBadge").textContent = `${user.name} (${user.role})`;
+      document.getElementById("topStoreName").textContent = state.printer.storeName || "SEGI COFFEE";
+      document.getElementById("topBranchName").textContent = state.printer.branchName || "Cabang Utama";
+
+      const perms = isOwner
+        ? { kasir: true, dapur: true, diskon: true, laci: true, kelola: true }
+        : user.perms;
+
+      document.querySelector('[data-tab="kasir"]').style.display = perms.kasir ? "inline-flex" : "none";
+      document.querySelector('[data-tab="dapur"]').style.display = perms.dapur ? "inline-flex" : "none";
+      document.querySelector('[data-tab="laci"]').style.display = perms.laci ? "inline-flex" : "none";
+      document.querySelector('[data-tab="printer"]').style.display = perms.kelola ? "inline-flex" : "none";
+      document.querySelector('[data-tab="kelola"]').style.display = perms.kelola ? "inline-flex" : "none";
+      document.getElementById("discountRow").style.display = perms.diskon ? "flex" : "none";
+      if (!perms.diskon) document.getElementById("discountInput").value = 0;
+
+      const activeBtn = document.querySelector(".nav-btn.active");
+      if (activeBtn && activeBtn.style.display === "none") {
+        const firstVisible = Array.from(document.querySelectorAll(".nav-btn")).find(b => b.style.display !== "none");
+        if (firstVisible) switchTab(firstVisible.dataset.tab);
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabName));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.toggle("active", p.id === `tab-${tabName}`));
+      if (tabName === "dapur") renderKitchen();
+      if (tabName === "laci") renderCashDrawer();
+      if (tabName === "printer") {
+        loadPrinterForm();
+        scanBluetoothDevices();
+      }
+      if (tabName === "kelola") renderManageAll();
+    }
+
+    function switchSubtab(subName, btn) {
+      document.querySelectorAll(".subtab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".subtab-pane").forEach(p => p.style.display = "none");
+      document.getElementById(`subtab-${subName}`).style.display = "block";
+    }
+
+    /* ==================== KASIR & CART ==================== */
+    function formatOrderNumber(num) {
+      const base = String(num).padStart(4, "0");
+      const dev = (state.cloud.deviceCode || "").trim().toUpperCase();
+      return (state.cloud.projectId && dev) ? `${base}-${dev}` : base;
+    }
+
+    function renderCategories() {
+      const cats = ["Semua", ...new Set(state.menu.map(m => m.category))];
+      const wrap = document.getElementById("categoryPills");
+      wrap.innerHTML = cats.map(c =>
+        `<button class="cat-pill ${selectedCategory === c ? "active" : ""}" onclick="selectCategory('${c}')">${c}</button>`
+      ).join("");
+    }
+
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      renderCategories();
+      renderMenuGrid();
+    }
+
+    function renderMenuGrid() {
+      const q = (document.getElementById("menuSearch").value || "").toLowerCase();
+      const filtered = state.menu.filter(m => {
+        const matchCat = selectedCategory === "Semua" || m.category === selectedCategory;
+        const matchText = m.name.toLowerCase().includes(q);
+        return matchCat && matchText;
+      });
+      document.getElementById("menuGrid").innerHTML = filtered.map(m => `
+        <div class="menu-card" onclick="addToCart('${m.id}')">
+          <div>
+            <div class="menu-cat">${m.category}</div>
+            <div class="menu-name">${m.name}</div>
+          </div>
+          <div class="menu-price">${formatRp(m.price)}</div>
+        </div>
+      `).join("");
+      document.getElementById("nextOrderBadge").textContent = "Next #" + formatOrderNumber(state.orderCounter);
+    }
+
+    function setOrderType(type) {
+      currentOrderType = type;
+      document.getElementById("btnDineIn").classList.toggle("active", type === "DINE IN");
+      document.getElementById("btnTakeAway").classList.toggle("active", type === "TAKE AWAY");
+    }
+
+    function addToCart(menuId) {
+      const item = state.menu.find(m => m.id === menuId);
+      if (!item) return;
+      const existing = cart.find(c => c.menuId === menuId && !c.note);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ menuId: item.id, name: item.name, price: item.price, hpp: item.hpp || 0, qty: 1, note: "" });
+      }
+      renderCart();
+    }
+
+    function changeQty(idx, delta) {
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      renderCart();
+    }
+
+    function openNoteModal(idx) {
+      editingNoteIndex = idx;
+      document.getElementById("noteModalTitle").textContent = "Catatan: " + cart[idx].name;
+      document.getElementById("itemNoteInput").value = cart[idx].note || "";
+      openModal("noteModal");
+    }
+
+    function appendQuickNote(text) {
+      const inp = document.getElementById("itemNoteInput");
+      inp.value = inp.value ? inp.value + ", " + text : text;
+    }
+
+    function saveItemNote() {
+      if (editingNoteIndex >= 0 && cart[editingNoteIndex]) {
+        cart[editingNoteIndex].note = document.getElementById("itemNoteInput").value.trim();
+        renderCart();
+      }
+      closeModal("noteModal");
+    }
+
+    function getCartTotals() {
+      const subtotal = cart.reduce((s, c) => s + (c.price * c.qty), 0);
+      const discount = Math.min(subtotal, Math.max(0, Number(document.getElementById("discountInput").value) || 0));
+      const grandTotal = Math.max(0, subtotal - discount);
+      return { subtotal, discount, grandTotal };
+    }
+
+    function renderCart() {
+      const wrap = document.getElementById("cartItemsList");
+      if (cart.length === 0) {
+        wrap.innerHTML = `<div style="text-align:center; color:var(--muted); padding:24px 0; font-size:13px;">Belum ada item dipilih</div>`;
+      } else {
+        wrap.innerHTML = cart.map((c, idx) => `
+          <div class="cart-item">
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:13px;">${c.name}</div>
+              <div style="font-size:12px; color:var(--muted);">${formatRp(c.price)} x ${c.qty} = <strong>${formatRp(c.price * c.qty)}</strong></div>
+              ${c.note ? `<div class="note-tag">${c.note}</div>` : ""}
+              <div><button class="btn btn-outline btn-sm" style="margin-top:4px; padding:2px 7px; font-size:11px;" onclick="openNoteModal(${idx})">+ Catatan</button></div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button>
+              <strong style="min-width:18px; text-align:center;">${c.qty}</strong>
+              <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const { subtotal, discount, grandTotal } = getCartTotals();
+      document.getElementById("cartSubtotal").textContent = formatRp(subtotal);
+      document.getElementById("cartDiscount").textContent = "- " + formatRp(discount);
+      document.getElementById("cartGrandTotal").textContent = formatRp(grandTotal);
+    }
+
+    /* ==================== CHECKOUT & MANDATORY KITCHEN PRINT ==================== */
+    function openCheckoutModal(method) {
+      if (cart.length === 0) {
+        showToast("Pilih menu terlebih dahulu!");
+        return;
+      }
+      currentPaymentMethod = method;
+      const { grandTotal } = getCartTotals();
+      document.getElementById("checkoutTotalDisplay").textContent = formatRp(grandTotal);
+
+      if (method === "CASH") {
+        document.getElementById("checkoutModalTitle").textContent = "Pembayaran Tunai";
+        document.getElementById("cashPaymentSection").style.display = "block";
+        document.getElementById("qrisPaymentSection").style.display = "none";
+        document.getElementById("cashReceivedInput").value = grandTotal;
+        calculateChange();
+      } else {
+        document.getElementById("checkoutModalTitle").textContent = "Pembayaran QRIS";
+        document.getElementById("cashPaymentSection").style.display = "none";
+        document.getElementById("qrisPaymentSection").style.display = "block";
+        const qrisWrap = document.getElementById("checkoutQrisImageWrap");
+        if (state.qrisDataUrl) {
+          qrisWrap.innerHTML = `<img src="${state.qrisDataUrl}" style="max-width:240px; width:100%; border-radius:8px;" />`;
+        } else {
+          qrisWrap.innerHTML = `<div style="padding:20px; color:var(--danger); font-size:13px; font-weight:700;">Gambar QRIS belum diunggah di menu Kelola → Input QRIS.</div>`;
+        }
+      }
+      openModal("checkoutModal");
+    }
+
+    function setQuickCash(val) {
+      const { grandTotal } = getCartTotals();
+      document.getElementById("cashReceivedInput").value = val === "EXACT" ? grandTotal : val;
+      calculateChange();
+    }
+
+    function calculateChange() {
+      const { grandTotal } = getCartTotals();
+      const received = Number(document.getElementById("cashReceivedInput").value) || 0;
+      const change = Math.max(0, received - grandTotal);
+      document.getElementById("cashChangeDisplay").textContent = formatRp(change);
+    }
+
+    function confirmPayment() {
+      const { subtotal, discount, grandTotal } = getCartTotals();
+      let cashPaid = grandTotal;
+      let change = 0;
+
+      if (currentPaymentMethod === "CASH") {
+        cashPaid = Number(document.getElementById("cashReceivedInput").value) || 0;
+        if (cashPaid < grandTotal) {
+          showToast("Uang tunai kurang dari total tagihan!");
+          return;
+        }
+        change = cashPaid - grandTotal;
+      }
+
+      const now = new Date();
+      const orderNo = formatOrderNumber(state.orderCounter);
+      const receiptId = "SC-" + now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        String(now.getDate()).padStart(2, "0") + "-" + orderNo;
+
+      const user = getActiveUser();
+      const order = {
+        id: "ord_" + Date.now(),
+        receiptId,
+        orderNo,
+        timestamp: now.toISOString(),
+        displayTime: formatDateTime(now),
+        cashier: user.name,
+        customerName: document.getElementById("customerNameInput").value.trim(),
+        orderType: currentOrderType,
+        paymentMethod: currentPaymentMethod,
+        items: JSON.parse(JSON.stringify(cart)),
+        subtotal,
+        discount,
+        grandTotal,
+        cashPaid,
+        change,
+        kitchenStatus: "PROSES",
+        status: "PAID"
+      };
+
+      state.orders.unshift(order);
+      state.orderCounter += 1;
+      enqueueSync("orders", order);
+      saveAllState(false);
+
+      // WAJIB: Otomatis cetak Struk Dapur saat transaksi dibayar
+      printKitchenTicket(order);
+
+      lastCompletedOrder = order;
+      cart = [];
+      document.getElementById("customerNameInput").value = "";
+      document.getElementById("discountInput").value = 0;
+      renderCart();
+      renderMenuGrid();
+      updateKitchenBadge();
+
+      closeModal("checkoutModal");
+      document.getElementById("postPaymentSummary").textContent =
+        `Order #${order.orderNo} (${order.paymentMethod}) • Struk dapur otomatis dicetak.`;
+      document.getElementById("postPaymentChange").textContent =
+        order.paymentMethod === "CASH" ? `Kembalian: ${formatRp(order.change)}` : "Pembayaran QRIS Lunas";
+      openModal("postPaymentModal");
+    }
+
+    function printCustomerReceiptFromLast() {
+      if (lastCompletedOrder) {
+        printCustomerReceipt(lastCompletedOrder);
+      }
+    }
+
+    function formatDateTime(d) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+    }
+
+    /* ==================== DAPUR & ANTI-FRAUD VOID ==================== */
+    function updateKitchenBadge() {
+      const activeCount = state.orders.filter(o => o.status === "PAID" && o.kitchenStatus === "PROSES").length;
+      document.getElementById("kitchenBadge").textContent = activeCount;
+    }
+
+    function renderKitchen() {
+      const wrap = document.getElementById("kitchenList");
+      const list = state.orders.slice(0, 30);
+      if (list.length === 0) {
+        wrap.innerHTML = `<div style="color:var(--muted); font-size:13px;">Belum ada pesanan masuk hari ini.</div>`;
+        return;
+      }
+      wrap.innerHTML = list.map(o => {
+        const isVoid = o.status === "VOID";
+        const isDone = o.kitchenStatus === "SELESAI";
+        return `
+          <div class="ticket-card ${isVoid ? "voided" : (isDone ? "done" : "")}">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="font-size:18px;">#${o.orderNo}</strong>
+              <div>
+                <span class="badge badge-neutral">${o.orderType}</span>
+                ${isVoid
+                  ? `<span class="badge badge-danger">VOID</span>`
+                  : `<span class="badge ${isDone ? "badge-success" : "badge-warning"}">${o.kitchenStatus}</span>`}
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+              ${o.displayTime} • Kasir: ${o.cashier} ${o.customerName ? `• Pelanggan: <strong>${o.customerName}</strong>` : ""}
+            </div>
+            <div style="border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); padding:8px 0; margin-bottom:10px;">
+              ${o.items.map(it => `
+                <div style="margin-bottom:4px; font-size:13px;">
+                  <strong>${it.qty}x ${it.name}</strong>
+                  ${it.note ? `<div class="note-tag">${it.note}</div>` : ""}
+                </div>
+              `).join("")}
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              ${!isVoid && !isDone ? `<button class="btn btn-success btn-sm" onclick="markKitchenDone('${o.id}')">Tandai Selesai</button>` : ""}
+              <button class="btn btn-outline btn-sm" onclick="reprintById('${o.id}', 'KITCHEN')">Cetak Dapur</button>
+              <button class="btn btn-outline btn-sm" onclick="reprintById('${o.id}', 'CUSTOMER')">Struk Pelanggan</button>
+              ${!isVoid ? `<button class="btn btn-danger btn-sm" onclick="requestVoidOrder('${o.id}')">Hapus/Void</button>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function markKitchenDone(orderId) {
+      const o = state.orders.find(x => x.id === orderId);
+      if (o) {
+        o.kitchenStatus = "SELESAI";
+        enqueueSync("orders", o);
+        saveAllState(false);
+        updateKitchenBadge();
+        renderKitchen();
+      }
+    }
+
+    function reprintById(orderId, type) {
+      const o = state.orders.find(x => x.id === orderId);
+      if (!o) return;
+      if (type === "KITCHEN") printKitchenTicket(o);
+      else printCustomerReceipt(o);
+    }
+
+    function requestVoidOrder(orderId) {
+      pendingVoidOrderId = orderId;
+      document.getElementById("voidOwnerPin").value = "";
+      document.getElementById("voidReasonInput").value = "";
+      openModal("voidModal");
+    }
+
+    function confirmVoidOrder() {
+      const pin = document.getElementById("voidOwnerPin").value.trim();
+      const reason = document.getElementById("voidReasonInput").value.trim();
+      const ownerAccount = state.users.find(u => u.role === "Owner" && u.pin === pin);
+
+      if (!ownerAccount) {
+        showToast("PIN Owner salah! Penghapusan pesanan ditolak.");
+        return;
+      }
+      if (!reason) {
+        showToast("Alasan pembatalan wajib diisi!");
+        return;
+      }
+
+      const o = state.orders.find(x => x.id === pendingVoidOrderId);
+      if (o && o.status !== "VOID") {
+        o.status = "VOID";
+        o.kitchenStatus = "BATAL";
+        const log = {
+          id: "void_" + Date.now(),
+          voidTime: formatDateTime(new Date()),
+          orderNo: o.orderNo,
+          cashier: o.cashier,
+          authorizedBy: ownerAccount.name,
+          reason,
+          amount: o.grandTotal
+        };
+        state.voidLogs.unshift(log);
+        enqueueSync("orders", o);
+        enqueueSync("voidLogs", log);
+        saveAllState(false);
+        updateKitchenBadge();
+        renderKitchen();
+        renderCashDrawer();
+        showToast(`Order #${o.orderNo} dibatalkan & dicatat ke Log Audit.`);
+      }
+      closeModal("voidModal");
+    }
+
+    /* ==================== LACI KAS & LAPORAN ==================== */
+    function saveOpeningCash() {
+      state.openingCash = Number(document.getElementById("openingCashInput").value) || 0;
+      saveAllState(true);
+      renderCashDrawer();
+    }
+
+    function renderCashDrawer() {
+      document.getElementById("openingCashInput").value = state.openingCash;
+      const validOrders = state.orders.filter(o => o.status === "PAID");
+      const cashSales = validOrders.filter(o => o.paymentMethod === "CASH").reduce((s, o) => s + o.grandTotal, 0);
+      const qrisSales = validOrders.filter(o => o.paymentMethod === "QRIS").reduce((s, o) => s + o.grandTotal, 0);
+      const netSales = cashSales + qrisSales;
+
+      document.getElementById("statNetSales").textContent = formatRp(netSales);
+      document.getElementById("statPaymentSplit").textContent = `Tunai: ${formatRp(cashSales)} • QRIS: ${formatRp(qrisSales)}`;
+      document.getElementById("statExpectedDrawer").textContent = formatRp(state.openingCash + cashSales);
+
+      document.getElementById("transactionHistoryBody").innerHTML = state.orders.map(o => `
+        <tr>
+          <td><strong>#${o.orderNo}</strong></td>
+          <td>${o.displayTime}</td>
+          <td>${o.cashier}</td>
+          <td>${o.orderType} • ${o.paymentMethod}</td>
+          <td><strong>${formatRp(o.grandTotal)}</strong></td>
+          <td>${o.status === "VOID" ? `<span class="badge badge-danger">VOID</span>` : `<span class="badge badge-success">LUNAS</span>`}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="reprintById('${o.id}', 'CUSTOMER')">Struk</button>
+            ${o.status !== "VOID" ? `<button class="btn btn-danger btn-sm" onclick="requestVoidOrder('${o.id}')">Void</button>` : ""}
+          </td>
+        </tr>
+      `).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted);">Belum ada transaksi</td></tr>`;
+
+      document.getElementById("voidLogBody").innerHTML = state.voidLogs.map(v => `
+        <tr>
+          <td>${v.voidTime}</td>
+          <td><strong>#${v.orderNo}</strong></td>
+          <td>${v.cashier}</td>
+          <td><strong>${v.authorizedBy}</strong></td>
+          <td>${v.reason}</td>
+          <td style="color:var(--danger); font-weight:700;">${formatRp(v.amount)}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="6" style="text-align:center; color:var(--muted);">Tidak ada pembatalan transaksi</td></tr>`;
+    }
+
+    function printShiftSummary() {
+      const validOrders = state.orders.filter(o => o.status === "PAID");
+      const cashSales = validOrders.filter(o => o.paymentMethod === "CASH").reduce((s, o) => s + o.grandTotal, 0);
+      const qrisSales = validOrders.filter(o => o.paymentMethod === "QRIS").reduce((s, o) => s + o.grandTotal, 0);
+      const w = state.printer.charWidth || 32;
+      const line = "-".repeat(w);
+      const lines = [
+        centerText(state.printer.storeName, w),
+        centerText("REKAP TUTUP KAS", w),
+        line,
+        `Waktu : ${formatDateTime(new Date())}`,
+        `User  : ${getActiveUser().name}`,
+        line,
+        padLR("Modal Awal", formatRp(state.openingCash), w),
+        padLR("Penjualan Tunai", formatRp(cashSales), w),
+        padLR("Penjualan QRIS", formatRp(qrisSales), w),
+        line,
+        padLR("TOTAL OMZET", formatRp(cashSales + qrisSales), w),
+        padLR("UANG DI LACI", formatRp(state.openingCash + cashSales), w),
+        padLR("Transaksi Void", `${state.voidLogs.length}x`, w),
+        line
+      ];
+      sendPlainEscPos(lines.join("\n"));
+    }
+
+    /* ==================== PRINTER, 1-BIT LOGO & ESC/POS ENGINE ==================== */
+    function loadPrinterForm() {
+      const p = state.printer;
+      document.getElementById("logoEnabledCheck").checked = p.logoEnabled;
+      document.getElementById("logoWidthRange").value = p.logoWidth;
+      document.getElementById("logoWidthVal").textContent = p.logoWidth;
+      document.getElementById("logoThreshRange").value = p.logoThreshold;
+      document.getElementById("logoThreshVal").textContent = p.logoThreshold;
+      document.getElementById("charWidthInput").value = p.charWidth;
+      document.getElementById("marginLeftInput").value = p.marginLeft;
+      document.getElementById("feedLinesInput").value = p.feedLines;
+      document.getElementById("storeNameInput").value = p.storeName;
+      document.getElementById("branchNameInput").value = p.branchName;
+      document.getElementById("addressInput").value = p.address;
+      document.getElementById("contactInput").value = p.contact;
+      document.getElementById("footer1Input").value = p.footer1;
+      document.getElementById("footer2Input").value = p.footer2;
+      renderLogoCanvas();
+      renderReceiptPreview();
+    }
+
+    function updatePrinterSettings() {
+      const p = state.printer;
+      p.logoEnabled = document.getElementById("logoEnabledCheck").checked;
+      p.logoWidth = Number(document.getElementById("logoWidthRange").value) || 220;
+      p.logoThreshold = Number(document.getElementById("logoThreshRange").value) || 140;
+      document.getElementById("logoWidthVal").textContent = p.logoWidth;
+      document.getElementById("logoThreshVal").textContent = p.logoThreshold;
+
+      p.charWidth = Math.min(42, Math.max(24, Number(document.getElementById("charWidthInput").value) || 32));
+      p.marginLeft = Math.min(6, Math.max(0, Number(document.getElementById("marginLeftInput").value) || 0));
+      p.feedLines = Math.min(8, Math.max(1, Number(document.getElementById("feedLinesInput").value) || 3));
+
+      p.storeName = document.getElementById("storeNameInput").value;
+      p.branchName = document.getElementById("branchNameInput").value;
+      p.address = document.getElementById("addressInput").value;
+      p.contact = document.getElementById("contactInput").value;
+      p.footer1 = document.getElementById("footer1Input").value;
+      p.footer2 = document.getElementById("footer2Input").value;
+
+      document.getElementById("topStoreName").textContent = p.storeName || "SEGI COFFEE";
+      document.getElementById("topBranchName").textContent = p.branchName || "Cabang Utama";
+      document.getElementById("rulerBadge").textContent = `${p.charWidth} kolom`;
+
+      renderLogoCanvas();
+      renderReceiptPreview();
+    }
+
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        state.printer.logoDataUrl = ev.target.result;
+        state.printer.logoEnabled = true;
+        document.getElementById("logoEnabledCheck").checked = true;
+        renderLogoCanvas();
+        saveAllState(true);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearLogo() {
+      state.printer.logoDataUrl = "";
+      cachedLogoEscPos = null;
+      renderLogoCanvas();
+      saveAllState(true);
+    }
+
+    function renderLogoCanvas() {
+      const container = document.getElementById("previewLogoContainer");
+      const canvas = document.getElementById("logoCanvas");
+      const p = state.printer;
+
+      if (!p.logoEnabled || !p.logoDataUrl) {
+        container.style.display = "none";
+        cachedLogoEscPos = null;
+        return;
+      }
+
+      const img = new Image();
+      img.onload = function() {
+        const targetW = Math.floor((p.logoWidth || 220) / 8) * 8;
+        const scale = targetW / img.width;
+        const targetH = Math.max(8, Math.round(img.height * scale));
+
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        const imgData = ctx.getImageData(0, 0, targetW, targetH);
+        const data = imgData.data;
+        const thresh = p.logoThreshold || 140;
+        const widthBytes = targetW / 8;
+        const raster = new Uint8Array(widthBytes * targetH);
+
+        for (let y = 0; y < targetH; y++) {
+          for (let x = 0; x < targetW; x++) {
+            const i = (y * targetW + x) * 4;
+            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const isBlack = data[i + 3] > 128 && lum < thresh;
+            const val = isBlack ? 0 : 255;
+            data[i] = data[i + 1] = data[i + 2] = val;
+            data[i + 3] = 255;
+            if (isBlack) {
+              raster[y * widthBytes + (x >> 3)] |= (0x80 >> (x & 7));
+            }
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        container.style.display = "block";
+
+        // Build ESC/POS GS v 0 command
+        const header = [
+          0x1B, 0x61, 0x01,
+          0x1D, 0x76, 0x30, 0x00,
+          widthBytes & 0xFF, (widthBytes >> 8) & 0xFF,
+          targetH & 0xFF, (targetH >> 8) & 0xFF
+        ];
+        const combined = new Uint8Array(header.length + raster.length + 4);
+        combined.set(header, 0);
+        combined.set(raster, header.length);
+        combined.set([0x0A, 0x1B, 0x61, 0x00], header.length + raster.length);
+        cachedLogoEscPos = combined;
+      };
+      img.src = p.logoDataUrl;
+    }
+
+    function centerText(str, width) {
+      const s = String(str || "").trim();
+      if (s.length >= width) return s.slice(0, width);
+      const left = Math.floor((width - s.length) / 2);
+      return " ".repeat(left) + s;
+    }
+
+    function padLR(left, right, width) {
+      const l = String(left || "");
+      const r = String(right || "");
+      const space = Math.max(1, width - l.length - r.length);
+      return l + " ".repeat(space) + r;
+    }
+
+    function getSampleOrder() {
+      return {
+        receiptId: "SC-20261123-0001",
+        orderNo: "0001",
+        displayTime: "23/11/2026 09:31:13",
+        cashier: getActiveUser().name,
+        orderType: "DINE IN",
+        paymentMethod: "CASH",
+        items: [{ name: "Kopi Susu Segi", qty: 1, price: 18000, note: "Less Sugar" }],
+        subtotal: 18000,
+        discount: 0,
+        grandTotal: 18000,
+        cashPaid: 20000,
+        change: 2000
+      };
+    }
+
+    function buildCustomerReceiptText(order) {
+      const p = state.printer;
+      const w = p.charWidth || 32;
+      const margin = " ".repeat(p.marginLeft || 0);
+      const dash = "-".repeat(w);
+      const out = [];
+
+      out.push(centerText((p.storeName || "SEGI COFFEE").toUpperCase(), w));
+      if (p.address) out.push(centerText(p.address, w));
+      if (p.contact) out.push(centerText(p.contact, w));
+      out.push(dash);
+      out.push(`No Pes    : ${order.receiptId}`);
+      if (p.branchName) out.push(`Cabang    : ${p.branchName}`);
+      out.push(`Tanggal   : ${order.displayTime}`);
+      out.push(`Kasir     : ${order.cashier}`);
+      out.push(`Jenis Pemb: ${order.paymentMethod}`);
+      out.push(`Tipe      : ${order.orderType}`);
+      out.push(dash);
+
+      order.items.forEach(it => {
+        out.push(it.name.toUpperCase());
+        out.push(padLR(`${it.qty}x ${formatRp(it.price)}`, formatRp(it.qty * it.price), w));
+        if (it.note) out.push(`  (${it.note})`);
+      });
+
+      out.push(dash);
+      out.push(padLR("Subtotal", formatRp(order.subtotal), w));
+      if (order.discount > 0) out.push(padLR("Diskon", "-" + formatRp(order.discount), w));
+      out.push(padLR("Grand Total", formatRp(order.grandTotal), w));
+      if (order.paymentMethod === "CASH") {
+        out.push(padLR("Tunai", formatRp(order.cashPaid), w));
+        out.push(padLR("Kembalian", formatRp(order.change), w));
+      }
+      out.push(dash);
+      out.push(centerText(`NO ORDER: ${order.orderNo}`, w));
+      out.push(dash);
+      if (p.footer1) out.push(centerText(p.footer1, w));
+      if (p.footer2) out.push(centerText(p.footer2, w));
+
+      return out.map(l => margin + l).join("\n");
+    }
+
+    function renderReceiptPreview() {
+      const sample = lastCompletedOrder || getSampleOrder();
+      document.getElementById("receiptPreviewText").textContent = buildCustomerReceiptText(sample);
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+
+    function textToBytes(str) {
+      return new TextEncoder().encode(str);
+    }
+
+    function printCustomerReceipt(order) {
+      const p = state.printer;
+      const w = p.charWidth || 32;
+      const margin = " ".repeat(p.marginLeft || 0);
+      const dash = "-".repeat(w);
+      const chunks = [];
+
+      // Init printer
+      chunks.push(new Uint8Array([0x1B, 0x40]));
+
+      // Logo 1-bit if active
+      if (p.logoEnabled && cachedLogoEscPos) {
+        chunks.push(cachedLogoEscPos);
+      }
+
+      // Double-size bold Store Name
+      chunks.push(new Uint8Array([0x1B, 0x61, 0x01, 0x1B, 0x21, 0x38]));
+      chunks.push(textToBytes((p.storeName || "SEGI COFFEE").toUpperCase() + "\n"));
+      chunks.push(new Uint8Array([0x1B, 0x21, 0x00]));
+
+      if (p.address) chunks.push(textToBytes(p.address + "\n"));
+      if (p.contact) chunks.push(textToBytes(p.contact + "\n"));
+      chunks.push(new Uint8Array([0x1B, 0x61, 0x00]));
+
+      const body = [];
+      body.push(dash);
+      body.push(`No Pes    : ${order.receiptId}`);
+      if (p.branchName) body.push(`Cabang    : ${p.branchName}`);
+      body.push(`Tanggal   : ${order.displayTime}`);
+      body.push(`Kasir     : ${order.cashier}`);
+      body.push(`Jenis Pemb: ${order.paymentMethod}`);
+      body.push(`Tipe      : ${order.orderType}`);
+      body.push(dash);
+
+      order.items.forEach(it => {
+        body.push(it.name.toUpperCase());
+        body.push(padLR(`${it.qty}x ${formatRp(it.price)}`, formatRp(it.qty * it.price), w));
+        if (it.note) body.push(`  (${it.note})`);
+      });
+
+      body.push(dash);
+      body.push(padLR("Subtotal", formatRp(order.subtotal), w));
+      if (order.discount > 0) body.push(padLR("Diskon", "-" + formatRp(order.discount), w));
+      body.push(padLR("Grand Total", formatRp(order.grandTotal), w));
+      if (order.paymentMethod === "CASH") {
+        body.push(padLR("Tunai", formatRp(order.cashPaid), w));
+        body.push(padLR("Kembalian", formatRp(order.change), w));
+      }
+      body.push(dash);
+      chunks.push(textToBytes(body.map(l => margin + l).join("\n") + "\n"));
+
+      // Large NO ORDER
+      chunks.push(new Uint8Array([0x1B, 0x61, 0x01, 0x1B, 0x21, 0x38]));
+      chunks.push(textToBytes(`NO ORDER: ${order.orderNo}\n`));
+      chunks.push(new Uint8Array([0x1B, 0x21, 0x00]));
+
+      if (p.footer1) chunks.push(textToBytes(p.footer1 + "\n"));
+      if (p.footer2) chunks.push(textToBytes(p.footer2 + "\n"));
+      chunks.push(new Uint8Array([0x1B, 0x61, 0x00, 0x1B, 0x64, p.feedLines || 3]));
+
+      dispatchToBridge(chunks, buildCustomerReceiptText(order));
+    }
+
+    function printKitchenTicket(order) {
+      const p = state.printer;
+      const w = p.charWidth || 32;
+      const margin = " ".repeat(p.marginLeft || 0);
+      const dash = "=".repeat(w);
+      const chunks = [];
+
+      chunks.push(new Uint8Array([0x1B, 0x40, 0x1B, 0x61, 0x01, 0x1B, 0x21, 0x38]));
+      chunks.push(textToBytes(`ORDER #${order.orderNo}\n`));
+      chunks.push(new Uint8Array([0x1B, 0x21, 0x08]));
+      chunks.push(textToBytes(`DAPUR • ${order.orderType}\n`));
+      chunks.push(new Uint8Array([0x1B, 0x21, 0x00, 0x1B, 0x61, 0x00]));
+
+      const lines = [
+        dash,
+        `Waktu : ${order.displayTime}`,
+        `Kasir : ${order.cashier}`
+      ];
+      if (order.customerName) lines.push(`Nama  : ${order.customerName}`);
+      lines.push(dash);
+      order.items.forEach(it => {
+        lines.push(`${it.qty}x ${it.name.toUpperCase()}`);
+        if (it.note) lines.push(`   >> ${it.note}`);
+      });
+      lines.push(dash);
+
+      chunks.push(textToBytes(lines.map(l => margin + l).join("\n") + "\n"));
+      chunks.push(new Uint8Array([0x1B, 0x64, p.feedLines || 3]));
+
+      dispatchToBridge(chunks, lines.join("\n"));
+    }
+
+    function sendPlainEscPos(text) {
+      const chunks = [
+        new Uint8Array([0x1B, 0x40]),
+        textToBytes(text + "\n"),
+        new Uint8Array([0x1B, 0x64, state.printer.feedLines || 3])
+      ];
+      dispatchToBridge(chunks, text);
+    }
+
+    function dispatchToBridge(byteChunks, fallbackText) {
+      const totalLen = byteChunks.reduce((s, a) => s + a.length, 0);
+      const full = new Uint8Array(totalLen);
+      let pos = 0;
+      byteChunks.forEach(a => { full.set(a, pos); pos += a.length; });
+
+      const bridge = getBridge();
+      if (bridge) {
+        if (state.selectedBtMac && typeof bridge.connect === "function") {
+          bridge.connect(state.selectedBtMac);
+        }
+        if (typeof bridge.printRawBase64 === "function") {
+          const ok = bridge.printRawBase64(bytesToBase64(full));
+          if (ok) {
+            showToast("Terkirim ke printer VSC MP-58A");
+            return;
+          }
+        }
+        if (typeof bridge.printText === "function") {
+          bridge.printText(fallbackText);
+          showToast("Terkirim ke printer (Mode Teks)");
+          return;
+        }
+      }
+      showToast("Mode Simulasi: Printer fisik belum terhubung");
+    }
+
+    function scanBluetoothDevices() {
+      const bridge = getBridge();
+      const statusBox = document.getElementById("btStatusBox");
+      const listBox = document.getElementById("btDeviceList");
+
+      if (!bridge || typeof bridge.getPairedDevices !== "function") {
+        statusBox.innerHTML = `<strong>Mode Browser / Simulasi:</strong> Jalankan di APK Android untuk terhubung ke VSC MP-58A.`;
+        listBox.innerHTML = "";
+        return;
+      }
+
+      try {
+        const devices = JSON.parse(bridge.getPairedDevices() || "[]");
+        statusBox.innerHTML = `<strong>Bluetooth Android Aktif:</strong> Pilih printer <strong>VSC MP-58A</strong> di bawah ini.`;
+        if (devices.length === 0) {
+          listBox.innerHTML = `<div style="font-size:12px; color:var(--muted);">Tidak ada perangkat Bluetooth terpasang.</div>`;
+          return;
+        }
+        listBox.innerHTML = devices.map(d => {
+          const isSel = state.selectedBtMac === d.address;
+          return `
+            <div class="bt-device ${isSel ? "selected" : ""}" onclick="selectBtPrinter('${d.address}', '${d.name.replace(/'/g, "")}')">
+              <div>
+                <div style="font-weight:800; font-size:13px;">${d.name}</div>
+                <div style="font-size:11px; color:var(--muted);">MAC: ${d.address}</div>
+              </div>
+              <span class="badge ${isSel ? "badge-success" : "badge-neutral"}">${isSel ? "Aktif" : "Pilih"}</span>
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        statusBox.textContent = "Gagal membaca daftar Bluetooth.";
+      }
+    }
+
+    function selectBtPrinter(mac, name) {
+      state.selectedBtMac = mac;
+      saveAllState(false);
+      const bridge = getBridge();
+      if (bridge && typeof bridge.connect === "function") {
+        const ok = bridge.connect(mac);
+        showToast(ok ? `Terhubung ke ${name}` : `Menyimpan ${name} (pastikan printer menyala)`);
+      }
+      scanBluetoothDevices();
+    }
+
+    function testPrintReceipt() {
+      printCustomerReceipt(getSampleOrder());
+    }
+
+    function testPrintKitchen() {
+      printKitchenTicket(getSampleOrder());
+    }
+
+    /* ==================== KELOLA (MENU, USERS, QRIS, CLOUD) ==================== */
+    function renderManageAll() {
+      renderManageMenu();
+      renderManageUsers();
+      renderQrisBox();
+      document.getElementById("deviceCodeInput").value = state.cloud.deviceCode || "TAB1";
+      document.getElementById("fbProjectIdInput").value = state.cloud.projectId || "";
+      document.getElementById("fbApiKeyInput").value = state.cloud.apiKey || "";
+    }
+
+    function renderManageMenu() {
+      document.getElementById("manageMenuBody").innerHTML = state.menu.map((m, idx) => `
+        <tr>
+          <td><strong>${m.name}</strong></td>
+          <td>${m.category}</td>
+          <td>${formatRp(m.price)}</td>
+          <td>${formatRp(m.hpp || 0)}</td>
+          <td style="color:var(--success); font-weight:700;">${formatRp(m.price - (m.hpp || 0))}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteMenuItem(${idx})">Hapus</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function addMenuItem() {
+      const name = document.getElementById("newMenuName").value.trim();
+      const category = document.getElementById("newMenuCat").value;
+      const price = Number(document.getElementById("newMenuPrice").value) || 0;
+      const hpp = Number(document.getElementById("newMenuHpp").value) || 0;
+      if (!name || price <= 0) {
+        showToast("Isi nama menu dan harga jual!");
+        return;
+      }
+      state.menu.push({ id: "m_" + Date.now(), name, category, price, hpp });
+      document.getElementById("newMenuName").value = "";
+      document.getElementById("newMenuPrice").value = "";
+      document.getElementById("newMenuHpp").value = "";
+      enqueueSync("config", { menu: state.menu });
+      saveAllState(true);
+      renderManageMenu();
+      renderCategories();
+      renderMenuGrid();
+    }
+
+    function deleteMenuItem(idx) {
+      state.menu.splice(idx, 1);
+      enqueueSync("config", { menu: state.menu });
+      saveAllState(true);
+      renderManageMenu();
+      renderCategories();
+      renderMenuGrid();
+    }
+
+    function renderManageUsers() {
+      document.getElementById("userListBody").innerHTML = state.users.map((u, idx) => {
+        const permList = u.role === "Owner"
+          ? "Akses Penuh + Void Pesanan"
+          : Object.entries(u.perms).filter(([, v]) => v).map(([k]) => k.toUpperCase()).join(", ");
+        return `
+          <tr>
+            <td><strong>${u.name}</strong></td>
+            <td><span class="badge ${u.role === "Owner" ? "badge-success" : "badge-neutral"}">${u.role}</span></td>
+            <td>••••</td>
+            <td>${permList}</td>
+            <td>
+              ${u.id !== "u-owner" ? `<button class="btn btn-danger btn-sm" onclick="deleteUserAccount(${idx})">Hapus</button>` : "-"}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function addUserAccount() {
+      const name = document.getElementById("newUserName").value.trim();
+      const role = document.getElementById("newUserRole").value;
+      const pin = document.getElementById("newUserPin").value.trim();
+      if (!name || pin.length !== 4) {
+        showToast("Nama wajib diisi & PIN harus 4 angka!");
+        return;
+      }
+      const perms = {
+        kasir: document.getElementById("permKasir").checked,
+        dapur: document.getElementById("permDapur").checked,
+        diskon: document.getElementById("permDiskon").checked,
+        laci: document.getElementById("permLaci").checked,
+        kelola: document.getElementById("permKelola").checked
+      };
+      state.users.push({ id: "u_" + Date.now(), name, role, pin, perms });
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newUserPin").value = "";
+      enqueueSync("config", { users: state.users });
+      saveAllState(true);
+      renderManageUsers();
+    }
+
+    function deleteUserAccount(idx) {
+      state.users.splice(idx, 1);
+      saveAllState(true);
+      renderManageUsers();
+    }
+
+    function handleQrisUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+          const maxW = 480;
+          const scale = Math.min(1, maxW / img.width);
+          const c = document.createElement("canvas");
+          c.width = img.width * scale;
+          c.height = img.height * scale;
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          state.qrisDataUrl = c.toDataURL("image/jpeg", 0.85);
+          saveAllState(true);
+          renderQrisBox();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderQrisBox() {
+      const box = document.getElementById("qrisPreviewBox");
+      if (state.qrisDataUrl) {
+        box.innerHTML = `<img src="${state.qrisDataUrl}" style="max-width:220px; border-radius:10px; border:1px solid var(--border);" />`;
+      }
+    }
+
+    function resetTransactions() {
+      const pin = prompt("Masukkan PIN Owner untuk mereset transaksi uji coba:");
+      const owner = state.users.find(u => u.role === "Owner" && u.pin === pin);
+      if (!owner) {
+        showToast("PIN Owner salah!");
+        return;
+      }
+      state.orders = [];
+      state.voidLogs = [];
+      state.orderCounter = 1;
+      saveAllState(true);
+      renderMenuGrid();
+      updateKitchenBadge();
+      renderCashDrawer();
+    }
+
+    /* ==================== ACCOUNT LOGIN MODAL ==================== */
+    function openAccountModal() {
+      const sel = document.getElementById("loginUserSelect");
+      sel.innerHTML = state.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
+      sel.value = state.activeUserId;
+      document.getElementById("loginPinInput").value = "";
+      openModal("accountModal");
+    }
+
+    function submitLogin() {
+      const uid = document.getElementById("loginUserSelect").value;
+      const pin = document.getElementById("loginPinInput").value.trim();
+      const user = state.users.find(u => u.id === uid);
+      if (!user || user.pin !== pin) {
+        showToast("PIN salah!");
+        return;
+      }
+      state.activeUserId = user.id;
+      saveAllState(false);
+      applyUserPermissions();
+      closeModal("accountModal");
+      showToast(`Masuk sebagai ${user.name}`);
+    }
+
+    /* ==================== OFFLINE-FIRST FIREBASE SYNC ==================== */
+    function enqueueSync(collection, payload) {
+      if (!state.cloud.projectId || !state.cloud.apiKey) return;
+      state.syncQueue.push({
+        id: "sq_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        collection,
+        docId: payload.id || "master",
+        data: JSON.stringify(payload)
+      });
+      processSyncQueue();
+    }
+
+    function saveCloudConfig() {
+      state.cloud.deviceCode = (document.getElementById("deviceCodeInput").value || "TAB1").trim().toUpperCase();
+      state.cloud.projectId = document.getElementById("fbProjectIdInput").value.trim();
+      state.cloud.apiKey = document.getElementById("fbApiKeyInput").value.trim();
+      saveAllState(true);
+      renderMenuGrid();
+      processSyncQueue();
+    }
+
+    async function processSyncQueue() {
+      const dot = document.getElementById("syncDot");
+      const text = document.getElementById("syncText");
+      const { projectId, apiKey } = state.cloud;
+
+      if (!projectId || !apiKey) {
+        dot.classList.remove("offline");
+        text.textContent = "Mode Lokal";
+        return;
+      }
+
+      if (!navigator.onLine) {
+        dot.classList.add("offline");
+        text.textContent = `Offline (${state.syncQueue.length} antre)`;
+        return;
+      }
+
+      if (state.syncQueue.length === 0) {
+        dot.classList.remove("offline");
+        text.textContent = "Online • Tersinkron";
+        return;
+      }
+
+      text.textContent = `Sinkron (${state.syncQueue.length})...`;
+      const item = state.syncQueue[0];
+      const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/${item.collection}/${encodeURIComponent(item.docId)}?key=${encodeURIComponent(apiKey)}`;
+
+      try {
+        const res = await fetch(url, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fields: {
+              payload: { stringValue: item.data },
+              updatedAt: { stringValue: new Date().toISOString() },
+              device: { stringValue: state.cloud.deviceCode || "TAB1" }
+            }
+          })
+        });
+        if (res.ok) {
+          state.syncQueue.shift();
+          saveAllState(false);
+          if (state.syncQueue.length > 0) processSyncQueue();
+          else {
+            dot.classList.remove("offline");
+            text.textContent = "Online • Tersinkron";
+          }
+        } else {
+          dot.classList.add("offline");
+          text.textContent = `Antre (${state.syncQueue.length})`;
+        }
+      } catch (e) {
+        dot.classList.add("offline");
+        text.textContent = `Offline (${state.syncQueue.length} antre)`;
+      }
+    }
+
+    function exportBackupJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `backup-segicoffee-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function importBackupJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          state = { ...state, ...imported };
+          saveAllState(true);
+          initApp();
+        } catch (err) {
+          showToast("File backup tidak valid!");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* ==================== HELPERS & INIT ==================== */
+    function openModal(id) { document.getElementById(id).classList.add("open"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+    function initApp() {
+      applyUserPermissions();
+      renderCategories();
+      renderMenuGrid();
+      renderCart();
+      updateKitchenBadge();
+      loadPrinterForm();
+      processSyncQueue();
+    }
+
+    window.addEventListener("online", processSyncQueue);
+    window.addEventListener("offline", processSyncQueue);
+    setInterval(processSyncQueue, 12000);
+
+    initApp();
+  </script>
+</body>
+</html>
