@@ -8,6 +8,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- SheetJS untuk Export Laporan Keuangan ke Excel (.xlsx) Multi-Sheet -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg-main: #f4efe9;
@@ -106,6 +108,7 @@
     input[type="email"],
     input[type="password"],
     input[type="date"],
+    input[type="month"],
     select,
     textarea {
       width: 100%;
@@ -537,11 +540,75 @@
       color: var(--primary);
     }
 
+    /* DIAGRAM GARIS STATISTIK PENJUALAN DAY-BY-DAY */
+    .chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 290px;
+      margin-top: 12px;
+      background: #fcfaf7;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      touch-action: pan-y;
+    }
+    .chart-canvas-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(31, 23, 18, 0.95);
+      color: #fff;
+      padding: 10px 13px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      z-index: 20;
+      display: none;
+      min-width: 185px;
+      max-width: 240px;
+    }
+    .series-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 12px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      min-height: 38px;
+    }
+    .series-pill.active {
+      border-color: var(--primary);
+      background: var(--bg-soft);
+    }
+    .series-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
     /* STAT BOX */
     .stat-card {
       background: var(--bg-soft);
       border-radius: 12px;
       padding: 14px;
+    }
+    .stat-card.highlight-green {
+      background: var(--success-bg);
+      border: 1px solid #b8e2c8;
+    }
+    .stat-card.highlight-red {
+      background: var(--danger-bg);
+      border: 1px solid #f4c2c2;
     }
     .stat-label {
       font-size: 14.5px;
@@ -553,6 +620,11 @@
       font-weight: 900;
       color: var(--primary);
       margin-top: 4px;
+    }
+    .stat-sub {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
     }
 
     /* MODAL */
@@ -646,7 +718,7 @@
     <nav class="nav-tabs" id="main-nav">
       <button class="nav-tab active" data-tab="kasir" onclick="switchTab('kasir')">Kasir</button>
       <button class="nav-tab" data-tab="dapur" onclick="switchTab('dapur')">Dapur <span class="badge-count" id="dapur-badge">0</span></button>
-      <button class="nav-tab" data-tab="laci" onclick="switchTab('laci')">Laci Kas</button>
+      <button class="nav-tab" data-tab="laci" onclick="switchTab('laci')">Laporan &amp; Kas</button>
       <button class="nav-tab" data-tab="printer" onclick="switchTab('printer')">Printer</button>
       <button class="nav-tab" data-tab="kelola" onclick="switchTab('kelola')">Kelola</button>
     </nav>
@@ -760,56 +832,214 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 3: LACI KAS & AUDIT ==================== -->
+    <!-- ==================== TAB 3: LAPORAN KEUANGAN LENGKAP & LACI KAS ==================== -->
     <section id="tab-laci" class="tab-pane">
       <div class="card">
         <div class="flex-between">
-          <h2>Rekap Laci Kas &amp; Laporan</h2>
+          <div>
+            <h2 style="margin:0;">Laporan Keuangan &amp; Laci Kas</h2>
+            <div class="text-muted" id="report-period-subtitle">Periode: Hari Ini</div>
+          </div>
           <div class="flex-gap">
+            <select id="report-mode-select" style="width: auto;" onchange="onReportModeChange()">
+              <option value="daily">Per Hari</option>
+              <option value="monthly">Per Bulan</option>
+              <option value="all">Semua Periode</option>
+            </select>
             <input type="date" id="laci-filter-date" style="width: auto;" onchange="renderLaciTab()" />
-            <button class="btn-outline btn-sm" onclick="setLaciToday()">Hari Ini</button>
-            <button class="btn-outline btn-sm" onclick="setLaciAllDates()">Semua Tanggal</button>
-            <button class="btn-primary btn-sm" onclick="printCashSummary()">Cetak Rekap Kas</button>
-            <button class="btn-accent btn-sm" onclick="exportLaciCSV()">Ekspor CSV</button>
+            <input type="month" id="laci-filter-month" style="width: auto; display:none;" onchange="renderLaciTab()" />
+            <button class="btn-outline btn-sm" onclick="setReportQuickToday()">Hari Ini</button>
+            <button class="btn-outline btn-sm" onclick="setReportQuickThisMonth()">Bulan Ini</button>
           </div>
         </div>
 
-        <div class="grid-4 mt-2">
+        <div class="flex-gap mt-2">
+          <button class="btn-success" onclick="exportFinancialExcel()">Export Excel (.xlsx)</button>
+          <button class="btn-accent btn-sm" onclick="exportLaciCSV()">Ekspor CSV</button>
+          <button class="btn-primary btn-sm" onclick="printCashSummary()">Cetak Rekap Struk</button>
+        </div>
+
+        <!-- 6 KARTU RINGKASAN KEUANGAN -->
+        <div class="grid-3 mt-2">
           <div class="stat-card">
             <div class="stat-label">Omzet Bersih (Non-Void)</div>
             <div class="stat-val" id="stat-net-sales">Rp 0</div>
+            <div class="stat-sub" id="stat-tx-count">0 transaksi sukses</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Pembayaran Tunai</div>
-            <div class="stat-val" id="stat-cash-sales">Rp 0</div>
+            <div class="stat-label">Rincian Tunai &amp; QRIS</div>
+            <div class="stat-val" style="font-size:18px;" id="stat-method-split">Tunai: Rp 0 | QRIS: Rp 0</div>
+            <div class="stat-sub" id="stat-discount-total">Total Diskon: Rp 0</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Pembayaran QRIS</div>
-            <div class="stat-val" id="stat-qris-sales">Rp 0</div>
+            <div class="stat-label">Total HPP (Modal Produk)</div>
+            <div class="stat-val" id="stat-total-hpp">Rp 0</div>
+            <div class="stat-sub">Berdasarkan HPP per item</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Estimasi Uang di Laci</div>
-            <div class="stat-val" id="stat-drawer-est" style="color: var(--success);">Rp 0</div>
+            <div class="stat-label">Laba Kotor (Omzet - HPP)</div>
+            <div class="stat-val" id="stat-gross-profit">Rp 0</div>
+            <div class="stat-sub" id="stat-gross-margin">Margin Kotor: 0%</div>
+          </div>
+          <div class="stat-card highlight-red">
+            <div class="stat-label">Pengeluaran Operasional</div>
+            <div class="stat-val" id="stat-total-expenses" style="color: var(--danger);">Rp 0</div>
+            <div class="stat-sub" id="stat-expense-count">0 catatan kas keluar</div>
+          </div>
+          <div class="stat-card highlight-green">
+            <div class="stat-label">Laba Bersih (Net Profit)</div>
+            <div class="stat-val" id="stat-net-profit" style="color: var(--success);">Rp 0</div>
+            <div class="stat-sub" id="stat-drawer-est">Est. Uang Fisik Laci: Rp 0</div>
           </div>
         </div>
 
-        <div class="grid-2 mt-2" style="align-items: end;">
-          <div>
-            <label for="opening-cash-input">Modal Awal Laci Kas (Rp)</label>
-            <div class="flex-gap">
-              <input type="number" id="opening-cash-input" value="0" min="0" style="flex:1;" />
-              <button class="btn-primary" onclick="saveOpeningCash()">Simpan Modal</button>
+        <!-- MODAL AWAL LACI KAS (KHUSUS MODE HARIAN) -->
+        <div id="opening-cash-box" class="mt-2" style="background: var(--bg-soft); padding: 12px; border-radius: 10px;">
+          <div class="flex-between">
+            <div style="flex:1; min-width: 220px;">
+              <label for="opening-cash-input" style="margin-bottom:4px;">Modal Awal Laci Kas Tanggal Terpilih (Rp)</label>
+              <div class="text-muted" style="font-size:13.5px;">Est. Uang Laci = Modal Awal + Penjualan Tunai - Pengeluaran</div>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Estimasi Laba Kotor (Omzet - HPP)</div>
-            <div class="stat-val" id="stat-gross-profit">Rp 0</div>
+            <div class="flex-gap">
+              <input type="number" id="opening-cash-input" value="0" min="0" style="width: 180px;" />
+              <button class="btn-primary btn-sm" onclick="saveOpeningCash()">Simpan Modal</button>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- DIAGRAM GARIS STATISTIK PENJUALAN DAY-BY-DAY -->
       <div class="card">
-        <h3>Riwayat Transaksi</h3>
+        <div class="flex-between">
+          <div>
+            <h3 style="margin:0;">Statistik Penjualan Day-by-Day (Diagram Garis)</h3>
+            <div class="text-muted" id="sales-chart-subtitle">Tren omzet &amp; laba bersih harian (ketuk titik grafik untuk detail)</div>
+          </div>
+          <div class="flex-gap">
+            <button type="button" class="btn-outline btn-sm chart-range-btn" data-range="7" onclick="setSalesChartRange('7')">7 Hari</button>
+            <button type="button" class="btn-outline btn-sm active chart-range-btn" data-range="14" onclick="setSalesChartRange('14')">14 Hari</button>
+            <button type="button" class="btn-outline btn-sm chart-range-btn" data-range="30" onclick="setSalesChartRange('30')">30 Hari</button>
+            <button type="button" class="btn-outline btn-sm chart-range-btn" data-range="month" onclick="setSalesChartRange('month')">Bulan Ini</button>
+          </div>
+        </div>
+
+        <div class="flex-between mt-1">
+          <div class="flex-gap">
+            <button type="button" class="series-pill active" id="toggle-series-sales" onclick="toggleChartSeries('sales')">
+              <span class="series-dot" style="background:#b86b35;"></span> Omzet Bersih
+            </button>
+            <button type="button" class="series-pill active" id="toggle-series-profit" onclick="toggleChartSeries('profit')">
+              <span class="series-dot" style="background:#1b7a43;"></span> Laba Bersih
+            </button>
+            <button type="button" class="series-pill" id="toggle-series-expense" onclick="toggleChartSeries('expense')">
+              <span class="series-dot" style="background:#b82929;"></span> Pengeluaran
+            </button>
+          </div>
+          <div class="text-muted" id="sales-chart-insight" style="font-weight:700;">Rata-rata: Rp 0/hari</div>
+        </div>
+
+        <div class="chart-canvas-wrap" id="sales-chart-wrap">
+          <canvas id="sales-line-canvas"></canvas>
+          <div class="chart-tooltip" id="sales-chart-tooltip"></div>
+        </div>
+      </div>
+
+      <!-- CATAT PENGELUARAN OPERASIONAL / KAS KELUAR -->
+      <div class="card">
+        <h3>Catat Pengeluaran Operasional / Kas Keluar</h3>
+        <p class="text-muted">Catat pembelian bahan harian (es batu, susu, gas, plastik, dll.) agar laporan laba bersih &amp; sisa uang laci akurat.</p>
+        <div class="grid-4 mt-1">
+          <div>
+            <label for="exp-date-input">Tanggal</label>
+            <input type="date" id="exp-date-input" />
+          </div>
+          <div>
+            <label for="exp-cat-select">Kategori Biaya</label>
+            <select id="exp-cat-select">
+              <option value="Bahan Baku">Bahan Baku (Susu/Es/Kopi)</option>
+              <option value="Kemasan">Kemasan (Cup/Sedotan/Kantong)</option>
+              <option value="Operasional">Operasional (Gas/Listrik/Air)</option>
+              <option value="Gaji / Tenaga">Gaji / Uang Makan Staf</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label for="exp-note-input">Keterangan Pengeluaran</label>
+            <input type="text" id="exp-note-input" placeholder="Contoh: Beli es batu kristal 2 bal" />
+          </div>
+          <div>
+            <label for="exp-amount-input">Nominal (Rp)</label>
+            <input type="number" id="exp-amount-input" placeholder="25000" min="0" />
+          </div>
+        </div>
+        <div class="mt-1">
+          <button class="btn-primary btn-sm" onclick="addOperationalExpense()">+ Simpan Pengeluaran</button>
+        </div>
+
+        <div class="table-wrap mt-2">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Kategori</th>
+                <th>Keterangan</th>
+                <th>Dicatat Oleh</th>
+                <th>Nominal</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="expense-list-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REKAP RINGKASAN PER HARI -->
+      <div class="card">
+        <h3>Rekap Keuangan Per Hari</h3>
+        <p class="text-muted">Rangkuman omzet, HPP, pengeluaran, dan laba bersih per tanggal pada periode yang dipilih.</p>
+        <div class="table-wrap mt-1">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Transaksi</th>
+                <th>Omzet Bersih</th>
+                <th>Tunai</th>
+                <th>QRIS</th>
+                <th>HPP</th>
+                <th>Laba Kotor</th>
+                <th>Pengeluaran</th>
+                <th>Laba Bersih</th>
+              </tr>
+            </thead>
+            <tbody id="daily-breakdown-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PERFORMA PENJUALAN PER MENU -->
+      <div class="card">
+        <h3>Laporan Penjualan &amp; Profit Per Menu</h3>
+        <div class="table-wrap mt-1">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Menu</th>
+                <th>Kategori</th>
+                <th>Qty Terjual</th>
+                <th>Total Omzet</th>
+                <th>Total HPP</th>
+                <th>Total Profit</th>
+              </tr>
+            </thead>
+            <tbody id="menu-performance-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIWAYAT TRANSAKSI DETAIL -->
+      <div class="card">
+        <h3>Detail Riwayat Transaksi</h3>
         <div class="table-wrap mt-1">
           <table>
             <thead>
@@ -829,6 +1059,7 @@
         </div>
       </div>
 
+      <!-- LOG AUDIT VOID -->
       <div class="card">
         <h3>Log Audit Void (Anti-Fraud)</h3>
         <p class="text-muted">Setiap pembatalan transaksi wajib memakai PIN Owner dan tercatat permanen.</p>
@@ -1026,7 +1257,7 @@
           <span class="sync-pill" id="cloud-panel-badge">● Mode Lokal</span>
         </div>
         <p class="text-muted mt-1">
-          Hubungkan dengan Email Owner agar seluruh data transaksi, menu, logo, QRIS, dan laporan tersinkron <strong>real-time 2-arah</strong> ke HP/Web Owner di mana saja.
+          Hubungkan dengan Email Owner agar seluruh data transaksi, pengeluaran, menu, logo, QRIS, dan laporan tersinkron <strong>real-time 2-arah</strong> ke HP/Web Owner di mana saja.
         </p>
 
         <div class="grid-2 mt-1">
@@ -1176,8 +1407,8 @@
             </select>
           </div>
           <div>
-            <label for="new-user-pin">PIN (4 Digit)</label>
-            <input type="text" id="new-user-pin" maxlength="6" placeholder="1234" />
+            <label for="new-user-pin">PIN (4–6 Digit)</label>
+            <input type="text" id="new-user-pin" inputmode="numeric" maxlength="6" placeholder="1234" />
           </div>
         </div>
 
@@ -1185,7 +1416,7 @@
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-kasir" checked style="width:20px;height:20px;" /> Kasir</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-dapur" checked style="width:20px;height:20px;" /> Dapur</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-diskon" style="width:20px;height:20px;" /> Diskon</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-laci" style="width:20px;height:20px;" /> Laci Kas</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-laci" style="width:20px;height:20px;" /> Laporan &amp; Kas</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-kelola" style="width:20px;height:20px;" /> Printer &amp; Kelola</label>
         </div>
 
@@ -1260,6 +1491,64 @@
 
       <div class="mt-2" style="text-align:right;">
         <button class="btn-outline btn-sm" id="pin-cancel-btn" onclick="closePinModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL UBAH PIN USER (OWNER / STAF) ==================== -->
+  <div class="modal-backdrop" id="edit-user-pin-modal">
+    <div class="modal-box">
+      <h3 id="edit-pin-modal-title">Ubah PIN Akun</h3>
+      <p class="text-muted" id="edit-pin-modal-desc">Masukkan PIN baru 4 hingga 6 digit angka.</p>
+      <div class="mt-1">
+        <label for="edit-pin-new-input">PIN Baru (4–6 Digit Angka)</label>
+        <input type="password" id="edit-pin-new-input" inputmode="numeric" maxlength="6" placeholder="Contoh: 2580" />
+      </div>
+      <div class="mt-1">
+        <label for="edit-pin-confirm-input">Ulangi PIN Baru</label>
+        <input type="password" id="edit-pin-confirm-input" inputmode="numeric" maxlength="6" placeholder="Ketik ulang PIN baru" />
+      </div>
+      <div class="flex-gap mt-2" style="justify-content: flex-end;">
+        <button class="btn-outline btn-sm" onclick="closeEditUserPinModal()">Batal</button>
+        <button class="btn-primary btn-sm" onclick="saveEditedUserPin()">Simpan PIN Baru</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL EDIT MENU & HARGA ==================== -->
+  <div class="modal-backdrop" id="edit-menu-modal">
+    <div class="modal-box">
+      <h3>Edit Menu &amp; Harga</h3>
+      <p class="text-muted">Perbarui nama, kategori, harga jual, atau HPP menu.</p>
+      <div class="mt-1">
+        <label for="edit-menu-name">Nama Menu</label>
+        <input type="text" id="edit-menu-name" placeholder="Nama menu" />
+      </div>
+      <div class="mt-1">
+        <label for="edit-menu-cat">Kategori</label>
+        <select id="edit-menu-cat">
+          <option value="Kopi">Kopi</option>
+          <option value="Non-Kopi">Non-Kopi</option>
+          <option value="Makanan">Makanan</option>
+          <option value="Snack">Snack</option>
+        </select>
+      </div>
+      <div class="grid-2 mt-1">
+        <div>
+          <label for="edit-menu-price">Harga Jual (Rp)</label>
+          <input type="number" id="edit-menu-price" min="0" oninput="updateEditMenuMarginPreview()" />
+        </div>
+        <div>
+          <label for="edit-menu-hpp">HPP / Modal (Rp)</label>
+          <input type="number" id="edit-menu-hpp" min="0" oninput="updateEditMenuMarginPreview()" />
+        </div>
+      </div>
+      <div id="edit-menu-margin-preview" class="mt-1" style="background: var(--bg-soft); padding: 10px 12px; border-radius: 10px; font-weight: 700; font-size: 15px;">
+        Margin: Rp 0 (0%)
+      </div>
+      <div class="flex-gap mt-2" style="justify-content: flex-end;">
+        <button class="btn-outline btn-sm" onclick="closeEditMenuModal()">Batal</button>
+        <button class="btn-primary btn-sm" onclick="saveEditedMenuItem()">Simpan Perubahan</button>
       </div>
     </div>
   </div>
@@ -1342,6 +1631,7 @@
       users: JSON.parse(JSON.stringify(DEFAULT_USERS)),
       profile: JSON.parse(JSON.stringify(DEFAULT_PROFILE)),
       orders: [],
+      expenses: [],
       voidLogs: [],
       openingCashByDate: {},
       orderCounterByDate: {},
@@ -1360,6 +1650,8 @@
     // PIN Modal State
     let pinBuffer = '';
     let pinModalContext = null;
+    let editingPinUserId = null;
+    let editingMenuId = null;
 
     // Firebase State
     let fbAuth = null;
@@ -1376,6 +1668,7 @@
           appState = {
             ...appState,
             ...parsed,
+            expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
             profile: { ...DEFAULT_PROFILE, ...(parsed.profile || {}) }
           };
         }
@@ -1421,6 +1714,10 @@
       return `${y}-${m}-${day}`;
     }
 
+    function getThisMonthStr() {
+      return getTodayStr().slice(0, 7);
+    }
+
     function getActiveUser() {
       return appState.users.find(u => u.id === appState.activeUserId) || appState.users[0];
     }
@@ -1449,7 +1746,7 @@
     function switchTab(tabName) {
       const user = getActiveUser();
       if (tabName === 'laci' && !user.perms.laci) {
-        showToast('Akun ini tidak memiliki akses Laci Kas.');
+        showToast('Akun ini tidak memiliki akses Laporan & Laci Kas.');
         return;
       }
       if ((tabName === 'printer' || tabName === 'kelola') && !user.perms.kelola) {
@@ -1791,15 +2088,41 @@
       if (ord) printReceiptOrder(ord, mode);
     }
 
-    /* ==================== TAB LACI KAS & AUDIT ==================== */
-    function setLaciToday() {
-      document.getElementById('laci-filter-date').value = getTodayStr();
+    /* ==================== TAB LAPORAN KEUANGAN LENGKAP & EXCEL (.XLSX) ==================== */
+    function onReportModeChange() {
+      const mode = document.getElementById('report-mode-select').value;
+      const dateInput = document.getElementById('laci-filter-date');
+      const monthInput = document.getElementById('laci-filter-month');
+      const openBox = document.getElementById('opening-cash-box');
+
+      if (mode === 'daily') {
+        dateInput.style.display = 'inline-block';
+        monthInput.style.display = 'none';
+        if (!dateInput.value) dateInput.value = getTodayStr();
+        openBox.style.display = 'block';
+      } else if (mode === 'monthly') {
+        dateInput.style.display = 'none';
+        monthInput.style.display = 'inline-block';
+        if (!monthInput.value) monthInput.value = getThisMonthStr();
+        openBox.style.display = 'none';
+      } else {
+        dateInput.style.display = 'none';
+        monthInput.style.display = 'none';
+        openBox.style.display = 'none';
+      }
       renderLaciTab();
     }
 
-    function setLaciAllDates() {
-      document.getElementById('laci-filter-date').value = '';
-      renderLaciTab();
+    function setReportQuickToday() {
+      document.getElementById('report-mode-select').value = 'daily';
+      document.getElementById('laci-filter-date').value = getTodayStr();
+      onReportModeChange();
+    }
+
+    function setReportQuickThisMonth() {
+      document.getElementById('report-mode-select').value = 'monthly';
+      document.getElementById('laci-filter-month').value = getThisMonthStr();
+      onReportModeChange();
     }
 
     function saveOpeningCash() {
@@ -1812,36 +2135,242 @@
       showToast('Modal awal laci kas disimpan.');
     }
 
-    function getFilteredOrdersForLaci() {
-      const dateFilter = document.getElementById('laci-filter-date').value;
-      return appState.orders.filter(o => !dateFilter || o.dateStr === dateFilter);
+    function addOperationalExpense() {
+      const dateStr = document.getElementById('exp-date-input').value || getTodayStr();
+      const category = document.getElementById('exp-cat-select').value;
+      const note = (document.getElementById('exp-note-input').value || '').trim();
+      const amount = Math.max(0, Number(document.getElementById('exp-amount-input').value) || 0);
+
+      if (!note || amount <= 0) {
+        showToast('Isi keterangan pengeluaran dan nominal yang valid.');
+        return;
+      }
+
+      const now = Date.now();
+      appState.expenses.unshift({
+        id: 'exp_' + now + '_' + Math.random().toString(36).slice(2, 6),
+        dateStr,
+        createdAt: now,
+        updatedAt: now,
+        category,
+        note,
+        amount,
+        recordedBy: getActiveUser().name
+      });
+
+      document.getElementById('exp-note-input').value = '';
+      document.getElementById('exp-amount-input').value = '';
+      saveState();
+      renderLaciTab();
+      triggerBackgroundSync();
+      showToast('Pengeluaran operasional dicatat.');
     }
 
-    function renderLaciTab() {
-      const dateFilter = document.getElementById('laci-filter-date').value;
-      const dateKey = dateFilter || getTodayStr();
-      const openingCash = Number(appState.openingCashByDate[dateKey] || 0);
-      document.getElementById('opening-cash-input').value = openingCash;
+    function deleteOperationalExpense(expId) {
+      appState.expenses = appState.expenses.filter(e => e.id !== expId);
+      saveState();
+      renderLaciTab();
+      triggerBackgroundSync();
+      showToast('Catatan pengeluaran dihapus.');
+    }
 
-      const list = getFilteredOrdersForLaci();
-      const validOrders = list.filter(o => !o.voided);
+    function getReportDataset() {
+      const mode = document.getElementById('report-mode-select').value;
+      const dateFilter = document.getElementById('laci-filter-date').value || getTodayStr();
+      const monthFilter = document.getElementById('laci-filter-month').value || getThisMonthStr();
 
+      let periodLabel = 'Semua Periode';
+      let matchDate = () => true;
+
+      if (mode === 'daily') {
+        periodLabel = `Harian (${dateFilter})`;
+        matchDate = (d) => d === dateFilter;
+      } else if (mode === 'monthly') {
+        periodLabel = `Bulanan (${monthFilter})`;
+        matchDate = (d) => String(d || '').startsWith(monthFilter);
+      }
+
+      const filteredOrders = appState.orders.filter(o => matchDate(o.dateStr));
+      const validOrders = filteredOrders.filter(o => !o.voided);
+      const filteredExpenses = (appState.expenses || []).filter(e => matchDate(e.dateStr));
+
+      const subtotalGross = validOrders.reduce((s, o) => s + (o.subtotal || o.total), 0);
+      const totalDiscount = validOrders.reduce((s, o) => s + (o.discount || 0), 0);
       const netSales = validOrders.reduce((s, o) => s + o.total, 0);
       const cashSales = validOrders.filter(o => o.payMethod === 'TUNAI').reduce((s, o) => s + o.total, 0);
       const qrisSales = validOrders.filter(o => o.payMethod === 'QRIS').reduce((s, o) => s + o.total, 0);
+
       const totalHpp = validOrders.reduce((s, o) => {
         return s + o.items.reduce((is, it) => is + ((it.hpp || 0) * it.qty), 0);
       }, 0);
       const grossProfit = netSales - totalHpp;
+      const totalExpenses = filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+      const netProfit = grossProfit - totalExpenses;
 
-      document.getElementById('stat-net-sales').textContent = formatRp(netSales);
-      document.getElementById('stat-cash-sales').textContent = formatRp(cashSales);
-      document.getElementById('stat-qris-sales').textContent = formatRp(qrisSales);
-      document.getElementById('stat-drawer-est').textContent = formatRp(openingCash + cashSales);
-      document.getElementById('stat-gross-profit').textContent = formatRp(grossProfit);
+      const openingCash = mode === 'daily' ? Number(appState.openingCashByDate[dateFilter] || 0) : 0;
+      const drawerEstimate = openingCash + cashSales - totalExpenses;
 
+      // Rekap Per Hari
+      const dailyMap = new Map();
+      const ensureDay = (d) => {
+        if (!dailyMap.has(d)) {
+          dailyMap.set(d, {
+            dateStr: d,
+            txCount: 0,
+            netSales: 0,
+            cashSales: 0,
+            qrisSales: 0,
+            hpp: 0,
+            grossProfit: 0,
+            expenses: 0,
+            netProfit: 0
+          });
+        }
+        return dailyMap.get(d);
+      };
+
+      validOrders.forEach(o => {
+        const rec = ensureDay(o.dateStr);
+        const orderHpp = o.items.reduce((is, it) => is + ((it.hpp || 0) * it.qty), 0);
+        rec.txCount += 1;
+        rec.netSales += o.total;
+        if (o.payMethod === 'TUNAI') rec.cashSales += o.total;
+        if (o.payMethod === 'QRIS') rec.qrisSales += o.total;
+        rec.hpp += orderHpp;
+        rec.grossProfit = rec.netSales - rec.hpp;
+        rec.netProfit = rec.grossProfit - rec.expenses;
+      });
+
+      filteredExpenses.forEach(e => {
+        const rec = ensureDay(e.dateStr);
+        rec.expenses += (e.amount || 0);
+        rec.netProfit = rec.grossProfit - rec.expenses;
+      });
+
+      const dailyBreakdown = Array.from(dailyMap.values()).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+
+      // Rekap Performa Per Menu
+      const menuMap = new Map();
+      validOrders.forEach(o => {
+        o.items.forEach(it => {
+          const key = it.name;
+          if (!menuMap.has(key)) {
+            const master = appState.menu.find(m => m.id === it.menuId || m.name === it.name);
+            menuMap.set(key, {
+              name: it.name,
+              category: master ? master.category : '-',
+              qty: 0,
+              revenue: 0,
+              hpp: 0,
+              profit: 0
+            });
+          }
+          const mRec = menuMap.get(key);
+          const lineRev = it.price * it.qty;
+          const lineHpp = (it.hpp || 0) * it.qty;
+          mRec.qty += it.qty;
+          mRec.revenue += lineRev;
+          mRec.hpp += lineHpp;
+          mRec.profit += (lineRev - lineHpp);
+        });
+      });
+      const menuBreakdown = Array.from(menuMap.values()).sort((a, b) => b.qty - a.qty);
+
+      return {
+        mode,
+        periodLabel,
+        dateFilter,
+        monthFilter,
+        filteredOrders,
+        validOrders,
+        filteredExpenses,
+        subtotalGross,
+        totalDiscount,
+        netSales,
+        cashSales,
+        qrisSales,
+        totalHpp,
+        grossProfit,
+        totalExpenses,
+        netProfit,
+        openingCash,
+        drawerEstimate,
+        dailyBreakdown,
+        menuBreakdown
+      };
+    }
+
+    function renderLaciTab() {
+      const ds = getReportDataset();
+      document.getElementById('report-period-subtitle').textContent = `Periode Aktif: ${ds.periodLabel}`;
+
+      if (ds.mode === 'daily') {
+        document.getElementById('opening-cash-input').value = ds.openingCash;
+      }
+
+      const marginPct = ds.netSales > 0 ? Math.round((ds.grossProfit / ds.netSales) * 100) : 0;
+
+      document.getElementById('stat-net-sales').textContent = formatRp(ds.netSales);
+      document.getElementById('stat-tx-count').textContent = `${ds.validOrders.length} transaksi sukses`;
+      document.getElementById('stat-method-split').textContent = `Tunai: ${formatRp(ds.cashSales)} | QRIS: ${formatRp(ds.qrisSales)}`;
+      document.getElementById('stat-discount-total').textContent = `Total Diskon: ${formatRp(ds.totalDiscount)}`;
+      document.getElementById('stat-total-hpp').textContent = formatRp(ds.totalHpp);
+      document.getElementById('stat-gross-profit').textContent = formatRp(ds.grossProfit);
+      document.getElementById('stat-gross-margin').textContent = `Margin Kotor: ${marginPct}%`;
+      document.getElementById('stat-total-expenses').textContent = formatRp(ds.totalExpenses);
+      document.getElementById('stat-expense-count').textContent = `${ds.filteredExpenses.length} catatan kas keluar`;
+      document.getElementById('stat-net-profit').textContent = formatRp(ds.netProfit);
+      document.getElementById('stat-drawer-est').textContent = ds.mode === 'daily'
+        ? `Est. Uang Fisik Laci: ${formatRp(ds.drawerEstimate)}`
+        : `Selisih Kas Tunai - Biaya: ${formatRp(ds.cashSales - ds.totalExpenses)}`;
+
+      renderSalesLineChart();
+
+      // Render tabel pengeluaran
+      const expBody = document.getElementById('expense-list-tbody');
+      expBody.innerHTML = ds.filteredExpenses.map(e => `
+        <tr>
+          <td>${e.dateStr}</td>
+          <td><strong>${e.category}</strong></td>
+          <td>${e.note}</td>
+          <td>${e.recordedBy || '-'}</td>
+          <td style="color:var(--danger); font-weight:800;">-${formatRp(e.amount)}</td>
+          <td><button class="btn-danger btn-sm" onclick="deleteOperationalExpense('${e.id}')">Hapus</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="text-muted">Belum ada catatan pengeluaran pada periode ini.</td></tr>';
+
+      // Render tabel rekap per hari
+      const dailyBody = document.getElementById('daily-breakdown-tbody');
+      dailyBody.innerHTML = ds.dailyBreakdown.map(d => `
+        <tr>
+          <td><strong>${d.dateStr}</strong></td>
+          <td>${d.txCount}</td>
+          <td><strong>${formatRp(d.netSales)}</strong></td>
+          <td>${formatRp(d.cashSales)}</td>
+          <td>${formatRp(d.qrisSales)}</td>
+          <td>${formatRp(d.hpp)}</td>
+          <td>${formatRp(d.grossProfit)}</td>
+          <td style="color:var(--danger);">${formatRp(d.expenses)}</td>
+          <td style="color:var(--success); font-weight:800;">${formatRp(d.netProfit)}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="9" class="text-muted">Belum ada data harian pada periode ini.</td></tr>';
+
+      // Render tabel performa menu
+      const menuPerfBody = document.getElementById('menu-performance-tbody');
+      menuPerfBody.innerHTML = ds.menuBreakdown.map(m => `
+        <tr>
+          <td><strong>${m.name}</strong></td>
+          <td>${m.category}</td>
+          <td><strong>${m.qty}</strong></td>
+          <td>${formatRp(m.revenue)}</td>
+          <td>${formatRp(m.hpp)}</td>
+          <td style="color:var(--success); font-weight:800;">${formatRp(m.profit)}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="text-muted">Belum ada data penjualan menu pada periode ini.</td></tr>';
+
+      // Render riwayat transaksi
       const tbody = document.getElementById('tx-history-tbody');
-      tbody.innerHTML = list.map(o => {
+      tbody.innerHTML = ds.filteredOrders.map(o => {
         const dt = new Date(o.createdAt).toLocaleString('id-ID', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
         return `
           <tr style="${o.voided ? 'opacity:0.55; background:var(--danger-bg);' : ''}">
@@ -1860,8 +2389,9 @@
             </td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="8" class="text-muted">Belum ada transaksi.</td></tr>';
+      }).join('') || '<tr><td colspan="8" class="text-muted">Belum ada transaksi pada periode ini.</td></tr>';
 
+      // Render log void
       const voidBody = document.getElementById('void-log-tbody');
       voidBody.innerHTML = appState.voidLogs.map(v => `
         <tr>
@@ -1875,10 +2405,495 @@
       `).join('') || '<tr><td colspan="6" class="text-muted">Belum ada riwayat pembatalan (void).</td></tr>';
     }
 
+    /* ==================== DIAGRAM GARIS PENJUALAN DAY-BY-DAY ==================== */
+    let salesChartRange = '14';
+    let salesChartSeries = { sales: true, profit: true, expense: false };
+    let salesChartPointsCache = [];
+    let salesChartSelectedIdx = -1;
+
+    function setSalesChartRange(range) {
+      salesChartRange = range;
+      salesChartSelectedIdx = -1;
+      document.querySelectorAll('.chart-range-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.range === range);
+      });
+      renderSalesLineChart();
+    }
+
+    function toggleChartSeries(key) {
+      salesChartSeries[key] = !salesChartSeries[key];
+      if (!salesChartSeries.sales && !salesChartSeries.profit && !salesChartSeries.expense) {
+        salesChartSeries[key] = true;
+        showToast('Minimal 1 garis statistik harus aktif.');
+        return;
+      }
+      document.getElementById('toggle-series-sales').classList.toggle('active', salesChartSeries.sales);
+      document.getElementById('toggle-series-profit').classList.toggle('active', salesChartSeries.profit);
+      document.getElementById('toggle-series-expense').classList.toggle('active', salesChartSeries.expense);
+      renderSalesLineChart();
+    }
+
+    function formatDateYMD(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatShortDateID(ymd) {
+      const parts = String(ymd || '').split('-');
+      if (parts.length !== 3) return ymd;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const mIdx = Math.max(0, Math.min(11, parseInt(parts[1], 10) - 1));
+      return `${parseInt(parts[2], 10)} ${months[mIdx]}`;
+    }
+
+    function formatCompactRp(val) {
+      const abs = Math.abs(val);
+      const sign = val < 0 ? '-' : '';
+      if (abs >= 1000000) {
+        const jt = (abs / 1000000).toFixed(abs % 1000000 === 0 ? 0 : 1).replace('.', ',');
+        return `${sign}${jt}jt`;
+      }
+      if (abs >= 1000) {
+        return `${sign}${Math.round(abs / 1000)}rb`;
+      }
+      return `${sign}${Math.round(abs)}`;
+    }
+
+    function buildDayByDaySeries() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dateList = [];
+
+      if (salesChartRange === 'month') {
+        const monthFilter = document.getElementById('laci-filter-month').value || getThisMonthStr();
+        const [yy, mm] = monthFilter.split('-').map(Number);
+        const daysInMonth = new Date(yy, mm, 0).getDate();
+        for (let day = 1; day <= daysInMonth; day++) {
+          dateList.push(`${yy}-${String(mm).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+        }
+      } else {
+        const numDays = parseInt(salesChartRange, 10) || 14;
+        for (let i = numDays - 1; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          dateList.push(formatDateYMD(d));
+        }
+      }
+
+      const map = new Map();
+      dateList.forEach(d => {
+        map.set(d, {
+          dateStr: d,
+          shortLabel: formatShortDateID(d),
+          txCount: 0,
+          netSales: 0,
+          hpp: 0,
+          expenses: 0,
+          netProfit: 0
+        });
+      });
+
+      appState.orders.forEach(o => {
+        if (o.voided || !map.has(o.dateStr)) return;
+        const rec = map.get(o.dateStr);
+        const orderHpp = o.items.reduce((s, it) => s + ((it.hpp || 0) * it.qty), 0);
+        rec.txCount += 1;
+        rec.netSales += o.total;
+        rec.hpp += orderHpp;
+      });
+
+      (appState.expenses || []).forEach(e => {
+        if (!map.has(e.dateStr)) return;
+        const rec = map.get(e.dateStr);
+        rec.expenses += (e.amount || 0);
+      });
+
+      const result = Array.from(map.values());
+      result.forEach(r => {
+        r.netProfit = (r.netSales - r.hpp) - r.expenses;
+      });
+      return result;
+    }
+
+    function renderSalesLineChart() {
+      const canvas = document.getElementById('sales-line-canvas');
+      const wrap = document.getElementById('sales-chart-wrap');
+      if (!canvas || !wrap) return;
+
+      const data = buildDayByDaySeries();
+      const totalSalesSum = data.reduce((s, d) => s + d.netSales, 0);
+      const avgSales = data.length > 0 ? Math.round(totalSalesSum / data.length) : 0;
+      let peakDay = null;
+      data.forEach(d => {
+        if (!peakDay || d.netSales > peakDay.netSales) peakDay = d;
+      });
+
+      const insightEl = document.getElementById('sales-chart-insight');
+      if (peakDay && peakDay.netSales > 0) {
+        insightEl.textContent = `Rata-rata: ${formatRp(avgSales)}/hari • Tertinggi: ${peakDay.shortLabel} (${formatRp(peakDay.netSales)})`;
+      } else {
+        insightEl.textContent = `Rata-rata: ${formatRp(avgSales)}/hari`;
+      }
+
+      const rect = wrap.getBoundingClientRect();
+      const width = Math.max(300, Math.floor(rect.width - 16));
+      const height = Math.max(220, Math.floor(rect.height - 16));
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const padLeft = 58;
+      const padRight = 18;
+      const padTop = 18;
+      const padBottom = 36;
+      const plotW = Math.max(60, width - padLeft - padRight);
+      const plotH = Math.max(60, height - padTop - padBottom);
+
+      let maxVal = 10000;
+      let minVal = 0;
+      data.forEach(d => {
+        if (salesChartSeries.sales) {
+          maxVal = Math.max(maxVal, d.netSales);
+          minVal = Math.min(minVal, d.netSales);
+        }
+        if (salesChartSeries.profit) {
+          maxVal = Math.max(maxVal, d.netProfit);
+          minVal = Math.min(minVal, d.netProfit);
+        }
+        if (salesChartSeries.expense) {
+          maxVal = Math.max(maxVal, d.expenses);
+          minVal = Math.min(minVal, d.expenses);
+        }
+      });
+
+      maxVal = Math.ceil((maxVal * 1.15) / 5000) * 5000;
+      if (minVal < 0) {
+        minVal = Math.floor((minVal * 1.15) / 5000) * 5000;
+      }
+      const valRange = Math.max(1, maxVal - minVal);
+
+      const getY = (v) => padTop + plotH - (((v - minVal) / valRange) * plotH);
+      const getX = (idx) => {
+        if (data.length <= 1) return padLeft + plotW / 2;
+        return padLeft + (idx / (data.length - 1)) * plotW;
+      };
+
+      // Grid horizontal & label sumbu Y
+      const gridSteps = 4;
+      ctx.font = '700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i <= gridSteps; i++) {
+        const val = minVal + (valRange * (i / gridSteps));
+        const y = getY(val);
+        ctx.strokeStyle = '#e5dcd2';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(padLeft + plotW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#5e5046';
+        ctx.fillText(formatCompactRp(val), padLeft - 8, y);
+      }
+
+      // Garis nol jika ada nilai negatif
+      if (minVal < 0) {
+        const yZero = getY(0);
+        ctx.strokeStyle = '#9c8d80';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(padLeft, yZero);
+        ctx.lineTo(padLeft + plotW, yZero);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Label sumbu X (tanggal day-by-day)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const maxLabels = Math.max(4, Math.floor(plotW / 54));
+      const step = Math.max(1, Math.ceil(data.length / maxLabels));
+
+      data.forEach((d, idx) => {
+        const x = getX(idx);
+        if (idx % step === 0 || idx === data.length - 1) {
+          ctx.fillStyle = '#5e5046';
+          ctx.fillText(d.shortLabel, x, padTop + plotH + 10);
+        }
+      });
+
+      // Helper menggambar 1 garis seri
+      const drawSeriesLine = (getter, color, fillAlpha) => {
+        if (data.length === 0) return;
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        data.forEach((d, idx) => {
+          const x = getX(idx);
+          const y = getY(getter(d));
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        if (fillAlpha > 0 && data.length > 1) {
+          const baseY = getY(Math.max(0, minVal));
+          ctx.lineTo(getX(data.length - 1), baseY);
+          ctx.lineTo(getX(0), baseY);
+          ctx.closePath();
+          ctx.fillStyle = fillAlpha;
+          ctx.fill();
+        }
+
+        // Titik data
+        const pointRadius = data.length > 22 ? 3.5 : 4.8;
+        data.forEach((d, idx) => {
+          const x = getX(idx);
+          const y = getY(getter(d));
+          ctx.beginPath();
+          ctx.arc(x, y, idx === salesChartSelectedIdx ? pointRadius + 2.5 : pointRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = color;
+          ctx.stroke();
+        });
+        ctx.restore();
+      };
+
+      // Simpan koordinat titik untuk interaksi tap/hover
+      salesChartPointsCache = data.map((d, idx) => ({
+        idx,
+        x: getX(idx),
+        ySales: getY(d.netSales),
+        yProfit: getY(d.netProfit),
+        yExpense: getY(d.expenses),
+        item: d
+      }));
+
+      // Garis penanda titik terpilih
+      if (salesChartSelectedIdx >= 0 && salesChartPointsCache[salesChartSelectedIdx]) {
+        const selPt = salesChartPointsCache[salesChartSelectedIdx];
+        ctx.save();
+        ctx.strokeStyle = '#3b2618';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(selPt.x, padTop);
+        ctx.lineTo(selPt.x, padTop + plotH);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (salesChartSeries.expense) {
+        drawSeriesLine(d => d.expenses, '#b82929', 0);
+      }
+      if (salesChartSeries.profit) {
+        drawSeriesLine(d => d.netProfit, '#1b7a43', 'rgba(27, 122, 67, 0.08)');
+      }
+      if (salesChartSeries.sales) {
+        drawSeriesLine(d => d.netSales, '#b86b35', 'rgba(184, 107, 53, 0.14)');
+      }
+
+      updateSalesChartTooltip();
+    }
+
+    function updateSalesChartTooltip() {
+      const tip = document.getElementById('sales-chart-tooltip');
+      const wrap = document.getElementById('sales-chart-wrap');
+      if (!tip || !wrap) return;
+
+      if (salesChartSelectedIdx < 0 || !salesChartPointsCache[salesChartSelectedIdx]) {
+        tip.style.display = 'none';
+        return;
+      }
+
+      const pt = salesChartPointsCache[salesChartSelectedIdx];
+      const d = pt.item;
+      tip.innerHTML = `
+        <div style="font-weight:800; font-size:15px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:4px; margin-bottom:5px;">
+          ${d.dateStr} (${d.shortLabel})
+        </div>
+        <div>Transaksi: <strong>${d.txCount} order</strong></div>
+        <div style="color:#f5b98b;">Omzet Bersih: <strong>${formatRp(d.netSales)}</strong></div>
+        <div style="color:#7be0a5;">Laba Bersih: <strong>${formatRp(d.netProfit)}</strong></div>
+        <div style="color:#fca5a5;">Pengeluaran: <strong>${formatRp(d.expenses)}</strong></div>
+      `;
+      tip.style.display = 'block';
+
+      const wrapW = wrap.clientWidth;
+      const tipW = tip.offsetWidth || 200;
+      let leftPos = pt.x + 14;
+      if (leftPos + tipW > wrapW - 8) {
+        leftPos = Math.max(8, pt.x - tipW - 14);
+      }
+      tip.style.left = leftPos + 'px';
+      tip.style.top = '14px';
+    }
+
+    function handleSalesChartPointer(clientX) {
+      const canvas = document.getElementById('sales-line-canvas');
+      if (!canvas || salesChartPointsCache.length === 0) return;
+      const rect = canvas.getBoundingClientRect();
+      const relX = clientX - rect.left;
+
+      let closestIdx = 0;
+      let minDist = Infinity;
+      salesChartPointsCache.forEach((pt, idx) => {
+        const dist = Math.abs(pt.x - relX);
+        if (dist < minDist) {
+          minDist = dist;
+          closestIdx = idx;
+        }
+      });
+
+      if (minDist <= 45) {
+        salesChartSelectedIdx = closestIdx;
+        renderSalesLineChart();
+      }
+    }
+
+    function initSalesChartEvents() {
+      const canvas = document.getElementById('sales-line-canvas');
+      if (!canvas) return;
+      canvas.addEventListener('pointerdown', (e) => {
+        handleSalesChartPointer(e.clientX);
+      });
+      canvas.addEventListener('mousemove', (e) => {
+        if (e.pointerType === 'mouse') {
+          handleSalesChartPointer(e.clientX);
+        }
+      });
+      window.addEventListener('resize', () => {
+        if (document.getElementById('tab-laci').classList.contains('active')) {
+          renderSalesLineChart();
+        }
+      });
+    }
+
+    function exportFinancialExcel() {
+      if (typeof XLSX === 'undefined') {
+        showToast('Library Excel belum termuat (periksa koneksi internet), beralih ke Ekspor CSV...');
+        exportLaciCSV();
+        return;
+      }
+
+      const ds = getReportDataset();
+      const shopName = (appState.profile.shopName || 'A POS').trim();
+      const branchName = (appState.profile.branchName || 'Cabang Utama').trim();
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Ringkasan Keuangan
+      const summaryRows = [
+        ['LAPORAN KEUANGAN LENGKAP - ' + shopName.toUpperCase()],
+        ['Cabang', branchName],
+        ['Periode Laporan', ds.periodLabel],
+        ['Waktu Ekspor', new Date().toLocaleString('id-ID')],
+        [],
+        ['KETERANGAN', 'NILAI (RP)'],
+        ['Omzet Kotor (Sebelum Diskon)', ds.subtotalGross],
+        ['Total Diskon', ds.totalDiscount],
+        ['Omzet Bersih (Penjualan Valid)', ds.netSales],
+        ['  - Pembayaran Tunai', ds.cashSales],
+        ['  - Pembayaran QRIS', ds.qrisSales],
+        ['Total HPP (Modal Produk Terjual)', ds.totalHpp],
+        ['Laba Kotor (Omzet Bersih - HPP)', ds.grossProfit],
+        ['Total Pengeluaran Operasional', ds.totalExpenses],
+        ['LABA BERSIH (NET PROFIT)', ds.netProfit],
+        [],
+        ['Jumlah Transaksi Sukses', ds.validOrders.length],
+        ['Modal Awal Laci (Mode Harian)', ds.openingCash],
+        ['Estimasi Uang Fisik di Laci', ds.drawerEstimate]
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+      wsSummary['!cols'] = [{ wch: 36 }, { wch: 22 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan Keuangan');
+
+      // Sheet 2: Rekap Per Hari
+      const dailyRows = [
+        ['Tanggal', 'Jumlah Transaksi', 'Omzet Bersih (Rp)', 'Tunai (Rp)', 'QRIS (Rp)', 'Total HPP (Rp)', 'Laba Kotor (Rp)', 'Pengeluaran (Rp)', 'Laba Bersih (Rp)']
+      ];
+      ds.dailyBreakdown.forEach(d => {
+        dailyRows.push([d.dateStr, d.txCount, d.netSales, d.cashSales, d.qrisSales, d.hpp, d.grossProfit, d.expenses, d.netProfit]);
+      });
+      const wsDaily = XLSX.utils.aoa_to_sheet(dailyRows);
+      wsDaily['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsDaily, 'Rekap Per Hari');
+
+      // Sheet 3: Detail Transaksi
+      const txRows = [
+        ['No Order', 'Tanggal', 'Jam', 'Tipe Order', 'Pelanggan', 'Kasir', 'Metode Bayar', 'Rincian Item', 'Subtotal (Rp)', 'Diskon (Rp)', 'Grand Total (Rp)', 'HPP Order (Rp)', 'Laba Kotor Order (Rp)', 'Status']
+      ];
+      ds.filteredOrders.forEach(o => {
+        const dt = new Date(o.createdAt);
+        const itemSummary = o.items.map(it => `${it.qty}x ${it.name}${it.note ? ' (' + it.note + ')' : ''}`).join('; ');
+        const orderHpp = o.items.reduce((is, it) => is + ((it.hpp || 0) * it.qty), 0);
+        txRows.push([
+          o.orderNumber,
+          o.dateStr,
+          dt.toLocaleTimeString('id-ID'),
+          o.orderType,
+          o.customerName || '-',
+          o.cashierName,
+          o.payMethod,
+          itemSummary,
+          o.subtotal,
+          o.discount,
+          o.total,
+          o.voided ? 0 : orderHpp,
+          o.voided ? 0 : (o.total - orderHpp),
+          o.voided ? 'VOID' : o.kitchenStatus
+        ]);
+      });
+      const wsTx = XLSX.utils.aoa_to_sheet(txRows);
+      wsTx['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 40 }, { wch: 15 }, { wch: 14 }, { wch: 16 }, { wch: 15 }, { wch: 18 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsTx, 'Detail Transaksi');
+
+      // Sheet 4: Pengeluaran Operasional
+      const expRows = [
+        ['Tanggal', 'Kategori Biaya', 'Keterangan', 'Dicatat Oleh', 'Nominal (Rp)']
+      ];
+      ds.filteredExpenses.forEach(e => {
+        expRows.push([e.dateStr, e.category, e.note, e.recordedBy || '-', e.amount]);
+      });
+      const wsExp = XLSX.utils.aoa_to_sheet(expRows);
+      wsExp['!cols'] = [{ wch: 14 }, { wch: 22 }, { wch: 36 }, { wch: 16 }, { wch: 16 }];
+      XLSX.utils.book_append_sheet(wb, wsExp, 'Pengeluaran');
+
+      // Sheet 5: Penjualan Per Menu
+      const menuRows = [
+        ['Nama Menu', 'Kategori', 'Qty Terjual', 'Total Omzet (Rp)', 'Total HPP (Rp)', 'Total Profit (Rp)']
+      ];
+      ds.menuBreakdown.forEach(m => {
+        menuRows.push([m.name, m.category, m.qty, m.revenue, m.hpp, m.profit]);
+      });
+      const wsMenu = XLSX.utils.aoa_to_sheet(menuRows);
+      wsMenu['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsMenu, 'Penjualan Per Menu');
+
+      const tag = ds.mode === 'daily' ? ds.dateFilter : (ds.mode === 'monthly' ? ds.monthFilter : 'Semua');
+      const filename = `Laporan-Keuangan-${shopName.replace(/\s+/g, '-')}-${tag}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      showToast('File Excel (.xlsx) berhasil diunduh!');
+    }
+
     function exportLaciCSV() {
-      const list = getFilteredOrdersForLaci();
+      const ds = getReportDataset();
       const rows = [['No Order', 'Tanggal', 'Tipe', 'Kasir', 'Metode', 'Subtotal', 'Diskon', 'Total', 'Status']];
-      list.forEach(o => {
+      ds.filteredOrders.forEach(o => {
         rows.push([
           o.orderNumber,
           new Date(o.createdAt).toISOString(),
@@ -2248,11 +3263,11 @@
     function getEscPosFontBytes() {
       const mode = appState.profile.receiptFontMode || 'FONT_B';
       if (mode === 'FONT_A') {
-        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00]; // Font A Standar
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00];
       } else if (mode === 'FONT_A_TALL') {
-        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01]; // Font A Tinggi 2x
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01];
       }
-      return [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];   // Font B Kecil & Rapat (Ideal 58mm)
+      return [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];
     }
 
     async function buildEscPosRasterLogoBytes() {
@@ -2318,27 +3333,24 @@
     function testPrintKitchen() { printReceiptOrder(buildSampleOrder(), 'KITCHEN'); }
 
     function printCashSummary() {
-      const dateFilter = document.getElementById('laci-filter-date').value || getTodayStr();
-      const opening = Number(appState.openingCashByDate[dateFilter] || 0);
-      const validOrders = getFilteredOrdersForLaci().filter(o => !o.voided);
-      const net = validOrders.reduce((s, o) => s + o.total, 0);
-      const cash = validOrders.filter(o => o.payMethod === 'TUNAI').reduce((s, o) => s + o.total, 0);
-      const qris = validOrders.filter(o => o.payMethod === 'QRIS').reduce((s, o) => s + o.total, 0);
-
+      const ds = getReportDataset();
       const cols = appState.profile.charWidth || 42;
       const sep = '-'.repeat(cols);
       const summaryText = [
         (appState.profile.shopName || 'A POS').toUpperCase(),
-        'REKAP LACI KAS',
+        'REKAP LAPORAN KEUANGAN',
         sep,
-        `Tanggal   : ${dateFilter}`,
-        `Kasir     : ${getActiveUser().name}`,
+        `Periode    : ${ds.periodLabel}`,
+        `Dicetak    : ${getActiveUser().name}`,
         sep,
-        `Modal Awal: ${formatRp(opening)}`,
-        `Tunai     : ${formatRp(cash)}`,
-        `QRIS      : ${formatRp(qris)}`,
-        `Omzet     : ${formatRp(net)}`,
-        `Est. Laci : ${formatRp(opening + cash)}`,
+        `Omzet      : ${formatRp(ds.netSales)}`,
+        `Tunai      : ${formatRp(ds.cashSales)}`,
+        `QRIS       : ${formatRp(ds.qrisSales)}`,
+        `Total HPP  : ${formatRp(ds.totalHpp)}`,
+        `Laba Kotor : ${formatRp(ds.grossProfit)}`,
+        `Pengeluaran: ${formatRp(ds.totalExpenses)}`,
+        `LABA BERSIH: ${formatRp(ds.netProfit)}`,
+        ...(ds.mode === 'daily' ? [`Modal Awal : ${formatRp(ds.openingCash)}`, `Est. Laci  : ${formatRp(ds.drawerEstimate)}`] : []),
         sep
       ].join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
 
@@ -2347,7 +3359,7 @@
         let bin = '';
         bytes.forEach(b => bin += String.fromCharCode(b));
         window.AndroidPrinter.printRawBase64(btoa(bin));
-        showToast('Rekap kas dicetak.');
+        showToast('Rekap laporan dicetak.');
       } else {
         document.getElementById('receipt-logo-preview-wrap').style.display = 'none';
         document.getElementById('receipt-text-preview').textContent = summaryText;
@@ -2355,7 +3367,7 @@
       }
     }
 
-    /* ==================== TAB KELOLA (QRIS, MENU, USER, BACKUP) ==================== */
+    /* ==================== TAB KELOLA (QRIS, MENU, USER, PIN, BACKUP) ==================== */
     function renderKelolaTab() {
       document.getElementById('device-code-input').value = appState.deviceCode || 'TAB1';
       document.getElementById('lock-on-start-chk').checked = !!appState.lockOnStart;
@@ -2378,7 +3390,12 @@
             <td>${formatRp(m.price)}</td>
             <td>${formatRp(m.hpp || 0)}</td>
             <td>${formatRp(margin)} (${pct}%)</td>
-            <td><button class="btn-danger btn-sm" onclick="deleteMenuItem('${m.id}')">Hapus</button></td>
+            <td>
+              <div class="flex-gap">
+                <button class="btn-outline btn-sm" onclick="openEditMenuModal('${m.id}')">Edit</button>
+                <button class="btn-danger btn-sm" onclick="deleteMenuItem('${m.id}')">Hapus</button>
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
@@ -2390,12 +3407,59 @@
           <tr>
             <td><strong>${u.name}</strong></td>
             <td>${u.role}</td>
-            <td>••••</td>
+            <td>${'•'.repeat(String(u.pin || '1234').length)}</td>
             <td>${activePerms}</td>
-            <td>${u.id !== 'u_owner' ? `<button class="btn-danger btn-sm" onclick="deleteUserAccount('${u.id}')">Hapus</button>` : '<span class="text-muted">Default</span>'}</td>
+            <td>
+              <div class="flex-gap">
+                <button class="btn-outline btn-sm" onclick="openEditUserPinModal('${u.id}')">Ganti PIN</button>
+                ${u.id !== 'u_owner' ? `<button class="btn-danger btn-sm" onclick="deleteUserAccount('${u.id}')">Hapus</button>` : ''}
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
+    }
+
+    function openEditUserPinModal(userId) {
+      const target = appState.users.find(u => u.id === userId);
+      if (!target) return;
+      editingPinUserId = userId;
+      document.getElementById('edit-pin-modal-title').textContent = `Ganti PIN — ${target.name} (${target.role})`;
+      document.getElementById('edit-pin-modal-desc').textContent = 'Masukkan PIN baru 4 hingga 6 digit angka untuk membuka aplikasi & otorisasi.';
+      document.getElementById('edit-pin-new-input').value = '';
+      document.getElementById('edit-pin-confirm-input').value = '';
+      document.getElementById('edit-user-pin-modal').classList.add('open');
+    }
+
+    function closeEditUserPinModal() {
+      editingPinUserId = null;
+      document.getElementById('edit-user-pin-modal').classList.remove('open');
+    }
+
+    function saveEditedUserPin() {
+      if (!editingPinUserId) return;
+      const target = appState.users.find(u => u.id === editingPinUserId);
+      if (!target) return;
+
+      const p1 = (document.getElementById('edit-pin-new-input').value || '').trim();
+      const p2 = (document.getElementById('edit-pin-confirm-input').value || '').trim();
+
+      if (!/^\d{4,6}$/.test(p1)) {
+        showToast('PIN baru wajib berupa 4 hingga 6 digit angka.');
+        return;
+      }
+      if (p1 !== p2) {
+        showToast('Konfirmasi PIN baru tidak cocok.');
+        return;
+      }
+
+      target.pin = p1;
+      target.updatedAt = Date.now();
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      closeEditUserPinModal();
+      showToast(`PIN untuk ${target.name} berhasil diubah!`);
     }
 
     async function handleQrisUpload(event) {
@@ -2449,10 +3513,79 @@
       showToast('Menu ditambahkan.');
     }
 
+    function openEditMenuModal(menuId) {
+      const item = appState.menu.find(m => m.id === menuId);
+      if (!item) return;
+      editingMenuId = menuId;
+      document.getElementById('edit-menu-name').value = item.name || '';
+
+      const catSelect = document.getElementById('edit-menu-cat');
+      const existingOpt = Array.from(catSelect.options).find(o => o.value === item.category);
+      if (!existingOpt && item.category) {
+        const opt = document.createElement('option');
+        opt.value = item.category;
+        opt.textContent = item.category;
+        catSelect.appendChild(opt);
+      }
+      catSelect.value = item.category || 'Kopi';
+
+      document.getElementById('edit-menu-price').value = Number(item.price) || 0;
+      document.getElementById('edit-menu-hpp').value = Number(item.hpp) || 0;
+      updateEditMenuMarginPreview();
+      document.getElementById('edit-menu-modal').classList.add('open');
+    }
+
+    function updateEditMenuMarginPreview() {
+      const price = Math.max(0, Number(document.getElementById('edit-menu-price').value) || 0);
+      const hpp = Math.max(0, Number(document.getElementById('edit-menu-hpp').value) || 0);
+      const margin = price - hpp;
+      const pct = price > 0 ? Math.round((margin / price) * 100) : 0;
+      const box = document.getElementById('edit-menu-margin-preview');
+      box.textContent = `Margin Laba: ${formatRp(margin)} (${pct}%)`;
+      box.style.color = margin < 0 ? 'var(--danger)' : 'var(--success)';
+    }
+
+    function closeEditMenuModal() {
+      editingMenuId = null;
+      document.getElementById('edit-menu-modal').classList.remove('open');
+    }
+
+    function saveEditedMenuItem() {
+      if (!editingMenuId) return;
+      const item = appState.menu.find(m => m.id === editingMenuId);
+      if (!item) return;
+
+      const name = (document.getElementById('edit-menu-name').value || '').trim();
+      const category = document.getElementById('edit-menu-cat').value;
+      const price = Math.max(0, Number(document.getElementById('edit-menu-price').value) || 0);
+      const hpp = Math.max(0, Number(document.getElementById('edit-menu-hpp').value) || 0);
+
+      if (!name || price <= 0) {
+        showToast('Isi nama menu dan harga jual yang valid.');
+        return;
+      }
+
+      item.name = name;
+      item.category = category;
+      item.price = price;
+      item.hpp = hpp;
+      item.updatedAt = Date.now();
+
+      saveState();
+      renderKelolaTab();
+      renderCategoryBar();
+      renderMenuGrid();
+      triggerBackgroundSync();
+      closeEditMenuModal();
+      showToast(`Menu "${item.name}" berhasil diperbarui!`);
+    }
+
     function deleteMenuItem(id) {
       appState.menu = appState.menu.filter(m => m.id !== id);
       saveState();
       renderKelolaTab();
+      renderCategoryBar();
+      renderMenuGrid();
       triggerBackgroundSync();
       showToast('Menu dihapus.');
     }
@@ -2461,8 +3594,8 @@
       const name = (document.getElementById('new-user-name').value || '').trim();
       const role = document.getElementById('new-user-role').value;
       const pin = (document.getElementById('new-user-pin').value || '').trim();
-      if (!name || pin.length < 4) {
-        showToast('Isi nama staf dan PIN minimal 4 digit.');
+      if (!name || !/^\d{4,6}$/.test(pin)) {
+        showToast('Isi nama staf dan PIN 4–6 digit angka.');
         return;
       }
       appState.users.push({
@@ -2527,7 +3660,11 @@
         try {
           const parsed = JSON.parse(ev.target.result);
           if (!parsed.menu || !parsed.users) throw new Error('Struktur file backup tidak valid');
-          appState = { ...appState, ...parsed };
+          appState = {
+            ...appState,
+            ...parsed,
+            expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+          };
           saveState();
           updateHeaderUI();
           renderKelolaTab();
@@ -2573,7 +3710,7 @@
       pinBuffer = '';
       document.getElementById('pin-dots-display').textContent = '';
       document.getElementById('pin-modal-title').textContent = 'Reset Data Transaksi (PIN Owner)';
-      document.getElementById('pin-modal-desc').textContent = 'Masukkan PIN Owner untuk menghapus transaksi dan reset nomor ke #0001';
+      document.getElementById('pin-modal-desc').textContent = 'Masukkan PIN Owner untuk menghapus transaksi & pengeluaran dan reset nomor ke #0001';
       document.getElementById('user-select-wrap').style.display = 'none';
       document.getElementById('void-reason-wrap').style.display = 'none';
       document.getElementById('pin-cancel-btn').style.display = 'inline-flex';
@@ -2650,6 +3787,7 @@
         closePinModal();
       } else if (pinModalContext.mode === 'reset') {
         appState.orders = [];
+        appState.expenses = [];
         appState.voidLogs = [];
         appState.orderCounterByDate = {};
         appState.openingCashByDate = {};
@@ -2664,15 +3802,12 @@
     /* ==================== SINKRONISASI CLOUD 2-ARAH (EMAIL OWNER) ==================== */
     function parseFirebaseConfigInput(rawText) {
       let cleaned = rawText.trim();
-      // Mendukung paste langsung dari Firebase Console (const firebaseConfig = { ... };)
       const braceStart = cleaned.indexOf('{');
       const braceEnd = cleaned.lastIndexOf('}');
       if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
         cleaned = cleaned.slice(braceStart, braceEnd + 1);
       }
-      // Ubah unquoted JS keys (apiKey: "...") menjadi valid JSON ("apiKey": "...")
       cleaned = cleaned.replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":');
-      // Hapus trailing comma sebelum }
       cleaned = cleaned.replace(/,\s*}/g, '}');
       return JSON.parse(cleaned);
     }
@@ -2823,7 +3958,10 @@
           appState.users = mergeByIdAndUpdatedAt(appState.users, remote.users);
           appState.orders = mergeByIdAndUpdatedAt(appState.orders, remote.orders)
             .sort((a, b) => b.createdAt - a.createdAt)
-            .slice(0, 500);
+            .slice(0, 1000);
+          appState.expenses = mergeByIdAndUpdatedAt(appState.expenses, remote.expenses)
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 1000);
           appState.voidLogs = mergeByIdAndUpdatedAt(appState.voidLogs, remote.voidLogs)
             .sort((a, b) => b.voidedAt - a.voidedAt);
           appState.openingCashByDate = { ...(remote.openingCashByDate || {}), ...(appState.openingCashByDate || {}) };
@@ -2834,7 +3972,8 @@
           profile: appState.profile,
           menu: appState.menu,
           users: appState.users,
-          orders: appState.orders.slice(0, 500),
+          orders: appState.orders.slice(0, 1000),
+          expenses: (appState.expenses || []).slice(0, 1000),
           voidLogs: appState.voidLogs,
           openingCashByDate: appState.openingCashByDate,
           lastSyncedAt: Date.now()
@@ -2843,6 +3982,12 @@
         saveState();
         updateHeaderUI();
         renderMenuGrid();
+        if (document.getElementById('tab-laci').classList.contains('active')) {
+          renderLaciTab();
+        }
+        if (document.getElementById('tab-kelola').classList.contains('active')) {
+          renderKelolaTab();
+        }
         setSyncPill('online', '● Cloud Aktif');
         const t = new Date().toLocaleTimeString('id-ID');
         const lbl = document.getElementById('last-sync-time');
@@ -2862,8 +4007,14 @@
       renderCategoryBar();
       renderMenuGrid();
       renderCart();
-      document.getElementById('laci-filter-date').value = getTodayStr();
-      initFirebaseFromSavedConfig();
+
+      const today = getTodayStr();
+      document.getElementById('laci-filter-date').value = today;
+      document.getElementById('laci-filter-month').value = getThisMonthStr();
+      document.getElementById('exp-date-input').value = today;
+
+      initSalesChartEvents();
+            initFirebaseFromSavedConfig();
 
       if (appState.lockOnStart) {
         openSwitchUserModal(true);
