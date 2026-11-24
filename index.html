@@ -1,0 +1,2874 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A POS — Sistem Kasir &amp; Manajemen Kedai</title>
+  <!-- Firebase Compat SDK untuk Sinkronisasi Cloud 2-Arah (Email Owner) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --bg-main: #f4efe9;
+      --bg-card: #ffffff;
+      --bg-soft: #ebe3d9;
+      --primary: #3b2618;
+      --primary-hover: #523623;
+      --accent: #b86b35;
+      --accent-soft: #f7eadf;
+      --text-main: #1f1712;
+      --text-muted: #5e5046;
+      --border: #d8cdc2;
+      --success: #1b7a43;
+      --success-bg: #e3f5ea;
+      --danger: #b82929;
+      --danger-bg: #fde8e8;
+      --warning: #b36b00;
+      --warning-bg: #fff4df;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(31, 23, 18, 0.08);
+      /* Variabel terisolasi khusus kertas struk */
+      --receipt-font-size: 10px;
+      --receipt-paper-width: 260px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* SKALA FONT APLIKASI BESAR (+2.5 PX) UNTUK LAYAR TABLET KASIR 7 INCI */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16.5px;
+      line-height: 1.45;
+      background: var(--bg-main);
+      color: var(--text-main);
+      height: 100%;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0 0 10px 0;
+      color: var(--primary);
+      line-height: 1.3;
+    }
+    h2 { font-size: 21px; }
+    h3 { font-size: 18.5px; }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 16.5px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-weight: 700;
+      min-height: 46px;
+      transition: background 0.15s, transform 0.05s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-outline {
+      background: #fff;
+      color: var(--primary);
+      border: 2px solid var(--border);
+    }
+    .btn-outline.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn-sm {
+      padding: 9px 13px;
+      font-size: 15px;
+      min-height: 40px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text-main);
+      font-size: 16.5px;
+      min-height: 46px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 36px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 15.5px;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    /* TOP BAR */
+    .topbar {
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--primary);
+      font-weight: 900;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 13.5px;
+      color: #e6d7c8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.16);
+      color: #fff;
+    }
+    .sync-pill.online { background: #1b7a43; color: #fff; }
+    .sync-pill.syncing { background: #b36b00; color: #fff; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      background: rgba(255,255,255,0.12);
+      color: #f5ece3;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      min-height: 44px;
+    }
+    .nav-tab.active {
+      background: #fff;
+      color: var(--primary);
+    }
+
+    .badge-count {
+      background: var(--accent);
+      color: #fff;
+      font-size: 13.5px;
+      padding: 1px 7px;
+      border-radius: 99px;
+      font-weight: 800;
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-pill {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 700;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      padding: 14px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    /* LAYOUT KASIR (OPTIMAL UNTUK TABLET 7 INCI LANDSCAPE & PORTRAIT) */
+    .pos-layout {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    @media (max-width: 780px) {
+      .pos-layout, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cat-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin: 10px 0;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      gap: 10px;
+      max-height: 64vh;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .menu-item-btn {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 12px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 98px;
+      color: var(--text-main);
+    }
+    .menu-item-btn:hover {
+      border-color: var(--primary);
+      background: #fcf9f5;
+    }
+    .menu-item-cat {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .menu-item-name {
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 6px;
+    }
+    .menu-item-price {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* KERANJANG */
+    .cart-list {
+      max-height: 36vh;
+      overflow-y: auto;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 10px 0;
+      padding: 6px 0;
+    }
+
+    .cart-row {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .cart-row:last-child { border-bottom: none; }
+
+    .cart-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cart-qty-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qty-btn {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--bg-soft);
+      color: var(--primary);
+    }
+
+    .note-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 7px;
+    }
+
+    .chip {
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      background: var(--bg-soft);
+      color: var(--text-main);
+      min-height: 32px;
+    }
+    .chip.selected {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 6px 0;
+      font-size: 16.5px;
+    }
+    .summary-total {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+      border-top: 2px solid var(--border);
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+
+    /* UPLOAD FILE TOMBOL BESAR & AMAN UNTUK ANDROID WEBVIEW */
+    .file-upload-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 16.5px;
+      font-weight: 700;
+      min-height: 48px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .file-upload-label input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0.01;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    /* ==================== ISOLASI TOTAL STRUK THERMAL (58MM / 80MM) ==================== */
+    .receipt-stage {
+      background: #e6dfd7;
+      padding: 18px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    #receipt-print-area {
+      background: #ffffff;
+      color: #000000;
+      font-family: "Courier New", Courier, monospace !important;
+      font-size: var(--receipt-font-size) !important;
+      line-height: 1.32 !important;
+      width: var(--receipt-paper-width);
+      padding: 12px 10px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+      box-sizing: border-box;
+    }
+
+    #receipt-print-area * {
+      font-family: "Courier New", Courier, monospace !important;
+      font-size: var(--receipt-font-size) !important;
+      line-height: 1.32 !important;
+      color: #000000 !important;
+    }
+
+    #receipt-text-preview {
+      white-space: pre;
+      overflow-x: hidden;
+    }
+
+    /* ATURAN CETAK BROWSER / SYSTEM PRINT / RAWBT */
+    @media print {
+      @page {
+        margin: 0 !important;
+        size: auto;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #receipt-print-area,
+      #receipt-print-area * {
+        visibility: visible !important;
+      }
+      #receipt-print-area {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        padding: 2mm 1mm !important;
+        box-shadow: none !important;
+      }
+    }
+
+    /* TABLE */
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15.5px;
+    }
+    th, td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th {
+      background: var(--bg-soft);
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* STAT BOX */
+    .stat-card {
+      background: var(--bg-soft);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .stat-label {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .stat-val {
+      font-size: 21px;
+      font-weight: 900;
+      color: var(--primary);
+      margin-top: 4px;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 14, 10, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .pin-dots {
+      font-size: 28px;
+      letter-spacing: 10px;
+      text-align: center;
+      padding: 10px;
+      background: var(--bg-soft);
+      border-radius: 10px;
+      margin: 10px 0;
+      min-height: 54px;
+      font-weight: 900;
+    }
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .pin-key {
+      font-size: 22px;
+      font-weight: 800;
+      min-height: 56px;
+      background: var(--bg-soft);
+      color: var(--primary);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: var(--primary);
+      color: #fff;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      z-index: 200;
+      display: none;
+    }
+    .toast.show { display: block; }
+
+    .text-muted { color: var(--text-muted); font-size: 15px; }
+    .mt-1 { margin-top: 8px; }
+    .mt-2 { margin-top: 14px; }
+    .mb-1 { margin-bottom: 8px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .flex-gap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand-box">
+      <div class="brand-badge" id="topbar-badge">AP</div>
+      <div>
+        <div class="brand-title">A POS</div>
+        <div class="brand-sub">
+          <span id="topbar-shop-name">Nama Kedai Anda</span>
+          <span class="sync-pill" id="sync-status-pill">● Mode Lokal</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav-tabs" id="main-nav">
+      <button class="nav-tab active" data-tab="kasir" onclick="switchTab('kasir')">Kasir</button>
+      <button class="nav-tab" data-tab="dapur" onclick="switchTab('dapur')">Dapur <span class="badge-count" id="dapur-badge">0</span></button>
+      <button class="nav-tab" data-tab="laci" onclick="switchTab('laci')">Laci Kas</button>
+      <button class="nav-tab" data-tab="printer" onclick="switchTab('printer')">Printer</button>
+      <button class="nav-tab" data-tab="kelola" onclick="switchTab('kelola')">Kelola</button>
+    </nav>
+
+    <div class="user-box">
+      <div class="user-pill" id="active-user-label">Owner (Owner)</div>
+      <button class="btn-outline btn-sm" onclick="openSwitchUserModal()">Ganti Akun</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ==================== TAB 1: KASIR ==================== -->
+    <section id="tab-kasir" class="tab-pane active">
+      <div class="pos-layout">
+        <!-- KIRI: KATALOG MENU -->
+        <div class="card">
+          <div class="flex-between">
+            <h2 style="margin:0;">Daftar Menu</h2>
+            <div style="width: 240px; max-width: 100%;">
+              <input type="text" id="menu-search" placeholder="Cari menu..." oninput="renderMenuGrid()" />
+            </div>
+          </div>
+
+          <div class="cat-bar" id="category-bar"></div>
+          <div class="menu-grid" id="menu-grid"></div>
+        </div>
+
+        <!-- KANAN: KERANJANG & PEMBAYARAN -->
+        <div class="card">
+          <div class="flex-between">
+            <h2 style="margin:0;">Pesanan Baru</h2>
+            <div class="flex-gap">
+              <button class="btn-outline btn-sm active" id="btn-dinein" onclick="setOrderType('DINE IN')">DINE IN</button>
+              <button class="btn-outline btn-sm" id="btn-takeaway" onclick="setOrderType('TAKE AWAY')">TAKE AWAY</button>
+            </div>
+          </div>
+
+          <div class="mt-1">
+            <input type="text" id="customer-name" placeholder="Nama Pelanggan / No. Meja (Opsional)" />
+          </div>
+
+          <div class="cart-list" id="cart-list">
+            <div class="text-muted" style="text-align:center; padding: 24px 0;">Belum ada item dipilih</div>
+          </div>
+
+          <div class="grid-2" style="gap: 10px;">
+            <div>
+              <label for="discount-input">Diskon Manual (Rp)</label>
+              <input type="number" id="discount-input" value="0" min="0" oninput="renderCart()" />
+            </div>
+            <div>
+              <label>Metode Pembayaran</label>
+              <div class="flex-gap">
+                <button class="btn-outline active" style="flex:1;" id="pay-method-cash" onclick="setPayMethod('TUNAI')">TUNAI</button>
+                <button class="btn-outline" style="flex:1;" id="pay-method-qris" onclick="setPayMethod('QRIS')">QRIS</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL TUNAI -->
+          <div id="cash-panel" class="mt-1" style="background: var(--bg-soft); padding: 12px; border-radius: 10px;">
+            <label for="cash-received">Uang Diterima (Rp)</label>
+            <input type="number" id="cash-received" placeholder="0" oninput="updateChangeDisplay()" />
+            <div class="flex-gap mt-1">
+              <button class="btn-outline btn-sm" onclick="setExactCash()">Uang Pas</button>
+              <button class="btn-outline btn-sm" onclick="addCashNominal(20000)">+20rb</button>
+              <button class="btn-outline btn-sm" onclick="addCashNominal(50000)">+50rb</button>
+              <button class="btn-outline btn-sm" onclick="addCashNominal(100000)">+100rb</button>
+            </div>
+            <div class="summary-row mt-1" style="font-weight: 800; font-size: 19px;">
+              <span>Kembalian:</span>
+              <span id="cash-change-label" style="color: var(--success);">Rp 0</span>
+            </div>
+          </div>
+
+          <!-- PANEL QRIS -->
+          <div id="qris-panel" class="mt-1" style="display:none; background: var(--bg-soft); padding: 12px; border-radius: 10px; text-align:center;">
+            <div id="qris-cashier-preview"></div>
+          </div>
+
+          <div class="summary-row mt-1">
+            <span>Subtotal</span>
+            <span id="summary-subtotal">Rp 0</span>
+          </div>
+          <div class="summary-row">
+            <span>Diskon</span>
+            <span id="summary-discount">Rp 0</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Grand Total</span>
+            <span id="summary-total">Rp 0</span>
+          </div>
+
+          <div class="flex-gap mt-2">
+            <button class="btn-outline" onclick="clearCart()">Batal</button>
+            <button class="btn-success" style="flex:1; font-size: 18px;" onclick="processCheckout()">Bayar &amp; Kirim ke Dapur</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: DAPUR / BARISTA ==================== -->
+    <section id="tab-dapur" class="tab-pane">
+      <div class="card">
+        <div class="flex-between">
+          <h2>Antrean Dapur &amp; Barista</h2>
+          <span class="text-muted">Pesanan aktif yang sedang disiapkan</span>
+        </div>
+        <div id="dapur-list" class="grid-2 mt-1"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: LACI KAS & AUDIT ==================== -->
+    <section id="tab-laci" class="tab-pane">
+      <div class="card">
+        <div class="flex-between">
+          <h2>Rekap Laci Kas &amp; Laporan</h2>
+          <div class="flex-gap">
+            <input type="date" id="laci-filter-date" style="width: auto;" onchange="renderLaciTab()" />
+            <button class="btn-outline btn-sm" onclick="setLaciToday()">Hari Ini</button>
+            <button class="btn-outline btn-sm" onclick="setLaciAllDates()">Semua Tanggal</button>
+            <button class="btn-primary btn-sm" onclick="printCashSummary()">Cetak Rekap Kas</button>
+            <button class="btn-accent btn-sm" onclick="exportLaciCSV()">Ekspor CSV</button>
+          </div>
+        </div>
+
+        <div class="grid-4 mt-2">
+          <div class="stat-card">
+            <div class="stat-label">Omzet Bersih (Non-Void)</div>
+            <div class="stat-val" id="stat-net-sales">Rp 0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pembayaran Tunai</div>
+            <div class="stat-val" id="stat-cash-sales">Rp 0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pembayaran QRIS</div>
+            <div class="stat-val" id="stat-qris-sales">Rp 0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Estimasi Uang di Laci</div>
+            <div class="stat-val" id="stat-drawer-est" style="color: var(--success);">Rp 0</div>
+          </div>
+        </div>
+
+        <div class="grid-2 mt-2" style="align-items: end;">
+          <div>
+            <label for="opening-cash-input">Modal Awal Laci Kas (Rp)</label>
+            <div class="flex-gap">
+              <input type="number" id="opening-cash-input" value="0" min="0" style="flex:1;" />
+              <button class="btn-primary" onclick="saveOpeningCash()">Simpan Modal</button>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Estimasi Laba Kotor (Omzet - HPP)</div>
+            <div class="stat-val" id="stat-gross-profit">Rp 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Riwayat Transaksi</h3>
+        <div class="table-wrap mt-1">
+          <table>
+            <thead>
+              <tr>
+                <th>No. Order</th>
+                <th>Waktu</th>
+                <th>Tipe</th>
+                <th>Kasir</th>
+                <th>Metode</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tx-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Log Audit Void (Anti-Fraud)</h3>
+        <p class="text-muted">Setiap pembatalan transaksi wajib memakai PIN Owner dan tercatat permanen.</p>
+        <div class="table-wrap mt-1">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu Void</th>
+                <th>No. Order</th>
+                <th>Nominal</th>
+                <th>Kasir Order</th>
+                <th>Otorisasi</th>
+                <th>Alasan Pembatalan</th>
+              </tr>
+            </thead>
+            <tbody id="void-log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: PRINTER THERMAL & UKURAN FONT STRUK ==================== -->
+    <section id="tab-printer" class="tab-pane">
+      <div class="grid-2" style="align-items: start;">
+        <!-- KIRI: PENGATURAN PRINTER & LOGO -->
+        <div>
+          <div class="card">
+            <h3>1. Koneksi &amp; Metode Printer</h3>
+            <div class="mt-1">
+              <label for="print-method-select">Jalankan Cetak Melalui</label>
+              <select id="print-method-select" onchange="savePrinterProfile()">
+                <option value="bluetooth">Bluetooth Thermal Direct (ESC/POS APK)</option>
+                <option value="system">System Print / Browser / RawBT</option>
+              </select>
+            </div>
+            <div class="flex-gap mt-2">
+              <button class="btn-primary" onclick="scanBluetoothPrinters()">Muat Perangkat Bluetooth</button>
+              <span class="text-muted" id="printer-conn-status">Belum terhubung</span>
+            </div>
+            <div id="paired-devices-list" class="mt-1"></div>
+            <div class="grid-2 mt-2">
+              <button class="btn-primary" onclick="testPrintCustomer()">Tes Cetak Struk</button>
+              <button class="btn-outline" onclick="testPrintKitchen()">Tes Cetak Dapur</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>2. Ukuran Kertas &amp; Font Kertas Struk</h3>
+            <p class="text-muted">Terpisah dari font aplikasi agar hasil print di kertas 58mm tetap kecil, rapat, dan presisi.</p>
+
+            <div class="grid-2 mt-1">
+              <div>
+                <label for="paper-size-select">Ukuran Kertas Thermal</label>
+                <select id="paper-size-select" onchange="onPrinterPresetChange()">
+                  <option value="58mm">58mm (Mini Thermal)</option>
+                  <option value="80mm">80mm (Standard)</option>
+                </select>
+              </div>
+              <div>
+                <label for="receipt-font-mode">Ukuran Font Kertas Struk</label>
+                <select id="receipt-font-mode" onchange="onPrinterPresetChange()">
+                  <option value="FONT_B">Kecil &amp; Rapat (Font B — Ideal 58mm)</option>
+                  <option value="FONT_A">Sedang / Standar (Font A)</option>
+                  <option value="FONT_A_TALL">Besar / Tinggi (Font A 2x)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <label for="receipt-preview-slider">
+                Ukuran Font Pratinjau &amp; System Print: <strong id="receipt-preview-size-val">10</strong> px
+              </label>
+              <input type="range" id="receipt-preview-slider" min="8.5" max="15" step="0.5" value="10" oninput="onPreviewFontSlider()" />
+              <div class="flex-gap mt-1">
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(9)">Kecil (9px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(10)">Ideal 58mm (10px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(12)">Besar 80mm (12px)</button>
+              </div>
+            </div>
+
+            <div class="grid-3 mt-2">
+              <div>
+                <label for="char-width-input">Lebar Karakter</label>
+                <input type="number" id="char-width-input" min="24" max="64" value="42" onchange="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="left-margin-input">Margin Kiri (Spasi)</label>
+                <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="feed-lines-input">Spasi Sobek Bawah</label>
+                <input type="number" id="feed-lines-input" min="1" max="8" value="3" onchange="savePrinterProfile()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="flex-between">
+              <h3 style="margin:0;">3. Logo Struk (Monokrom 1-Bit)</h3>
+              <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer;">
+                <input type="checkbox" id="logo-enabled" style="width:22px; height:22px;" onchange="savePrinterProfile()" />
+                <span>Aktifkan Logo</span>
+              </label>
+            </div>
+
+            <div class="mt-2">
+              <label>Pilih Gambar Logo (PNG / JPG)</label>
+              <div class="flex-gap">
+                <label class="file-upload-label">
+                  <span>Pilih File Gambar Logo</span>
+                  <input type="file" id="logo-file-input" accept="image/*" onclick="this.value=''" onchange="handleLogoUpload(event)" />
+                </label>
+                <span class="text-muted" id="logo-file-name">Belum ada file dipilih</span>
+              </div>
+            </div>
+
+            <div class="grid-2 mt-2">
+              <div>
+                <label for="logo-width-range">Lebar Logo: <span id="logo-width-val">180</span> px</label>
+                <input type="range" id="logo-width-range" min="100" max="384" value="180" oninput="onLogoSliderChange()" />
+              </div>
+              <div>
+                <label for="logo-thresh-range">Ketajaman Hitam-Putih: <span id="logo-thresh-val">128</span></label>
+                <input type="range" id="logo-thresh-range" min="60" max="220" value="128" oninput="onLogoSliderChange()" />
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <button class="btn-outline btn-sm" onclick="removeLogo()">Hapus Logo</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>4. Profil Kedai di Header Struk</h3>
+            <div class="grid-2 mt-1">
+              <div>
+                <label for="shop-name-input">Nama Kedai (Header Besar)</label>
+                <input type="text" id="shop-name-input" value="A POS" oninput="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="branch-name-input">Nama Cabang</label>
+                <input type="text" id="branch-name-input" value="Cabang Utama" oninput="savePrinterProfile()" />
+              </div>
+            </div>
+
+            <div class="grid-2 mt-1">
+              <div>
+                <label for="shop-address-input">Alamat Kedai</label>
+                <input type="text" id="shop-address-input" placeholder="Jl. Contoh No. 1" oninput="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="shop-social-input">Instagram / WhatsApp</label>
+                <input type="text" id="shop-social-input" placeholder="@kedaikopi / 0812xxxx" oninput="savePrinterProfile()" />
+              </div>
+            </div>
+
+            <div class="grid-2 mt-1">
+              <div>
+                <label for="footer-1-input">Footer Baris 1</label>
+                <input type="text" id="footer-1-input" value="Terima kasih sudah singgah!" oninput="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="footer-2-input">Footer Baris 2</label>
+                <input type="text" id="footer-2-input" value="Selamat menikmati pesanan Anda" oninput="savePrinterProfile()" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KANAN: PRATINJAU STRUK THERMAL -->
+        <div class="card" style="position: sticky; top: 76px;">
+          <div class="flex-between">
+            <h3 style="margin:0;">Pratinjau Output Struk</h3>
+            <span class="badge-count" id="preview-cols-badge">58mm • 42 kolom • 10px</span>
+          </div>
+          <div class="receipt-stage mt-2">
+            <div id="receipt-print-area">
+              <div id="receipt-logo-preview-wrap" style="text-align:center; margin-bottom:8px; display:none;">
+                <canvas id="receipt-logo-canvas"></canvas>
+              </div>
+              <div id="receipt-text-preview"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: KELOLA & SINKRONISASI CLOUD ==================== -->
+    <section id="tab-kelola" class="tab-pane">
+
+      <!-- 1. SINKRONISASI CLOUD 2-ARAH (EMAIL OWNER) -->
+      <div class="card">
+        <div class="flex-between">
+          <h2 style="margin:0;">Sinkronisasi Cloud 2-Arah (Email Owner)</h2>
+          <span class="sync-pill" id="cloud-panel-badge">● Mode Lokal</span>
+        </div>
+        <p class="text-muted mt-1">
+          Hubungkan dengan Email Owner agar seluruh data transaksi, menu, logo, QRIS, dan laporan tersinkron <strong>real-time 2-arah</strong> ke HP/Web Owner di mana saja.
+        </p>
+
+        <div class="grid-2 mt-1">
+          <div>
+            <label for="device-code-input">Kode Perangkat Ini (Agar No. Order Tidak Bentrok)</label>
+            <div class="flex-gap">
+              <input type="text" id="device-code-input" value="TAB1" maxlength="6" style="max-width: 140px; text-transform: uppercase;" />
+              <button class="btn-outline btn-sm" onclick="saveDeviceCode()">Simpan Kode</button>
+            </div>
+          </div>
+          <div>
+            <label>Aksi Sinkronisasi Manual</label>
+            <div class="flex-gap">
+              <button class="btn-primary" onclick="syncTwoWayNow(true)">Sinkron 2-Arah Sekarang</button>
+              <span class="text-muted" id="last-sync-time">Belum pernah sinkron</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM LOGIN / DAFTAR EMAIL OWNER -->
+        <div id="cloud-auth-logged-out" class="mt-2" style="background: var(--bg-soft); padding: 14px; border-radius: 10px;">
+          <div class="grid-2">
+            <div>
+              <label for="owner-email-input">Email Owner</label>
+              <input type="email" id="owner-email-input" placeholder="owner@email.com" />
+            </div>
+            <div>
+              <label for="owner-pass-input">Password</label>
+              <input type="password" id="owner-pass-input" placeholder="Minimal 6 karakter" />
+            </div>
+          </div>
+          <div class="flex-gap mt-2">
+            <button class="btn-primary" onclick="cloudLogin()">Login Owner</button>
+            <button class="btn-accent" onclick="cloudRegister()">Daftar Akun Owner Baru</button>
+            <button class="btn-outline btn-sm" onclick="cloudResetPassword()">Lupa Password</button>
+          </div>
+        </div>
+
+        <div id="cloud-auth-logged-in" class="mt-2" style="display:none; background: var(--success-bg); padding: 14px; border-radius: 10px;">
+          <div class="flex-between">
+            <div>
+              <strong style="font-size: 17px; color: var(--success);">Terhubung ke Cloud Owner:</strong>
+              <div id="logged-in-email-label" style="font-weight: 800; font-size: 17px;"></div>
+            </div>
+            <button class="btn-danger btn-sm" onclick="cloudLogout()">Logout Cloud</button>
+          </div>
+        </div>
+
+        <!-- KONFIGURASI FIREBASE PROJECT -->
+        <details class="mt-2" open>
+          <summary style="font-weight: 700; cursor: pointer; padding: 6px 0;">Pengaturan Kunci Firebase Project (Isi Sekali)</summary>
+          <div class="mt-1" style="background: var(--accent-soft); padding: 12px; border-radius: 10px;">
+            <p class="text-muted" style="margin-top:0;">
+              1. Buka <strong>console.firebase.google.com</strong> &rarr; buat proyek &rarr; aktifkan <strong>Authentication (Email/Password)</strong> &amp; <strong>Firestore Database</strong>.<br/>
+              2. Di <em>Project Settings &rarr; Your apps (Web)</em>, salin objek <code>firebaseConfig</code> (JSON atau teks <code>const firebaseConfig = {...}</code>) dan tempel di bawah ini:
+            </p>
+            <textarea id="firebase-config-textarea" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
+            <div class="flex-gap mt-1">
+              <button class="btn-primary btn-sm" onclick="saveFirebaseConfig()">Simpan &amp; Hubungkan Firebase</button>
+              <span class="text-muted" id="fb-init-status">Status SDK: Menunggu konfigurasi</span>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- 2. UPLOAD GAMBAR QRIS -->
+      <div class="card">
+        <h3>Gambar QRIS Pembayaran (Offline &amp; Tersinkron Cloud)</h3>
+        <div class="flex-gap mt-1">
+          <label class="file-upload-label">
+            <span>Pilih Gambar QRIS (PNG / JPG)</span>
+            <input type="file" id="qris-file-input" accept="image/*" onclick="this.value=''" onchange="handleQrisUpload(event)" />
+          </label>
+          <button class="btn-outline btn-sm" onclick="removeQris()">Hapus QRIS</button>
+        </div>
+        <div id="qris-manage-preview" class="mt-2"></div>
+      </div>
+
+      <!-- 3. MANAJEMEN MENU & HPP -->
+      <div class="card">
+        <h3>Manajemen Menu &amp; HPP</h3>
+        <div class="grid-4 mt-1">
+          <div>
+            <label for="new-menu-name">Nama Menu</label>
+            <input type="text" id="new-menu-name" placeholder="Contoh: Es Kopi Susu" />
+          </div>
+          <div>
+            <label for="new-menu-cat">Kategori</label>
+            <select id="new-menu-cat">
+              <option value="Kopi">Kopi</option>
+              <option value="Non-Kopi">Non-Kopi</option>
+              <option value="Makanan">Makanan</option>
+              <option value="Snack">Snack</option>
+            </select>
+          </div>
+          <div>
+            <label for="new-menu-price">Harga Jual (Rp)</label>
+            <input type="number" id="new-menu-price" placeholder="18000" min="0" />
+          </div>
+          <div>
+            <label for="new-menu-hpp">HPP / Modal (Rp)</label>
+            <input type="number" id="new-menu-hpp" placeholder="7000" min="0" />
+          </div>
+        </div>
+        <div class="mt-1">
+          <button class="btn-primary" onclick="addMenuItem()">+ Tambah Menu</button>
+        </div>
+
+        <div class="table-wrap mt-2">
+          <table>
+            <thead>
+              <tr>
+                <th>Menu</th>
+                <th>Kategori</th>
+                <th>Harga Jual</th>
+                <th>HPP</th>
+                <th>Margin</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="manage-menu-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. USER & HAK AKSES -->
+      <div class="card">
+        <div class="flex-between">
+          <h3 style="margin:0;">User &amp; Hak Akses Staf</h3>
+          <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer;">
+            <input type="checkbox" id="lock-on-start-chk" style="width:22px; height:22px;" onchange="toggleLockOnStart()" />
+            <span>Minta PIN saat Aplikasi Dibuka</span>
+          </label>
+        </div>
+
+        <div class="grid-3 mt-2">
+          <div>
+            <label for="new-user-name">Nama Staf</label>
+            <input type="text" id="new-user-name" placeholder="Contoh: Kasir 2" />
+          </div>
+          <div>
+            <label for="new-user-role">Jabatan</label>
+            <select id="new-user-role">
+              <option value="Kasir">Kasir</option>
+              <option value="Barista">Barista</option>
+              <option value="Owner">Owner</option>
+            </select>
+          </div>
+          <div>
+            <label for="new-user-pin">PIN (4 Digit)</label>
+            <input type="text" id="new-user-pin" maxlength="6" placeholder="1234" />
+          </div>
+        </div>
+
+        <div class="flex-gap mt-1">
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-kasir" checked style="width:20px;height:20px;" /> Kasir</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-dapur" checked style="width:20px;height:20px;" /> Dapur</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-diskon" style="width:20px;height:20px;" /> Diskon</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-laci" style="width:20px;height:20px;" /> Laci Kas</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="perm-kelola" style="width:20px;height:20px;" /> Printer &amp; Kelola</label>
+        </div>
+
+        <div class="mt-1">
+          <button class="btn-primary" onclick="addUserAccount()">+ Tambah User</button>
+        </div>
+
+        <div class="table-wrap mt-2">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Role</th>
+                <th>PIN</th>
+                <th>Hak Akses</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="manage-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 5. BACKUP & RESET -->
+      <div class="card">
+        <h3>Backup Manual &amp; Reset Data</h3>
+        <div class="flex-gap mt-1">
+          <button class="btn-outline" onclick="exportBackupJSON()">Download Backup (.json)</button>
+          <label class="file-upload-label" style="background: var(--accent);">
+            <span>Restore Backup (.json)</span>
+            <input type="file" id="restore-json-input" accept=".json,application/json" onclick="this.value=''" onchange="handleRestoreJSON(event)" />
+          </label>
+          <button class="btn-danger" onclick="resetTransactionsWithPin()">Reset Transaksi ke #0001</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL PIN / GANTI AKUN / VOID ==================== -->
+  <div class="modal-backdrop" id="pin-modal">
+    <div class="modal-box">
+      <h3 id="pin-modal-title">Masukkan PIN</h3>
+      <p class="text-muted" id="pin-modal-desc">Pilih akun atau masukkan PIN 4 digit</p>
+
+      <div id="user-select-wrap" class="mb-1" style="display:none;">
+        <label for="switch-user-select">Pilih Akun</label>
+        <select id="switch-user-select"></select>
+      </div>
+
+      <div id="void-reason-wrap" class="mb-1" style="display:none;">
+        <label for="void-reason-input">Alasan Pembatalan (Wajib)</label>
+        <input type="text" id="void-reason-input" placeholder="Contoh: Salah input menu / Pelanggan batal" />
+      </div>
+
+      <div class="pin-dots" id="pin-dots-display"></div>
+
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pressPinKey('1')">1</button>
+        <button class="pin-key" onclick="pressPinKey('2')">2</button>
+        <button class="pin-key" onclick="pressPinKey('3')">3</button>
+        <button class="pin-key" onclick="pressPinKey('4')">4</button>
+        <button class="pin-key" onclick="pressPinKey('5')">5</button>
+        <button class="pin-key" onclick="pressPinKey('6')">6</button>
+        <button class="pin-key" onclick="pressPinKey('7')">7</button>
+        <button class="pin-key" onclick="pressPinKey('8')">8</button>
+        <button class="pin-key" onclick="pressPinKey('9')">9</button>
+        <button class="pin-key" onclick="clearPinInput()">C</button>
+        <button class="pin-key" onclick="pressPinKey('0')">0</button>
+        <button class="pin-key btn-success" style="color:#fff;" onclick="submitPinModal()">OK</button>
+      </div>
+
+      <div class="mt-2" style="text-align:right;">
+        <button class="btn-outline btn-sm" id="pin-cancel-btn" onclick="closePinModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL PASCA BAYAR ==================== -->
+  <div class="modal-backdrop" id="post-pay-modal">
+    <div class="modal-box" style="text-align:center;">
+      <h2 style="color: var(--success);">Pembayaran Berhasil!</h2>
+      <p id="post-pay-info" style="font-size: 17px; font-weight: 700;"></p>
+      <p class="text-muted">Struk dapur sudah dikirim otomatis ke antrean &amp; printer.</p>
+      <div class="grid-2 mt-2">
+        <button class="btn-primary" onclick="printLastCustomerReceipt()">Cetak Struk Pelanggan</button>
+        <button class="btn-outline" onclick="closePostPayModal()">Selesai (Tanpa Struk)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg"></div>
+
+  <script>
+    /* ==================== STATE & DEFAULT NETRAL (A POS) ==================== */
+    const STORAGE_KEY = 'apos_state_v3';
+    const FB_CFG_KEY = 'apos_firebase_cfg_v1';
+
+    const DEFAULT_MENU = [
+      { id: 'm1', name: 'Americano', category: 'Kopi', price: 16000, hpp: 5500, updatedAt: 1 },
+      { id: 'm2', name: 'Caffe Latte', category: 'Kopi', price: 20000, hpp: 7500, updatedAt: 1 },
+      { id: 'm3', name: 'Es Kopi Susu Gula Aren', category: 'Kopi', price: 18000, hpp: 6800, updatedAt: 1 },
+      { id: 'm4', name: 'Cappuccino', category: 'Kopi', price: 20000, hpp: 7500, updatedAt: 1 },
+      { id: 'm5', name: 'Matcha Latte', category: 'Non-Kopi', price: 22000, hpp: 8500, updatedAt: 1 },
+      { id: 'm6', name: 'Chocolate Signature', category: 'Non-Kopi', price: 20000, hpp: 8000, updatedAt: 1 },
+      { id: 'm7', name: 'Croissant Butter', category: 'Snack', price: 16000, hpp: 7000, updatedAt: 1 },
+      { id: 'm8', name: 'French Fries', category: 'Snack', price: 15000, hpp: 6000, updatedAt: 1 },
+      { id: 'm9', name: 'Chicken Rice Bowl', category: 'Makanan', price: 25000, hpp: 11000, updatedAt: 1 }
+    ];
+
+    const DEFAULT_USERS = [
+      {
+        id: 'u_owner',
+        name: 'Owner',
+        role: 'Owner',
+        pin: '1234',
+        perms: { kasir: true, dapur: true, diskon: true, laci: true, kelola: true },
+        updatedAt: 1
+      },
+      {
+        id: 'u_kasir1',
+        name: 'Kasir 1',
+        role: 'Kasir',
+        pin: '0000',
+        perms: { kasir: true, dapur: true, diskon: false, laci: true, kelola: false },
+        updatedAt: 1
+      }
+    ];
+
+    const DEFAULT_PROFILE = {
+      shopName: 'A POS',
+      branchName: 'Cabang Utama',
+      address: 'Jl. Contoh No. 1',
+      social: '@kedaianda',
+      footer1: 'Terima kasih sudah singgah!',
+      footer2: 'Selamat menikmati pesanan Anda',
+      printMethod: 'bluetooth',
+      paperSize: '58mm',
+      receiptFontMode: 'FONT_B',
+      receiptPreviewFontSize: 10,
+      charWidth: 42,
+      leftMargin: 0,
+      feedLines: 3,
+      logoEnabled: true,
+      logoDataUrl: '',
+      logoWidth: 180,
+      logoThreshold: 128,
+      qrisDataUrl: '',
+      updatedAt: 1
+    };
+
+    let appState = {
+      menu: JSON.parse(JSON.stringify(DEFAULT_MENU)),
+      users: JSON.parse(JSON.stringify(DEFAULT_USERS)),
+      profile: JSON.parse(JSON.stringify(DEFAULT_PROFILE)),
+      orders: [],
+      voidLogs: [],
+      openingCashByDate: {},
+      orderCounterByDate: {},
+      deviceCode: 'TAB1',
+      activeUserId: 'u_owner',
+      lockOnStart: false
+    };
+
+    let currentCategory = 'Semua';
+    let cart = [];
+    let orderType = 'DINE IN';
+    let payMethod = 'TUNAI';
+    let lastCompletedOrder = null;
+    let connectedPrinterMac = '';
+
+    // PIN Modal State
+    let pinBuffer = '';
+    let pinModalContext = null;
+
+    // Firebase State
+    let fbAuth = null;
+    let fbDb = null;
+    let currentOwnerUser = null;
+    let syncIntervalId = null;
+
+    /* ==================== INIT & STORAGE ==================== */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('apos_state_v2');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          appState = {
+            ...appState,
+            ...parsed,
+            profile: { ...DEFAULT_PROFILE, ...(parsed.profile || {}) }
+          };
+        }
+      } catch (e) {
+        console.error('Gagal memuat state:', e);
+      }
+      if (!appState.users || appState.users.length === 0) {
+        appState.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
+      }
+      if (!appState.users.find(u => u.id === appState.activeUserId)) {
+        appState.activeUserId = appState.users[0].id;
+      }
+      applyIsolatedReceiptCss();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        showToast('Penyimpanan penuh! Hapus transaksi lama atau perkecil gambar.');
+        console.error('QuotaExceeded:', e);
+      }
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-msg');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    function formatRp(num) {
+      const n = Math.round(Number(num) || 0);
+      return 'Rp ' + n.toLocaleString('id-ID');
+    }
+
+    function getTodayStr() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function getActiveUser() {
+      return appState.users.find(u => u.id === appState.activeUserId) || appState.users[0];
+    }
+
+    /* ==================== HEADER & NAVIGASI ==================== */
+    function updateHeaderUI() {
+      const shop = (appState.profile.shopName || 'A POS').trim();
+      document.getElementById('topbar-shop-name').textContent = `${shop} • ${appState.profile.branchName || 'Cabang Utama'}`;
+
+      const words = shop.split(/\s+/).filter(Boolean);
+      let initials = 'AP';
+      if (words.length >= 2) {
+        initials = (words[0][0] + words[1][0]).toUpperCase();
+      } else if (words.length === 1 && words[0].length >= 2) {
+        initials = words[0].slice(0, 2).toUpperCase();
+      }
+      document.getElementById('topbar-badge').textContent = initials;
+
+      const user = getActiveUser();
+      document.getElementById('active-user-label').textContent = `${user.name} (${user.role})`;
+
+      const activeOrdersCount = appState.orders.filter(o => !o.voided && o.kitchenStatus !== 'SELESAI').length;
+      document.getElementById('dapur-badge').textContent = activeOrdersCount;
+    }
+
+    function switchTab(tabName) {
+      const user = getActiveUser();
+      if (tabName === 'laci' && !user.perms.laci) {
+        showToast('Akun ini tidak memiliki akses Laci Kas.');
+        return;
+      }
+      if ((tabName === 'printer' || tabName === 'kelola') && !user.perms.kelola) {
+        showToast('Akun ini tidak memiliki akses Printer & Kelola.');
+        return;
+      }
+
+      document.querySelectorAll('.nav-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tabName);
+      });
+      document.querySelectorAll('.tab-pane').forEach(p => {
+        p.classList.toggle('active', p.id === 'tab-' + tabName);
+      });
+
+      if (tabName === 'kasir') { renderCategoryBar(); renderMenuGrid(); renderCart(); }
+      if (tabName === 'dapur') renderDapurTab();
+      if (tabName === 'laci') renderLaciTab();
+      if (tabName === 'printer') loadPrinterForm();
+      if (tabName === 'kelola') renderKelolaTab();
+    }
+
+    /* ==================== TAB KASIR ==================== */
+    function renderCategoryBar() {
+      const cats = ['Semua', ...new Set(appState.menu.map(m => m.category))];
+      const bar = document.getElementById('category-bar');
+      bar.innerHTML = cats.map(c => `
+        <button class="btn-outline btn-sm ${currentCategory === c ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</button>
+      `).join('');
+    }
+
+    function selectCategory(cat) {
+      currentCategory = cat;
+      renderCategoryBar();
+      renderMenuGrid();
+    }
+
+    function renderMenuGrid() {
+      const q = (document.getElementById('menu-search').value || '').toLowerCase().trim();
+      const filtered = appState.menu.filter(m => {
+        const matchCat = currentCategory === 'Semua' || m.category === currentCategory;
+        const matchQ = !q || m.name.toLowerCase().includes(q) || m.category.toLowerCase().includes(q);
+        return matchCat && matchQ;
+      });
+
+      const grid = document.getElementById('menu-grid');
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="text-muted">Menu tidak ditemukan.</div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(m => `
+        <button class="menu-item-btn" onclick="addToCart('${m.id}')">
+          <div>
+            <div class="menu-item-cat">${m.category}</div>
+            <div class="menu-item-name">${m.name}</div>
+          </div>
+          <div class="menu-item-price">${formatRp(m.price)}</div>
+        </button>
+      `).join('');
+    }
+
+    function addToCart(menuId) {
+      const item = appState.menu.find(m => m.id === menuId);
+      if (!item) return;
+      const existing = cart.find(c => c.menuId === menuId && !c.note);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({
+          uid: 'ci_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          menuId: item.id,
+          name: item.name,
+          price: item.price,
+          hpp: item.hpp || 0,
+          qty: 1,
+          note: ''
+        });
+      }
+      renderCart();
+    }
+
+    function updateCartQty(uid, delta) {
+      const idx = cart.findIndex(c => c.uid === uid);
+      if (idx === -1) return;
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      renderCart();
+    }
+
+    function toggleNoteChip(uid, tag) {
+      const row = cart.find(c => c.uid === uid);
+      if (!row) return;
+      const parts = row.note ? row.note.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const i = parts.indexOf(tag);
+      if (i >= 0) parts.splice(i, 1);
+      else parts.push(tag);
+      row.note = parts.join(', ');
+      renderCart();
+    }
+
+    function updateCartCustomNote(uid, val) {
+      const row = cart.find(c => c.uid === uid);
+      if (row) row.note = val;
+    }
+
+    function setOrderType(type) {
+      orderType = type;
+      document.getElementById('btn-dinein').classList.toggle('active', type === 'DINE IN');
+      document.getElementById('btn-takeaway').classList.toggle('active', type === 'TAKE AWAY');
+    }
+
+    function setPayMethod(method) {
+      payMethod = method;
+      document.getElementById('pay-method-cash').classList.toggle('active', method === 'TUNAI');
+      document.getElementById('pay-method-qris').classList.toggle('active', method === 'QRIS');
+      document.getElementById('cash-panel').style.display = method === 'TUNAI' ? 'block' : 'none';
+      document.getElementById('qris-panel').style.display = method === 'QRIS' ? 'block' : 'none';
+
+      if (method === 'QRIS') {
+        const box = document.getElementById('qris-cashier-preview');
+        if (appState.profile.qrisDataUrl) {
+          box.innerHTML = `<img src="${appState.profile.qrisDataUrl}" alt="QRIS" style="max-width:220px; border-radius:10px; border:2px solid var(--border);" /><div class="text-muted mt-1">Tunjukkan QRIS ke pelanggan, lalu klik Bayar</div>`;
+        } else {
+          box.innerHTML = `<div class="text-muted">Gambar QRIS belum di-upload. Silakan upload di tab <strong>Kelola</strong>.</div>`;
+        }
+      }
+    }
+
+    function getCartTotals() {
+      const subtotal = cart.reduce((s, c) => s + (c.price * c.qty), 0);
+      const user = getActiveUser();
+      const discInput = document.getElementById('discount-input');
+      if (!user.perms.diskon) {
+        discInput.value = 0;
+        discInput.disabled = true;
+      } else {
+        discInput.disabled = false;
+      }
+      const discount = Math.min(subtotal, Math.max(0, Number(discInput.value) || 0));
+      const total = Math.max(0, subtotal - discount);
+      return { subtotal, discount, total };
+    }
+
+    function renderCart() {
+      const list = document.getElementById('cart-list');
+      if (cart.length === 0) {
+        list.innerHTML = '<div class="text-muted" style="text-align:center; padding: 24px 0;">Belum ada item dipilih</div>';
+      } else {
+        const quickTags = ['Less Sugar', 'No Sugar', 'Less Ice', 'Extra Shot'];
+        list.innerHTML = cart.map(c => `
+          <div class="cart-row">
+            <div class="cart-row-top">
+              <div>
+                <div style="font-weight:800; font-size:16.5px;">${c.name}</div>
+                <div class="text-muted">${formatRp(c.price)} x ${c.qty} = <strong>${formatRp(c.price * c.qty)}</strong></div>
+              </div>
+              <div class="cart-qty-ctrl">
+                <button class="qty-btn" onclick="updateCartQty('${c.uid}', -1)">-</button>
+                <span style="font-weight:800; font-size:18px; min-width:24px; text-align:center;">${c.qty}</span>
+                <button class="qty-btn" onclick="updateCartQty('${c.uid}', 1)">+</button>
+              </div>
+            </div>
+            <div class="note-chips">
+              ${quickTags.map(t => `<button type="button" class="chip ${c.note.includes(t) ? 'selected' : ''}" onclick="toggleNoteChip('${c.uid}', '${t}')">${t}</button>`).join('')}
+            </div>
+            <input type="text" class="mt-1" style="min-height:38px; padding:6px 10px; font-size:15px;" placeholder="Catatan item..." value="${c.note.replace(/"/g, '&quot;')}" oninput="updateCartCustomNote('${c.uid}', this.value)" />
+          </div>
+        `).join('');
+      }
+
+      const { subtotal, discount, total } = getCartTotals();
+      document.getElementById('summary-subtotal').textContent = formatRp(subtotal);
+      document.getElementById('summary-discount').textContent = formatRp(discount);
+      document.getElementById('summary-total').textContent = formatRp(total);
+      updateChangeDisplay();
+    }
+
+    function setExactCash() {
+      const { total } = getCartTotals();
+      document.getElementById('cash-received').value = total;
+      updateChangeDisplay();
+    }
+
+    function addCashNominal(amount) {
+      const cur = Number(document.getElementById('cash-received').value) || 0;
+      document.getElementById('cash-received').value = cur + amount;
+      updateChangeDisplay();
+    }
+
+    function updateChangeDisplay() {
+      const { total } = getCartTotals();
+      const received = Number(document.getElementById('cash-received').value) || 0;
+      const change = Math.max(0, received - total);
+      document.getElementById('cash-change-label').textContent = formatRp(change);
+    }
+
+    function clearCart() {
+      cart = [];
+      document.getElementById('customer-name').value = '';
+      document.getElementById('discount-input').value = 0;
+      document.getElementById('cash-received').value = '';
+      renderCart();
+    }
+
+    function generateOrderNumber() {
+      const today = getTodayStr();
+      const compactDate = today.replace(/-/g, '');
+      const nextSeq = (appState.orderCounterByDate[today] || 0) + 1;
+      appState.orderCounterByDate[today] = nextSeq;
+
+      const shop = (appState.profile.shopName || 'A POS').trim();
+      let prefix = 'POS';
+      if (shop.toUpperCase() !== 'A POS') {
+        const letters = shop.replace(/[^A-Za-z]/g, '').toUpperCase();
+        if (letters.length >= 2) prefix = letters.slice(0, 3);
+      }
+      const dev = (appState.deviceCode || 'TAB1').toUpperCase();
+      return `${prefix}-${dev}-${compactDate}-${String(nextSeq).padStart(4, '0')}`;
+    }
+
+    function processCheckout() {
+      if (cart.length === 0) {
+        showToast('Pilih minimal 1 menu terlebih dahulu.');
+        return;
+      }
+      const { subtotal, discount, total } = getCartTotals();
+      let cashReceived = total;
+      let change = 0;
+
+      if (payMethod === 'TUNAI') {
+        cashReceived = Number(document.getElementById('cash-received').value) || 0;
+        if (cashReceived < total) {
+          showToast('Uang tunai yang diterima kurang dari Grand Total.');
+          return;
+        }
+        change = cashReceived - total;
+      }
+
+      const user = getActiveUser();
+      const now = Date.now();
+      const orderObj = {
+        id: 'ord_' + now + '_' + Math.random().toString(36).slice(2, 6),
+        orderNumber: generateOrderNumber(),
+        dateStr: getTodayStr(),
+        createdAt: now,
+        updatedAt: now,
+        orderType,
+        customerName: (document.getElementById('customer-name').value || '').trim(),
+        cashierName: user.name,
+        payMethod,
+        items: JSON.parse(JSON.stringify(cart)),
+        subtotal,
+        discount,
+        total,
+        cashReceived,
+        change,
+        kitchenStatus: 'PROSES',
+        voided: false
+      };
+
+      appState.orders.unshift(orderObj);
+      saveState();
+      updateHeaderUI();
+
+      // Auto cetak struk dapur saat pembayaran berhasil
+      printReceiptOrder(orderObj, 'KITCHEN');
+
+      lastCompletedOrder = orderObj;
+      document.getElementById('post-pay-info').textContent =
+        `${orderObj.orderNumber} • Total ${formatRp(total)}${payMethod === 'TUNAI' ? ' • Kembalian ' + formatRp(change) : ' (QRIS)'}`;
+      document.getElementById('post-pay-modal').classList.add('open');
+
+      clearCart();
+      triggerBackgroundSync();
+    }
+
+    function printLastCustomerReceipt() {
+      if (lastCompletedOrder) {
+        printReceiptOrder(lastCompletedOrder, 'CUSTOMER');
+      }
+      closePostPayModal();
+    }
+
+    function closePostPayModal() {
+      document.getElementById('post-pay-modal').classList.remove('open');
+    }
+
+    /* ==================== TAB DAPUR ==================== */
+    function renderDapurTab() {
+      const container = document.getElementById('dapur-list');
+      const activeList = appState.orders.filter(o => !o.voided && o.kitchenStatus !== 'SELESAI');
+      if (activeList.length === 0) {
+        container.innerHTML = '<div class="text-muted">Tidak ada antrean pesanan aktif.</div>';
+        return;
+      }
+
+      container.innerHTML = activeList.map(o => {
+        const timeStr = new Date(o.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="card" style="border-left: 6px solid var(--accent); margin-bottom:0;">
+            <div class="flex-between">
+              <strong style="font-size:18px;">${o.orderNumber}</strong>
+              <span class="badge-count">${o.orderType}</span>
+            </div>
+            <div class="text-muted mt-1">
+              Jam: ${timeStr} • Kasir: ${o.cashierName} ${o.customerName ? '• Pelanggan: <strong>' + o.customerName + '</strong>' : ''}
+            </div>
+            <div style="margin: 10px 0; border-top:1px dashed var(--border); padding-top:8px;">
+              ${o.items.map(it => `
+                <div style="margin-bottom:6px; font-size:17px;">
+                  <strong>${it.qty}x ${it.name}</strong>
+                  ${it.note ? `<div style="color:var(--danger); font-weight:700; font-size:15.5px;">Catatan: ${it.note}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex-gap mt-2">
+              <button class="btn-success btn-sm" onclick="markKitchenDone('${o.id}')">Tandai Selesai</button>
+              <button class="btn-outline btn-sm" onclick="reprintOrder('${o.id}', 'KITCHEN')">Cetak Dapur</button>
+              <button class="btn-danger btn-sm" onclick="openVoidOrderModal('${o.id}')">Void</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function markKitchenDone(orderId) {
+      const ord = appState.orders.find(o => o.id === orderId);
+      if (!ord) return;
+      ord.kitchenStatus = 'SELESAI';
+      ord.updatedAt = Date.now();
+      saveState();
+      updateHeaderUI();
+      renderDapurTab();
+      triggerBackgroundSync();
+      showToast('Pesanan ditandai selesai.');
+    }
+
+    function reprintOrder(orderId, mode) {
+      const ord = appState.orders.find(o => o.id === orderId);
+      if (ord) printReceiptOrder(ord, mode);
+    }
+
+    /* ==================== TAB LACI KAS & AUDIT ==================== */
+    function setLaciToday() {
+      document.getElementById('laci-filter-date').value = getTodayStr();
+      renderLaciTab();
+    }
+
+    function setLaciAllDates() {
+      document.getElementById('laci-filter-date').value = '';
+      renderLaciTab();
+    }
+
+    function saveOpeningCash() {
+      const dateKey = document.getElementById('laci-filter-date').value || getTodayStr();
+      const val = Math.max(0, Number(document.getElementById('opening-cash-input').value) || 0);
+      appState.openingCashByDate[dateKey] = val;
+      saveState();
+      renderLaciTab();
+      triggerBackgroundSync();
+      showToast('Modal awal laci kas disimpan.');
+    }
+
+    function getFilteredOrdersForLaci() {
+      const dateFilter = document.getElementById('laci-filter-date').value;
+      return appState.orders.filter(o => !dateFilter || o.dateStr === dateFilter);
+    }
+
+    function renderLaciTab() {
+      const dateFilter = document.getElementById('laci-filter-date').value;
+      const dateKey = dateFilter || getTodayStr();
+      const openingCash = Number(appState.openingCashByDate[dateKey] || 0);
+      document.getElementById('opening-cash-input').value = openingCash;
+
+      const list = getFilteredOrdersForLaci();
+      const validOrders = list.filter(o => !o.voided);
+
+      const netSales = validOrders.reduce((s, o) => s + o.total, 0);
+      const cashSales = validOrders.filter(o => o.payMethod === 'TUNAI').reduce((s, o) => s + o.total, 0);
+      const qrisSales = validOrders.filter(o => o.payMethod === 'QRIS').reduce((s, o) => s + o.total, 0);
+      const totalHpp = validOrders.reduce((s, o) => {
+        return s + o.items.reduce((is, it) => is + ((it.hpp || 0) * it.qty), 0);
+      }, 0);
+      const grossProfit = netSales - totalHpp;
+
+      document.getElementById('stat-net-sales').textContent = formatRp(netSales);
+      document.getElementById('stat-cash-sales').textContent = formatRp(cashSales);
+      document.getElementById('stat-qris-sales').textContent = formatRp(qrisSales);
+      document.getElementById('stat-drawer-est').textContent = formatRp(openingCash + cashSales);
+      document.getElementById('stat-gross-profit').textContent = formatRp(grossProfit);
+
+      const tbody = document.getElementById('tx-history-tbody');
+      tbody.innerHTML = list.map(o => {
+        const dt = new Date(o.createdAt).toLocaleString('id-ID', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+        return `
+          <tr style="${o.voided ? 'opacity:0.55; background:var(--danger-bg);' : ''}">
+            <td><strong>${o.orderNumber}</strong></td>
+            <td>${dt}</td>
+            <td>${o.orderType}</td>
+            <td>${o.cashierName}</td>
+            <td>${o.payMethod}</td>
+            <td><strong>${formatRp(o.total)}</strong></td>
+            <td>${o.voided ? '<span style="color:var(--danger);font-weight:800;">VOID</span>' : o.kitchenStatus}</td>
+            <td>
+              <div class="flex-gap">
+                <button class="btn-outline btn-sm" onclick="reprintOrder('${o.id}', 'CUSTOMER')">Struk</button>
+                ${!o.voided ? `<button class="btn-danger btn-sm" onclick="openVoidOrderModal('${o.id}')">Void</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="8" class="text-muted">Belum ada transaksi.</td></tr>';
+
+      const voidBody = document.getElementById('void-log-tbody');
+      voidBody.innerHTML = appState.voidLogs.map(v => `
+        <tr>
+          <td>${new Date(v.voidedAt).toLocaleString('id-ID')}</td>
+          <td><strong>${v.orderNumber}</strong></td>
+          <td>${formatRp(v.total)}</td>
+          <td>${v.cashierName}</td>
+          <td>${v.authorizedBy}</td>
+          <td>${v.reason}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="text-muted">Belum ada riwayat pembatalan (void).</td></tr>';
+    }
+
+    function exportLaciCSV() {
+      const list = getFilteredOrdersForLaci();
+      const rows = [['No Order', 'Tanggal', 'Tipe', 'Kasir', 'Metode', 'Subtotal', 'Diskon', 'Total', 'Status']];
+      list.forEach(o => {
+        rows.push([
+          o.orderNumber,
+          new Date(o.createdAt).toISOString(),
+          o.orderType,
+          o.cashierName,
+          o.payMethod,
+          o.subtotal,
+          o.discount,
+          o.total,
+          o.voided ? 'VOID' : o.kitchenStatus
+        ]);
+      });
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Laporan-APOS-${getTodayStr()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ==================== TAB PRINTER THERMAL & UKURAN FONT ADJUSTABLE ==================== */
+    function applyIsolatedReceiptCss() {
+      const p = appState.profile;
+      const fontSize = Number(p.receiptPreviewFontSize) || 10;
+      const is80mm = p.paperSize === '80mm';
+      document.documentElement.style.setProperty('--receipt-font-size', fontSize + 'px');
+      document.documentElement.style.setProperty('--receipt-paper-width', is80mm ? '340px' : '255px');
+    }
+
+    function loadPrinterForm() {
+      const p = appState.profile;
+      document.getElementById('print-method-select').value = p.printMethod || 'bluetooth';
+      document.getElementById('paper-size-select').value = p.paperSize || '58mm';
+      document.getElementById('receipt-font-mode').value = p.receiptFontMode || 'FONT_B';
+      document.getElementById('receipt-preview-slider').value = p.receiptPreviewFontSize || 10;
+      document.getElementById('receipt-preview-size-val').textContent = p.receiptPreviewFontSize || 10;
+
+      document.getElementById('logo-enabled').checked = !!p.logoEnabled;
+      document.getElementById('logo-width-range').value = p.logoWidth || 180;
+      document.getElementById('logo-width-val').textContent = p.logoWidth || 180;
+      document.getElementById('logo-thresh-range').value = p.logoThreshold || 128;
+      document.getElementById('logo-thresh-val').textContent = p.logoThreshold || 128;
+      document.getElementById('logo-file-name').textContent = p.logoDataUrl ? 'Logo tersimpan' : 'Belum ada file dipilih';
+
+      document.getElementById('char-width-input').value = p.charWidth || 42;
+      document.getElementById('left-margin-input').value = p.leftMargin || 0;
+      document.getElementById('feed-lines-input').value = p.feedLines || 3;
+      document.getElementById('shop-name-input').value = p.shopName || 'A POS';
+      document.getElementById('branch-name-input').value = p.branchName || 'Cabang Utama';
+      document.getElementById('shop-address-input').value = p.address || '';
+      document.getElementById('shop-social-input').value = p.social || '';
+      document.getElementById('footer-1-input').value = p.footer1 || '';
+      document.getElementById('footer-2-input').value = p.footer2 || '';
+
+      renderReceiptPreview();
+    }
+
+    function onPrinterPresetChange() {
+      const paper = document.getElementById('paper-size-select').value;
+      const fontMode = document.getElementById('receipt-font-mode').value;
+      const charInput = document.getElementById('char-width-input');
+      const slider = document.getElementById('receipt-preview-slider');
+
+      if (paper === '58mm') {
+        charInput.value = (fontMode === 'FONT_B') ? 42 : 32;
+      } else {
+        charInput.value = (fontMode === 'FONT_B') ? 56 : 48;
+      }
+
+      if (fontMode === 'FONT_B') {
+        slider.value = 10;
+      } else if (fontMode === 'FONT_A') {
+        slider.value = 11.5;
+      } else {
+        slider.value = 13.5;
+      }
+      document.getElementById('receipt-preview-size-val').textContent = slider.value;
+      savePrinterProfile();
+    }
+
+    function onPreviewFontSlider() {
+      const val = document.getElementById('receipt-preview-slider').value;
+      document.getElementById('receipt-preview-size-val').textContent = val;
+      savePrinterProfile();
+    }
+
+    function setQuickPreviewFont(px) {
+      document.getElementById('receipt-preview-slider').value = px;
+      document.getElementById('receipt-preview-size-val').textContent = px;
+      savePrinterProfile();
+    }
+
+    function onLogoSliderChange() {
+      document.getElementById('logo-width-val').textContent = document.getElementById('logo-width-range').value;
+      document.getElementById('logo-thresh-val').textContent = document.getElementById('logo-thresh-range').value;
+      savePrinterProfile();
+    }
+
+    function savePrinterProfile() {
+      const p = appState.profile;
+      p.printMethod = document.getElementById('print-method-select').value;
+      p.paperSize = document.getElementById('paper-size-select').value;
+      p.receiptFontMode = document.getElementById('receipt-font-mode').value;
+      p.receiptPreviewFontSize = Number(document.getElementById('receipt-preview-slider').value) || 10;
+
+      p.logoEnabled = document.getElementById('logo-enabled').checked;
+      p.logoWidth = Number(document.getElementById('logo-width-range').value) || 180;
+      p.logoThreshold = Number(document.getElementById('logo-thresh-range').value) || 128;
+      p.charWidth = Math.min(64, Math.max(24, Number(document.getElementById('char-width-input').value) || 42));
+      p.leftMargin = Math.min(10, Math.max(0, Number(document.getElementById('left-margin-input').value) || 0));
+      p.feedLines = Math.min(8, Math.max(1, Number(document.getElementById('feed-lines-input').value) || 3));
+      p.shopName = document.getElementById('shop-name-input').value;
+      p.branchName = document.getElementById('branch-name-input').value;
+      p.address = document.getElementById('shop-address-input').value;
+      p.social = document.getElementById('shop-social-input').value;
+      p.footer1 = document.getElementById('footer-1-input').value;
+      p.footer2 = document.getElementById('footer-2-input').value;
+      p.updatedAt = Date.now();
+
+      applyIsolatedReceiptCss();
+      saveState();
+      updateHeaderUI();
+      renderReceiptPreview();
+      triggerBackgroundSync();
+    }
+
+    // KOMPRESI & RESIZE GAMBAR OTOMATIS AGAR UPLOAD DI ANDROID WEBVIEW SELALU SUKSES
+    function compressImageFile(file, maxWidth, quality, asPng) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Gagal membaca file gambar'));
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('Format gambar tidak valid'));
+          img.onload = () => {
+            const scale = img.width > maxWidth ? (maxWidth / img.width) : 1;
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = asPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality);
+            resolve(dataUrl);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleLogoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageFile(file, 384, 0.9, true);
+        appState.profile.logoDataUrl = dataUrl;
+        appState.profile.logoEnabled = true;
+        appState.profile.updatedAt = Date.now();
+        document.getElementById('logo-enabled').checked = true;
+        document.getElementById('logo-file-name').textContent = file.name;
+        saveState();
+        renderReceiptPreview();
+        triggerBackgroundSync();
+        showToast('Logo berhasil diunggah & dikonversi!');
+      } catch (err) {
+        showToast('Gagal memproses foto logo: ' + err.message);
+      }
+    }
+
+    function removeLogo() {
+      appState.profile.logoDataUrl = '';
+      appState.profile.updatedAt = Date.now();
+      document.getElementById('logo-file-name').textContent = 'Belum ada file dipilih';
+      saveState();
+      renderReceiptPreview();
+      triggerBackgroundSync();
+      showToast('Logo dihapus.');
+    }
+
+    function renderMonochromeLogoToCanvas(canvas, dataUrl, targetWidth, threshold) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const w = Math.min(384, Math.max(64, targetWidth));
+          const h = Math.max(1, Math.round((img.height / img.width) * w));
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const data = imgData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const bw = lum < threshold ? 0 : 255;
+            data[i] = data[i + 1] = data[i + 2] = bw;
+            data[i + 3] = 255;
+          }
+          ctx.putImageData(imgData, 0, 0);
+          resolve(imgData);
+        };
+        img.src = dataUrl;
+      });
+    }
+
+    function buildSampleOrder() {
+      return {
+        orderNumber: 'POS-TAB1-20261124-0001',
+        createdAt: Date.now(),
+        orderType: 'DINE IN',
+        customerName: 'Meja 3',
+        cashierName: getActiveUser().name,
+        payMethod: 'TUNAI',
+        items: [
+          { name: 'Es Kopi Susu Gula Aren', qty: 2, price: 18000, note: 'Less Ice' },
+          { name: 'Croissant Butter', qty: 1, price: 16000, note: '' }
+        ],
+        subtotal: 52000,
+        discount: 0,
+        total: 52000,
+        cashReceived: 100000,
+        change: 48000
+      };
+    }
+
+    function formatReceiptLines(order, mode) {
+      const p = appState.profile;
+      const cols = p.charWidth || 42;
+      const margin = ' '.repeat(p.leftMargin || 0);
+      const sep = '-'.repeat(cols);
+
+      const center = (txt) => {
+        const s = String(txt || '').slice(0, cols);
+        const pad = Math.max(0, Math.floor((cols - s.length) / 2));
+        return margin + ' '.repeat(pad) + s;
+      };
+      const rowLR = (left, right) => {
+        const l = String(left);
+        const r = String(right);
+        const space = Math.max(1, cols - l.length - r.length);
+        return margin + l + ' '.repeat(space) + r;
+      };
+
+      const lines = [];
+      if (mode === 'KITCHEN') {
+        lines.push(center('*** STRUK DAPUR ***'));
+        lines.push(margin + sep);
+        lines.push(margin + `No Order : ${order.orderNumber}`);
+        lines.push(margin + `Tipe     : ${order.orderType}`);
+        if (order.customerName) lines.push(margin + `Pelanggan: ${order.customerName}`);
+        lines.push(margin + `Waktu    : ${new Date(order.createdAt).toLocaleTimeString('id-ID')}`);
+        lines.push(margin + sep);
+        order.items.forEach(it => {
+          lines.push(margin + `${it.qty}x ${it.name}`);
+          if (it.note) lines.push(margin + `   >> ${it.note}`);
+        });
+        lines.push(margin + sep);
+        return lines.join('\n');
+      }
+
+      if (p.shopName) lines.push(center(p.shopName.toUpperCase()));
+      if (p.branchName) lines.push(center(p.branchName));
+      if (p.address) lines.push(center(p.address));
+      if (p.social) lines.push(center(p.social));
+      lines.push(margin + sep);
+      lines.push(margin + `No Order : ${order.orderNumber}`);
+      lines.push(margin + `Tanggal  : ${new Date(order.createdAt).toLocaleString('id-ID')}`);
+      lines.push(margin + `Kasir    : ${order.cashierName}`);
+      lines.push(margin + `Tipe     : ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`);
+      lines.push(margin + sep);
+
+      order.items.forEach(it => {
+        lines.push(margin + it.name);
+        lines.push(rowLR(`${it.qty}x ${formatRp(it.price)}`, formatRp(it.qty * it.price)));
+        if (it.note) lines.push(margin + `  (${it.note})`);
+      });
+
+      lines.push(margin + sep);
+      lines.push(rowLR('Subtotal', formatRp(order.subtotal)));
+      if (order.discount > 0) lines.push(rowLR('Diskon', '-' + formatRp(order.discount)));
+      lines.push(rowLR('GRAND TOTAL', formatRp(order.total)));
+      lines.push(rowLR('Metode', order.payMethod));
+      if (order.payMethod === 'TUNAI') {
+        lines.push(rowLR('Tunai', formatRp(order.cashReceived)));
+        lines.push(rowLR('Kembalian', formatRp(order.change)));
+      }
+      lines.push(margin + sep);
+      if (p.footer1) lines.push(center(p.footer1));
+      if (p.footer2) lines.push(center(p.footer2));
+      return lines.join('\n');
+    }
+
+    async function renderReceiptPreview(orderOverride, modeOverride) {
+      const p = appState.profile;
+      const cols = p.charWidth || 42;
+      const fontSize = p.receiptPreviewFontSize || 10;
+      const paper = p.paperSize || '58mm';
+
+      document.getElementById('preview-cols-badge').textContent = `${paper} • ${cols} kolom • ${fontSize}px`;
+      applyIsolatedReceiptCss();
+
+      const logoWrap = document.getElementById('receipt-logo-preview-wrap');
+      const logoCanvas = document.getElementById('receipt-logo-canvas');
+      const isKitchen = modeOverride === 'KITCHEN';
+
+      if (!isKitchen && p.logoEnabled && p.logoDataUrl) {
+        logoWrap.style.display = 'block';
+        await renderMonochromeLogoToCanvas(logoCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128);
+      } else {
+        logoWrap.style.display = 'none';
+      }
+
+      const targetOrder = orderOverride || buildSampleOrder();
+      const targetMode = modeOverride || 'CUSTOMER';
+      document.getElementById('receipt-text-preview').textContent = formatReceiptLines(targetOrder, targetMode);
+    }
+
+    /* ==================== BLUETOOTH ESC/POS & SYSTEM PRINT ==================== */
+    function scanBluetoothPrinters() {
+      const listDiv = document.getElementById('paired-devices-list');
+      if (window.AndroidPrinter && typeof window.AndroidPrinter.getPairedDevices === 'function') {
+        try {
+          const raw = window.AndroidPrinter.getPairedDevices();
+          const devices = JSON.parse(raw || '[]');
+          if (devices.length === 0) {
+            listDiv.innerHTML = '<div class="text-muted">Tidak ada perangkat Bluetooth paired ditemukan.</div>';
+            return;
+          }
+          listDiv.innerHTML = devices.map(d => `
+            <div class="flex-between" style="padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px;">
+              <div>
+                <strong>${d.name || 'Printer Bluetooth'}</strong>
+                <div class="text-muted">MAC: ${d.address}</div>
+              </div>
+              <button class="btn-primary btn-sm" onclick="connectBluetoothPrinter('${d.address}', '${(d.name || 'Printer').replace(/'/g, '')}')">Pilih</button>
+            </div>
+          `).join('');
+        } catch (e) {
+          showToast('Gagal membaca perangkat Bluetooth: ' + e.message);
+        }
+      } else {
+        listDiv.innerHTML = '<div class="text-muted">Bridge AndroidPrinter tidak terdeteksi (gunakan APK Android untuk Bluetooth langsung, atau pilih System Print / Browser).</div>';
+      }
+    }
+
+    function connectBluetoothPrinter(mac, name) {
+      if (window.AndroidPrinter && typeof window.AndroidPrinter.connect === 'function') {
+        const ok = window.AndroidPrinter.connect(mac);
+        if (ok) {
+          connectedPrinterMac = mac;
+          document.getElementById('printer-conn-status').textContent = `Terhubung: ${name} (${mac})`;
+          showToast(`Terhubung ke ${name}`);
+        } else {
+          showToast('Gagal menghubungkan ke printer.');
+        }
+      }
+    }
+
+    function getEscPosFontBytes() {
+      const mode = appState.profile.receiptFontMode || 'FONT_B';
+      if (mode === 'FONT_A') {
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00]; // Font A Standar
+      } else if (mode === 'FONT_A_TALL') {
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01]; // Font A Tinggi 2x
+      }
+      return [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];   // Font B Kecil & Rapat (Ideal 58mm)
+    }
+
+    async function buildEscPosRasterLogoBytes() {
+      const p = appState.profile;
+      if (!p.logoEnabled || !p.logoDataUrl) return [];
+      const tempCanvas = document.createElement('canvas');
+      const imgData = await renderMonochromeLogoToCanvas(tempCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128);
+      const w = imgData.width;
+      const h = imgData.height;
+      const bytesPerRow = Math.ceil(w / 8);
+
+      const bytes = [0x1B, 0x61, 0x01, 0x1D, 0x76, 0x30, 0x00, bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF];
+      for (let y = 0; y < h; y++) {
+        for (let bx = 0; bx < bytesPerRow; bx++) {
+          let b = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const x = bx * 8 + bit;
+            if (x < w) {
+              const idx = (y * w + x) * 4;
+              if (imgData.data[idx] < 128) b |= (0x80 >> bit);
+            }
+          }
+          bytes.push(b);
+        }
+      }
+      bytes.push(0x0A, 0x1B, 0x61, 0x00);
+      return bytes;
+    }
+
+    async function printReceiptOrder(order, mode) {
+      await renderReceiptPreview(order, mode);
+      const method = appState.profile.printMethod || 'bluetooth';
+
+      if (method === 'system' || !(window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function')) {
+        if (method === 'system') {
+          window.print();
+          return;
+        }
+      }
+
+      const text = formatReceiptLines(order, mode) + '\n'.repeat(appState.profile.feedLines || 3);
+      if (window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function') {
+        try {
+          const initBytes = [0x1B, 0x40];
+          const fontBytes = getEscPosFontBytes();
+          const logoBytes = mode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
+          const encoder = new TextEncoder();
+          const textBytes = Array.from(encoder.encode(text));
+          const allBytes = new Uint8Array([...initBytes, ...fontBytes, ...logoBytes, ...textBytes]);
+          let bin = '';
+          allBytes.forEach(b => bin += String.fromCharCode(b));
+          window.AndroidPrinter.printRawBase64(btoa(bin));
+          showToast(mode === 'KITCHEN' ? 'Struk dapur dicetak.' : 'Struk pelanggan dicetak.');
+        } catch (e) {
+          showToast('Error cetak printer: ' + e.message);
+        }
+      } else {
+        showToast(mode === 'KITCHEN' ? 'Pratinjau Struk Dapur siap.' : 'Pratinjau Struk Pelanggan siap.');
+      }
+    }
+
+    function testPrintCustomer() { printReceiptOrder(buildSampleOrder(), 'CUSTOMER'); }
+    function testPrintKitchen() { printReceiptOrder(buildSampleOrder(), 'KITCHEN'); }
+
+    function printCashSummary() {
+      const dateFilter = document.getElementById('laci-filter-date').value || getTodayStr();
+      const opening = Number(appState.openingCashByDate[dateFilter] || 0);
+      const validOrders = getFilteredOrdersForLaci().filter(o => !o.voided);
+      const net = validOrders.reduce((s, o) => s + o.total, 0);
+      const cash = validOrders.filter(o => o.payMethod === 'TUNAI').reduce((s, o) => s + o.total, 0);
+      const qris = validOrders.filter(o => o.payMethod === 'QRIS').reduce((s, o) => s + o.total, 0);
+
+      const cols = appState.profile.charWidth || 42;
+      const sep = '-'.repeat(cols);
+      const summaryText = [
+        (appState.profile.shopName || 'A POS').toUpperCase(),
+        'REKAP LACI KAS',
+        sep,
+        `Tanggal   : ${dateFilter}`,
+        `Kasir     : ${getActiveUser().name}`,
+        sep,
+        `Modal Awal: ${formatRp(opening)}`,
+        `Tunai     : ${formatRp(cash)}`,
+        `QRIS      : ${formatRp(qris)}`,
+        `Omzet     : ${formatRp(net)}`,
+        `Est. Laci : ${formatRp(opening + cash)}`,
+        sep
+      ].join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
+
+      if (window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function') {
+        const bytes = new Uint8Array([0x1B, 0x40, ...getEscPosFontBytes(), ...Array.from(new TextEncoder().encode(summaryText))]);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        window.AndroidPrinter.printRawBase64(btoa(bin));
+        showToast('Rekap kas dicetak.');
+      } else {
+        document.getElementById('receipt-logo-preview-wrap').style.display = 'none';
+        document.getElementById('receipt-text-preview').textContent = summaryText;
+        window.print();
+      }
+    }
+
+    /* ==================== TAB KELOLA (QRIS, MENU, USER, BACKUP) ==================== */
+    function renderKelolaTab() {
+      document.getElementById('device-code-input').value = appState.deviceCode || 'TAB1';
+      document.getElementById('lock-on-start-chk').checked = !!appState.lockOnStart;
+
+      const qrisDiv = document.getElementById('qris-manage-preview');
+      if (appState.profile.qrisDataUrl) {
+        qrisDiv.innerHTML = `<img src="${appState.profile.qrisDataUrl}" alt="QRIS" style="max-width:220px; border-radius:10px; border:2px solid var(--border);" />`;
+      } else {
+        qrisDiv.innerHTML = '<div class="text-muted">Belum ada gambar QRIS tersimpan.</div>';
+      }
+
+      const menuBody = document.getElementById('manage-menu-tbody');
+      menuBody.innerHTML = appState.menu.map(m => {
+        const margin = (m.price || 0) - (m.hpp || 0);
+        const pct = m.price > 0 ? Math.round((margin / m.price) * 100) : 0;
+        return `
+          <tr>
+            <td><strong>${m.name}</strong></td>
+            <td>${m.category}</td>
+            <td>${formatRp(m.price)}</td>
+            <td>${formatRp(m.hpp || 0)}</td>
+            <td>${formatRp(margin)} (${pct}%)</td>
+            <td><button class="btn-danger btn-sm" onclick="deleteMenuItem('${m.id}')">Hapus</button></td>
+          </tr>
+        `;
+      }).join('');
+
+      const userBody = document.getElementById('manage-users-tbody');
+      userBody.innerHTML = appState.users.map(u => {
+        const activePerms = Object.entries(u.perms || {}).filter(([, v]) => v).map(([k]) => k.toUpperCase()).join(', ');
+        return `
+          <tr>
+            <td><strong>${u.name}</strong></td>
+            <td>${u.role}</td>
+            <td>••••</td>
+            <td>${activePerms}</td>
+            <td>${u.id !== 'u_owner' ? `<button class="btn-danger btn-sm" onclick="deleteUserAccount('${u.id}')">Hapus</button>` : '<span class="text-muted">Default</span>'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handleQrisUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageFile(file, 480, 0.85, false);
+        appState.profile.qrisDataUrl = dataUrl;
+        appState.profile.updatedAt = Date.now();
+        saveState();
+        renderKelolaTab();
+        triggerBackgroundSync();
+        showToast('Gambar QRIS berhasil disimpan & siap disinkron!');
+      } catch (err) {
+        showToast('Gagal upload QRIS: ' + err.message);
+      }
+    }
+
+    function removeQris() {
+      appState.profile.qrisDataUrl = '';
+      appState.profile.updatedAt = Date.now();
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      showToast('Gambar QRIS dihapus.');
+    }
+
+    function addMenuItem() {
+      const name = (document.getElementById('new-menu-name').value || '').trim();
+      const category = document.getElementById('new-menu-cat').value;
+      const price = Math.max(0, Number(document.getElementById('new-menu-price').value) || 0);
+      const hpp = Math.max(0, Number(document.getElementById('new-menu-hpp').value) || 0);
+      if (!name || price <= 0) {
+        showToast('Isi nama menu dan harga jual yang valid.');
+        return;
+      }
+      appState.menu.push({
+        id: 'm_' + Date.now(),
+        name,
+        category,
+        price,
+        hpp,
+        updatedAt: Date.now()
+      });
+      document.getElementById('new-menu-name').value = '';
+      document.getElementById('new-menu-price').value = '';
+      document.getElementById('new-menu-hpp').value = '';
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      showToast('Menu ditambahkan.');
+    }
+
+    function deleteMenuItem(id) {
+      appState.menu = appState.menu.filter(m => m.id !== id);
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      showToast('Menu dihapus.');
+    }
+
+    function addUserAccount() {
+      const name = (document.getElementById('new-user-name').value || '').trim();
+      const role = document.getElementById('new-user-role').value;
+      const pin = (document.getElementById('new-user-pin').value || '').trim();
+      if (!name || pin.length < 4) {
+        showToast('Isi nama staf dan PIN minimal 4 digit.');
+        return;
+      }
+      appState.users.push({
+        id: 'u_' + Date.now(),
+        name,
+        role,
+        pin,
+        perms: {
+          kasir: document.getElementById('perm-kasir').checked,
+          dapur: document.getElementById('perm-dapur').checked,
+          diskon: document.getElementById('perm-diskon').checked,
+          laci: document.getElementById('perm-laci').checked,
+          kelola: document.getElementById('perm-kelola').checked
+        },
+        updatedAt: Date.now()
+      });
+      document.getElementById('new-user-name').value = '';
+      document.getElementById('new-user-pin').value = '';
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      showToast('Akun staf ditambahkan.');
+    }
+
+    function deleteUserAccount(id) {
+      appState.users = appState.users.filter(u => u.id !== id);
+      saveState();
+      renderKelolaTab();
+      triggerBackgroundSync();
+      showToast('Akun staf dihapus.');
+    }
+
+    function toggleLockOnStart() {
+      appState.lockOnStart = document.getElementById('lock-on-start-chk').checked;
+      saveState();
+      showToast('Pengaturan kunci layar awal disimpan.');
+    }
+
+    function saveDeviceCode() {
+      const code = (document.getElementById('device-code-input').value || 'TAB1').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      appState.deviceCode = code || 'TAB1';
+      document.getElementById('device-code-input').value = appState.deviceCode;
+      saveState();
+      showToast('Kode perangkat disimpan: ' + appState.deviceCode);
+    }
+
+    function exportBackupJSON() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `APOS-Backup-${getTodayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function handleRestoreJSON(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (!parsed.menu || !parsed.users) throw new Error('Struktur file backup tidak valid');
+          appState = { ...appState, ...parsed };
+          saveState();
+          updateHeaderUI();
+          renderKelolaTab();
+          showToast('Backup berhasil dipulihkan!');
+        } catch (err) {
+          showToast('Gagal restore backup: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* ==================== MODAL PIN (GANTI AKUN / VOID / RESET) ==================== */
+    function openSwitchUserModal(isStartupLock = false) {
+      pinModalContext = { mode: isStartupLock ? 'unlock' : 'switch' };
+      pinBuffer = '';
+      document.getElementById('pin-dots-display').textContent = '';
+      document.getElementById('pin-modal-title').textContent = isStartupLock ? 'Kunci Layar A POS' : 'Ganti Akun Pengguna';
+      document.getElementById('pin-modal-desc').textContent = 'Pilih akun lalu masukkan PIN';
+      document.getElementById('user-select-wrap').style.display = 'block';
+      document.getElementById('void-reason-wrap').style.display = 'none';
+      document.getElementById('pin-cancel-btn').style.display = isStartupLock ? 'none' : 'inline-flex';
+
+      const sel = document.getElementById('switch-user-select');
+      sel.innerHTML = appState.users.map(u => `<option value="${u.id}" ${u.id === appState.activeUserId ? 'selected' : ''}>${u.name} (${u.role})</option>`).join('');
+      document.getElementById('pin-modal').classList.add('open');
+    }
+
+    function openVoidOrderModal(orderId) {
+      pinModalContext = { mode: 'void', targetOrderId: orderId };
+      pinBuffer = '';
+      document.getElementById('pin-dots-display').textContent = '';
+      document.getElementById('pin-modal-title').textContent = 'Otorisasi Void (PIN Owner)';
+      document.getElementById('pin-modal-desc').textContent = 'Masukkan PIN Owner dan alasan pembatalan pesanan';
+      document.getElementById('user-select-wrap').style.display = 'none';
+      document.getElementById('void-reason-wrap').style.display = 'block';
+      document.getElementById('void-reason-input').value = '';
+      document.getElementById('pin-cancel-btn').style.display = 'inline-flex';
+      document.getElementById('pin-modal').classList.add('open');
+    }
+
+    function resetTransactionsWithPin() {
+      pinModalContext = { mode: 'reset' };
+      pinBuffer = '';
+      document.getElementById('pin-dots-display').textContent = '';
+      document.getElementById('pin-modal-title').textContent = 'Reset Data Transaksi (PIN Owner)';
+      document.getElementById('pin-modal-desc').textContent = 'Masukkan PIN Owner untuk menghapus transaksi dan reset nomor ke #0001';
+      document.getElementById('user-select-wrap').style.display = 'none';
+      document.getElementById('void-reason-wrap').style.display = 'none';
+      document.getElementById('pin-cancel-btn').style.display = 'inline-flex';
+      document.getElementById('pin-modal').classList.add('open');
+    }
+
+    function pressPinKey(digit) {
+      if (pinBuffer.length >= 6) return;
+      pinBuffer += digit;
+      document.getElementById('pin-dots-display').textContent = '•'.repeat(pinBuffer.length);
+    }
+
+    function clearPinInput() {
+      pinBuffer = '';
+      document.getElementById('pin-dots-display').textContent = '';
+    }
+
+    function closePinModal() {
+      document.getElementById('pin-modal').classList.remove('open');
+    }
+
+    function submitPinModal() {
+      if (!pinModalContext) return;
+      if (pinModalContext.mode === 'switch' || pinModalContext.mode === 'unlock') {
+        const chosenId = document.getElementById('switch-user-select').value;
+        const targetUser = appState.users.find(u => u.id === chosenId);
+        if (!targetUser || targetUser.pin !== pinBuffer) {
+          showToast('PIN salah!');
+          clearPinInput();
+          return;
+        }
+        appState.activeUserId = targetUser.id;
+        saveState();
+        updateHeaderUI();
+        switchTab('kasir');
+        closePinModal();
+        showToast(`Masuk sebagai ${targetUser.name}`);
+        return;
+      }
+
+      const ownerAcc = appState.users.find(u => u.role === 'Owner' && u.pin === pinBuffer);
+      if (!ownerAcc) {
+        showToast('PIN Owner tidak valid!');
+        clearPinInput();
+        return;
+      }
+
+      if (pinModalContext.mode === 'void') {
+        const reason = (document.getElementById('void-reason-input').value || '').trim();
+        if (!reason) {
+          showToast('Alasan pembatalan wajib diisi!');
+          return;
+        }
+        const ord = appState.orders.find(o => o.id === pinModalContext.targetOrderId);
+        if (ord && !ord.voided) {
+          ord.voided = true;
+          ord.updatedAt = Date.now();
+          appState.voidLogs.unshift({
+            id: 'void_' + Date.now(),
+            voidedAt: Date.now(),
+            orderNumber: ord.orderNumber,
+            total: ord.total,
+            cashierName: ord.cashierName,
+            authorizedBy: ownerAcc.name,
+            reason
+          });
+          saveState();
+          updateHeaderUI();
+          renderDapurTab();
+          renderLaciTab();
+          triggerBackgroundSync();
+          showToast(`Order ${ord.orderNumber} berhasil di-void.`);
+        }
+        closePinModal();
+      } else if (pinModalContext.mode === 'reset') {
+        appState.orders = [];
+        appState.voidLogs = [];
+        appState.orderCounterByDate = {};
+        appState.openingCashByDate = {};
+        saveState();
+        updateHeaderUI();
+        renderKelolaTab();
+        showToast('Semua transaksi telah direset ke #0001.');
+        closePinModal();
+      }
+    }
+
+    /* ==================== SINKRONISASI CLOUD 2-ARAH (EMAIL OWNER) ==================== */
+    function parseFirebaseConfigInput(rawText) {
+      let cleaned = rawText.trim();
+      // Mendukung paste langsung dari Firebase Console (const firebaseConfig = { ... };)
+      const braceStart = cleaned.indexOf('{');
+      const braceEnd = cleaned.lastIndexOf('}');
+      if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+        cleaned = cleaned.slice(braceStart, braceEnd + 1);
+      }
+      // Ubah unquoted JS keys (apiKey: "...") menjadi valid JSON ("apiKey": "...")
+      cleaned = cleaned.replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":');
+      // Hapus trailing comma sebelum }
+      cleaned = cleaned.replace(/,\s*}/g, '}');
+      return JSON.parse(cleaned);
+    }
+
+    function initFirebaseFromSavedConfig() {
+      const raw = localStorage.getItem(FB_CFG_KEY);
+      if (!raw) return;
+      document.getElementById('firebase-config-textarea').value = raw;
+      try {
+        const cfg = JSON.parse(raw);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(cfg);
+        }
+        fbAuth = firebase.auth();
+        fbDb = firebase.firestore();
+        document.getElementById('fb-init-status').textContent = 'Status SDK: Siap (' + (cfg.projectId || 'OK') + ')';
+
+        fbAuth.onAuthStateChanged((user) => {
+          currentOwnerUser = user;
+          updateCloudAuthUI();
+          if (user) {
+            syncTwoWayNow(false);
+            clearInterval(syncIntervalId);
+            syncIntervalId = setInterval(() => syncTwoWayNow(false), 15000);
+          } else {
+            clearInterval(syncIntervalId);
+          }
+        });
+      } catch (e) {
+        document.getElementById('fb-init-status').textContent = 'Config error: ' + e.message;
+      }
+    }
+
+    function saveFirebaseConfig() {
+      const txt = (document.getElementById('firebase-config-textarea').value || '').trim();
+      try {
+        const parsed = parseFirebaseConfigInput(txt);
+        if (!parsed.apiKey || !parsed.projectId) throw new Error('apiKey dan projectId wajib ada');
+        localStorage.setItem(FB_CFG_KEY, JSON.stringify(parsed, null, 2));
+        showToast('Konfigurasi Firebase disimpan. Memuat ulang...');
+        setTimeout(() => location.reload(), 700);
+      } catch (e) {
+        showToast('Format Firebase config tidak valid: ' + e.message);
+      }
+    }
+
+    function setSyncPill(state, text) {
+      const pills = [document.getElementById('sync-status-pill'), document.getElementById('cloud-panel-badge')];
+      pills.forEach(p => {
+        if (!p) return;
+        p.className = 'sync-pill ' + (state || '');
+        p.textContent = text;
+      });
+    }
+
+    function updateCloudAuthUI() {
+      const outBox = document.getElementById('cloud-auth-logged-out');
+      const inBox = document.getElementById('cloud-auth-logged-in');
+      if (currentOwnerUser) {
+        outBox.style.display = 'none';
+        inBox.style.display = 'block';
+        document.getElementById('logged-in-email-label').textContent = currentOwnerUser.email;
+        setSyncPill('online', '● Cloud Aktif');
+      } else {
+        outBox.style.display = 'block';
+        inBox.style.display = 'none';
+        setSyncPill('', '● Mode Lokal');
+      }
+    }
+
+    async function cloudLogin() {
+      if (!fbAuth) { showToast('Isi Pengaturan Kunci Firebase Project terlebih dahulu.'); return; }
+      const email = document.getElementById('owner-email-input').value.trim();
+      const pass = document.getElementById('owner-pass-input').value;
+      try {
+        await fbAuth.signInWithEmailAndPassword(email, pass);
+        showToast('Login Owner berhasil!');
+      } catch (e) {
+        showToast('Gagal login: ' + e.message);
+      }
+    }
+
+    async function cloudRegister() {
+      if (!fbAuth) { showToast('Isi Pengaturan Kunci Firebase Project terlebih dahulu.'); return; }
+      const email = document.getElementById('owner-email-input').value.trim();
+      const pass = document.getElementById('owner-pass-input').value;
+      try {
+        await fbAuth.createUserWithEmailAndPassword(email, pass);
+        showToast('Akun Owner terdaftar! Menyinkronkan data...');
+      } catch (e) {
+        showToast('Gagal daftar: ' + e.message);
+      }
+    }
+
+    async function cloudResetPassword() {
+      if (!fbAuth) { showToast('Isi Pengaturan Kunci Firebase Project terlebih dahulu.'); return; }
+      const email = document.getElementById('owner-email-input').value.trim();
+      if (!email) { showToast('Masukkan Email Owner terlebih dahulu.'); return; }
+      try {
+        await fbAuth.sendPasswordResetEmail(email);
+        showToast('Email reset password telah dikirim ke ' + email);
+      } catch (e) {
+        showToast('Gagal kirim reset: ' + e.message);
+      }
+    }
+
+    async function cloudLogout() {
+      if (fbAuth) await fbAuth.signOut();
+      showToast('Logout dari Cloud Owner.');
+    }
+
+    function mergeByIdAndUpdatedAt(localArr, remoteArr) {
+      const map = new Map();
+      (remoteArr || []).forEach(item => map.set(item.id, item));
+      (localArr || []).forEach(item => {
+        const existing = map.get(item.id);
+        if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
+          map.set(item.id, item);
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    function triggerBackgroundSync() {
+      if (currentOwnerUser && fbDb) {
+        syncTwoWayNow(false);
+      }
+    }
+
+    async function syncTwoWayNow(manualToast) {
+      if (!currentOwnerUser || !fbDb) {
+        if (manualToast) showToast('Login Email Owner terlebih dahulu untuk sinkronisasi cloud.');
+        return;
+      }
+      setSyncPill('syncing', '↻ Menyinkronkan...');
+      const docRef = fbDb.collection('stores').doc(currentOwnerUser.uid);
+
+      try {
+        const snap = await docRef.get();
+        if (snap.exists) {
+          const remote = snap.data();
+
+          if (remote.profile && (remote.profile.updatedAt || 0) > (appState.profile.updatedAt || 0)) {
+            appState.profile = { ...appState.profile, ...remote.profile };
+          }
+
+          appState.menu = mergeByIdAndUpdatedAt(appState.menu, remote.menu);
+          appState.users = mergeByIdAndUpdatedAt(appState.users, remote.users);
+          appState.orders = mergeByIdAndUpdatedAt(appState.orders, remote.orders)
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 500);
+          appState.voidLogs = mergeByIdAndUpdatedAt(appState.voidLogs, remote.voidLogs)
+            .sort((a, b) => b.voidedAt - a.voidedAt);
+          appState.openingCashByDate = { ...(remote.openingCashByDate || {}), ...(appState.openingCashByDate || {}) };
+        }
+
+        await docRef.set({
+          ownerEmail: currentOwnerUser.email,
+          profile: appState.profile,
+          menu: appState.menu,
+          users: appState.users,
+          orders: appState.orders.slice(0, 500),
+          voidLogs: appState.voidLogs,
+          openingCashByDate: appState.openingCashByDate,
+          lastSyncedAt: Date.now()
+        }, { merge: true });
+
+        saveState();
+        updateHeaderUI();
+        renderMenuGrid();
+        setSyncPill('online', '● Cloud Aktif');
+        const t = new Date().toLocaleTimeString('id-ID');
+        const lbl = document.getElementById('last-sync-time');
+        if (lbl) lbl.textContent = 'Terakhir sinkron: ' + t;
+        if (manualToast) showToast('Sinkronisasi 2-arah berhasil (' + t + ')');
+      } catch (e) {
+        console.error('Sync error:', e);
+        setSyncPill('', '● Gagal Sinkron');
+        if (manualToast) showToast('Gagal sinkronisasi: ' + e.message);
+      }
+    }
+
+    /* ==================== BOOTSTRAP ==================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateHeaderUI();
+      renderCategoryBar();
+      renderMenuGrid();
+      renderCart();
+      document.getElementById('laci-filter-date').value = getTodayStr();
+      initFirebaseFromSavedConfig();
+
+      if (appState.lockOnStart) {
+        openSwitchUserModal(true);
+      }
+    });
+  </script>
+</body>
+</html>
