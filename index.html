@@ -775,6 +775,7 @@
               <div class="flex-gap">
                 <button class="btn-outline active" style="flex:1;" id="pay-method-cash" onclick="setPayMethod('TUNAI')">TUNAI</button>
                 <button class="btn-outline" style="flex:1;" id="pay-method-qris" onclick="setPayMethod('QRIS')">QRIS</button>
+                <button class="btn-outline" style="flex:1;" id="pay-method-later" onclick="setPayMethod('BAYAR NANTI')">BAYAR NANTI</button>
               </div>
             </div>
           </div>
@@ -800,6 +801,14 @@
             <div id="qris-cashier-preview"></div>
           </div>
 
+          <!-- PANEL BAYAR NANTI (OPEN BILL / KASBON MEJA) -->
+          <div id="later-panel" class="mt-1" style="display:none; background: var(--warning-bg); border: 1px solid #f2cf8d; padding: 12px; border-radius: 10px;">
+            <strong style="color: var(--warning);">Mode Open Bill / Bayar Nanti</strong>
+            <div class="text-muted mt-1" style="font-size: 14px;">
+              Pesanan langsung dikirim ke <strong>Dapur</strong> &amp; dicatat sebagai <strong>BELUM LUNAS</strong>. Pelunasan (Tunai/QRIS) dilakukan saat pelanggan selesai dan tidak masuk omzet sebelum dilunasi.
+            </div>
+          </div>
+
           <div class="summary-row mt-1">
             <span>Subtotal</span>
             <span id="summary-subtotal">Rp 0</span>
@@ -815,7 +824,7 @@
 
           <div class="flex-gap mt-2">
             <button class="btn-outline" onclick="clearCart()">Batal</button>
-            <button class="btn-success" style="flex:1; font-size: 18px;" onclick="processCheckout()">Bayar &amp; Kirim ke Dapur</button>
+            <button class="btn-success" id="checkout-submit-btn" style="flex:1; font-size: 18px;" onclick="processCheckout()">Bayar &amp; Kirim ke Dapur</button>
           </div>
         </div>
       </div>
@@ -1553,6 +1562,46 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL PELUNASAN OPEN BILL / BAYAR NANTI ==================== -->
+  <div class="modal-backdrop" id="settle-order-modal">
+    <div class="modal-box">
+      <h3 style="color: var(--primary);">Pelunasan Pesanan (Bayar Nanti)</h3>
+      <p id="settle-order-info" style="font-weight: 700; font-size: 16.5px;"></p>
+
+      <div class="mt-1">
+        <label>Pilih Metode Pelunasan</label>
+        <div class="flex-gap">
+          <button type="button" class="btn-outline active" style="flex:1;" id="settle-method-cash" onclick="setSettleMethod('TUNAI')">TUNAI</button>
+          <button type="button" class="btn-outline" style="flex:1;" id="settle-method-qris" onclick="setSettleMethod('QRIS')">QRIS</button>
+        </div>
+      </div>
+
+      <div id="settle-cash-panel" class="mt-2" style="background: var(--bg-soft); padding: 12px; border-radius: 10px;">
+        <label for="settle-cash-received">Uang Diterima (Rp)</label>
+        <input type="number" id="settle-cash-received" placeholder="0" oninput="updateSettleChangeDisplay()" />
+        <div class="flex-gap mt-1">
+          <button type="button" class="btn-outline btn-sm" onclick="setExactSettleCash()">Uang Pas</button>
+          <button type="button" class="btn-outline btn-sm" onclick="addSettleCashNominal(20000)">+20rb</button>
+          <button type="button" class="btn-outline btn-sm" onclick="addSettleCashNominal(50000)">+50rb</button>
+          <button type="button" class="btn-outline btn-sm" onclick="addSettleCashNominal(100000)">+100rb</button>
+        </div>
+        <div class="summary-row mt-1" style="font-weight: 800; font-size: 19px;">
+          <span>Kembalian:</span>
+          <span id="settle-change-label" style="color: var(--success);">Rp 0</span>
+        </div>
+      </div>
+
+      <div id="settle-qris-panel" class="mt-2" style="display:none; background: var(--bg-soft); padding: 12px; border-radius: 10px; text-align:center;">
+        <div id="settle-qris-preview"></div>
+      </div>
+
+      <div class="flex-gap mt-2" style="justify-content: flex-end;">
+        <button type="button" class="btn-outline btn-sm" onclick="closeSettleOrderModal()">Batal</button>
+        <button type="button" class="btn-success" onclick="confirmSettleOrder()">Konfirmasi Lunas</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL PASCA BAYAR ==================== -->
   <div class="modal-backdrop" id="post-pay-modal">
     <div class="modal-box" style="text-align:center;">
@@ -1865,8 +1914,15 @@
       payMethod = method;
       document.getElementById('pay-method-cash').classList.toggle('active', method === 'TUNAI');
       document.getElementById('pay-method-qris').classList.toggle('active', method === 'QRIS');
+      document.getElementById('pay-method-later').classList.toggle('active', method === 'BAYAR NANTI');
       document.getElementById('cash-panel').style.display = method === 'TUNAI' ? 'block' : 'none';
       document.getElementById('qris-panel').style.display = method === 'QRIS' ? 'block' : 'none';
+      document.getElementById('later-panel').style.display = method === 'BAYAR NANTI' ? 'block' : 'none';
+
+      const submitBtn = document.getElementById('checkout-submit-btn');
+      if (submitBtn) {
+        submitBtn.textContent = method === 'BAYAR NANTI' ? 'Simpan Open Bill & Kirim Dapur' : 'Bayar & Kirim ke Dapur';
+      }
 
       if (method === 'QRIS') {
         const box = document.getElementById('qris-cashier-preview');
@@ -1976,7 +2032,8 @@
         return;
       }
       const { subtotal, discount, total } = getCartTotals();
-      let cashReceived = total;
+      const isPayLater = payMethod === 'BAYAR NANTI';
+      let cashReceived = isPayLater ? 0 : total;
       let change = 0;
 
       if (payMethod === 'TUNAI') {
@@ -2000,6 +2057,7 @@
         customerName: (document.getElementById('customer-name').value || '').trim(),
         cashierName: user.name,
         payMethod,
+        paymentStatus: isPayLater ? 'UNPAID' : 'PAID',
         items: JSON.parse(JSON.stringify(cart)),
         subtotal,
         discount,
@@ -2014,12 +2072,17 @@
       saveState();
       updateHeaderUI();
 
-      // Auto cetak struk dapur saat pembayaran berhasil
+      // Auto cetak struk dapur saat pesanan masuk
       printReceiptOrder(orderObj, 'KITCHEN');
 
       lastCompletedOrder = orderObj;
-      document.getElementById('post-pay-info').textContent =
-        `${orderObj.orderNumber} • Total ${formatRp(total)}${payMethod === 'TUNAI' ? ' • Kembalian ' + formatRp(change) : ' (QRIS)'}`;
+      if (isPayLater) {
+        document.getElementById('post-pay-info').textContent =
+          `${orderObj.orderNumber} • OPEN BILL (${formatRp(total)}) — Belum Lunas`;
+      } else {
+        document.getElementById('post-pay-info').textContent =
+          `${orderObj.orderNumber} • Total ${formatRp(total)}${payMethod === 'TUNAI' ? ' • Kembalian ' + formatRp(change) : ' (QRIS)'}`;
+      }
       document.getElementById('post-pay-modal').classList.add('open');
 
       clearCart();
@@ -2037,22 +2100,123 @@
       document.getElementById('post-pay-modal').classList.remove('open');
     }
 
+    let settlingOrderId = null;
+    let settlePayMethod = 'TUNAI';
+
+    function openSettleOrderModal(orderId) {
+      const ord = appState.orders.find(o => o.id === orderId);
+      if (!ord || ord.voided) return;
+      settlingOrderId = orderId;
+      document.getElementById('settle-order-info').textContent =
+        `${ord.orderNumber}${ord.customerName ? ' (' + ord.customerName + ')' : ''} • Tagihan: ${formatRp(ord.total)}`;
+      document.getElementById('settle-cash-received').value = ord.total;
+      setSettleMethod('TUNAI');
+      updateSettleChangeDisplay();
+      document.getElementById('settle-order-modal').classList.add('open');
+    }
+
+    function closeSettleOrderModal() {
+      settlingOrderId = null;
+      document.getElementById('settle-order-modal').classList.remove('open');
+    }
+
+    function setSettleMethod(method) {
+      settlePayMethod = method;
+      document.getElementById('settle-method-cash').classList.toggle('active', method === 'TUNAI');
+      document.getElementById('settle-method-qris').classList.toggle('active', method === 'QRIS');
+      document.getElementById('settle-cash-panel').style.display = method === 'TUNAI' ? 'block' : 'none';
+      document.getElementById('settle-qris-panel').style.display = method === 'QRIS' ? 'block' : 'none';
+
+      if (method === 'QRIS') {
+        const box = document.getElementById('settle-qris-preview');
+        if (appState.profile.qrisDataUrl) {
+          box.innerHTML = `<img src="${appState.profile.qrisDataUrl}" alt="QRIS" style="max-width:210px; border-radius:10px; border:2px solid var(--border);" /><div class="text-muted mt-1">Tunjukkan QRIS ke pelanggan, lalu klik Konfirmasi Lunas</div>`;
+        } else {
+          box.innerHTML = `<div class="text-muted">Gambar QRIS belum di-upload di tab <strong>Kelola</strong>.</div>`;
+        }
+      }
+    }
+
+    function setExactSettleCash() {
+      const ord = appState.orders.find(o => o.id === settlingOrderId);
+      if (!ord) return;
+      document.getElementById('settle-cash-received').value = ord.total;
+      updateSettleChangeDisplay();
+    }
+
+    function addSettleCashNominal(amount) {
+      const cur = Number(document.getElementById('settle-cash-received').value) || 0;
+      document.getElementById('settle-cash-received').value = cur + amount;
+      updateSettleChangeDisplay();
+    }
+
+    function updateSettleChangeDisplay() {
+      const ord = appState.orders.find(o => o.id === settlingOrderId);
+      if (!ord) return;
+      const received = Number(document.getElementById('settle-cash-received').value) || 0;
+      const change = Math.max(0, received - ord.total);
+      document.getElementById('settle-change-label').textContent = formatRp(change);
+    }
+
+    function confirmSettleOrder() {
+      const ord = appState.orders.find(o => o.id === settlingOrderId);
+      if (!ord) return;
+
+      let cashReceived = ord.total;
+      let change = 0;
+      if (settlePayMethod === 'TUNAI') {
+        cashReceived = Number(document.getElementById('settle-cash-received').value) || 0;
+        if (cashReceived < ord.total) {
+          showToast('Uang tunai yang diterima kurang dari total tagihan.');
+          return;
+        }
+        change = cashReceived - ord.total;
+      }
+
+      ord.payMethod = settlePayMethod;
+      ord.paymentStatus = 'PAID';
+      ord.cashReceived = cashReceived;
+      ord.change = change;
+      ord.paidAt = Date.now();
+      ord.updatedAt = Date.now();
+
+      saveState();
+      updateHeaderUI();
+      if (document.getElementById('tab-dapur').classList.contains('active')) renderDapurTab();
+      if (document.getElementById('tab-laci').classList.contains('active')) renderLaciTab();
+
+      closeSettleOrderModal();
+      lastCompletedOrder = ord;
+      document.getElementById('post-pay-info').textContent =
+        `${ord.orderNumber} LUNAS • Total ${formatRp(ord.total)}${settlePayMethod === 'TUNAI' ? ' • Kembalian ' + formatRp(change) : ' (QRIS)'}`;
+      document.getElementById('post-pay-modal').classList.add('open');
+      triggerBackgroundSync();
+    }
+
     /* ==================== TAB DAPUR ==================== */
+    function isOrderUnpaid(o) {
+      return o && !o.voided && (o.paymentStatus === 'UNPAID' || o.payMethod === 'BAYAR NANTI');
+    }
+
     function renderDapurTab() {
       const container = document.getElementById('dapur-list');
-      const activeList = appState.orders.filter(o => !o.voided && o.kitchenStatus !== 'SELESAI');
+      const activeList = appState.orders.filter(o => !o.voided && (o.kitchenStatus !== 'SELESAI' || isOrderUnpaid(o)));
       if (activeList.length === 0) {
-        container.innerHTML = '<div class="text-muted">Tidak ada antrean pesanan aktif.</div>';
+        container.innerHTML = '<div class="text-muted">Tidak ada antrean pesanan aktif atau tagihan belum lunas.</div>';
         return;
       }
 
       container.innerHTML = activeList.map(o => {
         const timeStr = new Date(o.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const unpaid = isOrderUnpaid(o);
         return `
-          <div class="card" style="border-left: 6px solid var(--accent); margin-bottom:0;">
+          <div class="card" style="border-left: 6px solid ${unpaid ? 'var(--warning)' : 'var(--accent)'}; margin-bottom:0;">
             <div class="flex-between">
               <strong style="font-size:18px;">${o.orderNumber}</strong>
-              <span class="badge-count">${o.orderType}</span>
+              <div class="flex-gap">
+                ${unpaid ? `<span class="badge-count" style="background:var(--danger);">BELUM LUNAS • ${formatRp(o.total)}</span>` : '<span class="badge-count" style="background:var(--success);">LUNAS</span>'}
+                <span class="badge-count">${o.orderType}</span>
+              </div>
             </div>
             <div class="text-muted mt-1">
               Jam: ${timeStr} • Kasir: ${o.cashierName} ${o.customerName ? '• Pelanggan: <strong>' + o.customerName + '</strong>' : ''}
@@ -2066,7 +2230,8 @@
               `).join('')}
             </div>
             <div class="flex-gap mt-2">
-              <button class="btn-success btn-sm" onclick="markKitchenDone('${o.id}')">Tandai Selesai</button>
+              ${o.kitchenStatus !== 'SELESAI' ? `<button class="btn-success btn-sm" onclick="markKitchenDone('${o.id}')">Tandai Selesai</button>` : `<span class="text-muted" style="font-weight:700;">✓ Dapur Selesai</span>`}
+              ${unpaid ? `<button class="btn-accent btn-sm" onclick="openSettleOrderModal('${o.id}')">Lunasi Sekarang</button>` : ''}
               <button class="btn-outline btn-sm" onclick="reprintOrder('${o.id}', 'KITCHEN')">Cetak Dapur</button>
               <button class="btn-danger btn-sm" onclick="openVoidOrderModal('${o.id}')">Void</button>
             </div>
@@ -2195,7 +2360,7 @@
       }
 
       const filteredOrders = appState.orders.filter(o => matchDate(o.dateStr));
-      const validOrders = filteredOrders.filter(o => !o.voided);
+      const validOrders = filteredOrders.filter(o => !o.voided && !isOrderUnpaid(o));
       const filteredExpenses = (appState.expenses || []).filter(e => matchDate(e.dateStr));
 
       const subtotalGross = validOrders.reduce((s, o) => s + (o.subtotal || o.total), 0);
@@ -2384,9 +2549,10 @@
             <td>${o.cashierName}</td>
             <td>${o.payMethod}</td>
             <td><strong>${formatRp(o.total)}</strong></td>
-            <td>${o.voided ? '<span style="color:var(--danger);font-weight:800;">VOID</span>' : o.kitchenStatus}</td>
+            <td>${o.voided ? '<span style="color:var(--danger);font-weight:800;">VOID</span>' : (isOrderUnpaid(o) ? '<span style="color:var(--warning);font-weight:800;">BELUM LUNAS</span>' : o.kitchenStatus)}</td>
             <td>
               <div class="flex-gap">
+                ${isOrderUnpaid(o) ? `<button class="btn-success btn-sm" onclick="openSettleOrderModal('${o.id}')">Lunasi</button>` : ''}
                 <button class="btn-outline btn-sm" onclick="reprintOrder('${o.id}', 'CUSTOMER')">Struk</button>
                 ${!o.voided ? `<button class="btn-danger btn-sm" onclick="openVoidOrderModal('${o.id}')">Void</button>` : ''}
               </div>
@@ -2500,7 +2666,7 @@
       });
 
       appState.orders.forEach(o => {
-        if (o.voided || !map.has(o.dateStr)) return;
+        if (o.voided || isOrderUnpaid(o) || !map.has(o.dateStr)) return;
         const rec = map.get(o.dateStr);
         const orderHpp = o.items.reduce((s, it) => s + ((it.hpp || 0) * it.qty), 0);
         rec.txCount += 1;
@@ -3187,8 +3353,9 @@
       lines.push(rowLR('Subtotal', formatRp(order.subtotal)));
       if (order.discount > 0) lines.push(rowLR('Diskon', '-' + formatRp(order.discount)));
       lines.push(rowLR('GRAND TOTAL', formatRp(order.total)));
-      lines.push(rowLR('Metode', order.payMethod));
-      if (order.payMethod === 'TUNAI') {
+      const unpaidFlag = order.paymentStatus === 'UNPAID' || order.payMethod === 'BAYAR NANTI';
+      lines.push(rowLR('Metode', unpaidFlag ? 'BAYAR NANTI (BELUM LUNAS)' : order.payMethod));
+      if (!unpaidFlag && order.payMethod === 'TUNAI') {
         lines.push(rowLR('Tunai', formatRp(order.cashReceived)));
         lines.push(rowLR('Kembalian', formatRp(order.change)));
       }
