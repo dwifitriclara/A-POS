@@ -309,15 +309,21 @@
 
     .cat-bar {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       overflow-x: auto;
       padding-bottom: 6px;
       margin: 10px 0;
+      scrollbar-width: thin;
+    }
+    .cat-bar .btn-sm {
+      flex-shrink: 0;
+      padding: 8px 11px;
+      font-size: clamp(13.5px, 1vw + 10px, 15.5px);
     }
 
     .menu-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 152px), 1fr));
       gap: 10px;
       max-height: 64vh;
       overflow-y: auto;
@@ -348,10 +354,12 @@
       margin-bottom: 4px;
     }
     .menu-item-name {
-      font-size: 17px;
+      font-size: clamp(14.5px, 1.35vw + 10px, 17.5px);
       font-weight: 800;
       line-height: 1.25;
       margin-bottom: 6px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .menu-item-price {
       font-size: 16.5px;
@@ -1687,8 +1695,8 @@
       deletedMenuIds: {},
       deletedUserIds: {},
       deviceCode: 'TAB1',
-      activeUserId: 'u_owner',
-      lockOnStart: false
+      activeUserId: '',
+      lockOnStart: true
     };
 
     let currentCategory = 'Semua';
@@ -1731,8 +1739,10 @@
       if (!appState.users || appState.users.length === 0) {
         appState.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
       }
-      if (!appState.users.find(u => u.id === appState.activeUserId)) {
-        appState.activeUserId = appState.users[0].id;
+      if (appState.lockOnStart !== false) {
+        appState.activeUserId = '';
+      } else if (appState.activeUserId && !appState.users.find(u => u.id === appState.activeUserId)) {
+        appState.activeUserId = '';
       }
       applyIsolatedReceiptCss();
     }
@@ -1771,8 +1781,20 @@
       return getTodayStr().slice(0, 7);
     }
 
+    function isUserUnlocked() {
+      return Boolean(appState.activeUserId && appState.users.some(u => u.id === appState.activeUserId));
+    }
+
     function getActiveUser() {
-      return appState.users.find(u => u.id === appState.activeUserId) || appState.users[0];
+      const found = appState.users.find(u => u.id === appState.activeUserId);
+      if (found) return found;
+      return {
+        id: '',
+        name: 'Terkunci (Masukkan PIN)',
+        role: 'Terkunci',
+        pin: '',
+        perms: { kasir: false, dapur: false, diskon: false, laci: false, kelola: false }
+      };
     }
 
     /* ==================== HEADER & NAVIGASI ==================== */
@@ -1861,6 +1883,10 @@
     }
 
     function addToCart(menuId) {
+      if (!isUserUnlocked()) {
+        openSwitchUserModal(true);
+        return;
+      }
       const item = appState.menu.find(m => m.id === menuId);
       if (!item) return;
       const existing = cart.find(c => c.menuId === menuId && !c.note);
@@ -2027,6 +2053,10 @@
     }
 
     function processCheckout() {
+      if (!isUserUnlocked()) {
+        openSwitchUserModal(true);
+        return;
+      }
       if (cart.length === 0) {
         showToast('Pilih minimal 1 menu terlebih dahulu.');
         return;
@@ -3860,14 +3890,19 @@
       pinModalContext = { mode: isStartupLock ? 'unlock' : 'switch' };
       pinBuffer = '';
       document.getElementById('pin-dots-display').textContent = '';
-      document.getElementById('pin-modal-title').textContent = isStartupLock ? 'Kunci Layar A POS' : 'Ganti Akun Pengguna';
-      document.getElementById('pin-modal-desc').textContent = 'Pilih akun lalu masukkan PIN';
+      document.getElementById('pin-modal-title').textContent = isStartupLock ? 'Kunci Layar A POS — Masukkan PIN' : 'Ganti Akun Pengguna';
+      document.getElementById('pin-modal-desc').textContent = isStartupLock
+        ? 'Koneksi cloud tetap aktif di latar belakang. Pilih akun & masukkan PIN untuk mulai.'
+        : 'Pilih akun lalu masukkan PIN';
       document.getElementById('user-select-wrap').style.display = 'block';
       document.getElementById('void-reason-wrap').style.display = 'none';
       document.getElementById('pin-cancel-btn').style.display = isStartupLock ? 'none' : 'inline-flex';
 
       const sel = document.getElementById('switch-user-select');
-      sel.innerHTML = appState.users.map(u => `<option value="${u.id}" ${u.id === appState.activeUserId ? 'selected' : ''}>${u.name} (${u.role})</option>`).join('');
+      const selectedTarget = isStartupLock ? '' : appState.activeUserId;
+      sel.innerHTML =
+        (isStartupLock ? '<option value="">-- Pilih Akun --</option>' : '') +
+        appState.users.map(u => `<option value="${u.id}" ${u.id === selectedTarget ? 'selected' : ''}>${u.name} (${u.role})</option>`).join('');
       document.getElementById('pin-modal').classList.add('open');
     }
 
@@ -4227,9 +4262,30 @@
       document.getElementById('exp-date-input').value = today;
 
       initSalesChartEvents();
-            initFirebaseFromSavedConfig();
+      initFirebaseFromSavedConfig();
 
-      if (appState.lockOnStart) {
+      const lockSessionToPinScreen = () => {
+        if (appState.lockOnStart !== false) {
+          appState.activeUserId = '';
+          saveState();
+          updateHeaderUI();
+          openSwitchUserModal(true);
+        }
+      };
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          lockSessionToPinScreen();
+        }
+      });
+
+      window.addEventListener('pagehide', () => {
+        lockSessionToPinScreen();
+      });
+
+      if (appState.lockOnStart !== false || !isUserUnlocked()) {
+        appState.activeUserId = '';
+        updateHeaderUI();
         openSwitchUserModal(true);
       }
     });
