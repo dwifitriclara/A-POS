@@ -14,7 +14,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="A-POS SEGI COFFEE"
+        android:label="A-POS"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         android:usesCleartextTraffic="true">
