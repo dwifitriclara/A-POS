@@ -1635,6 +1635,8 @@
       voidLogs: [],
       openingCashByDate: {},
       orderCounterByDate: {},
+      deletedMenuIds: {},
+      deletedUserIds: {},
       deviceCode: 'TAB1',
       activeUserId: 'u_owner',
       lockOnStart: false
@@ -1669,6 +1671,8 @@
             ...appState,
             ...parsed,
             expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+            deletedMenuIds: (parsed.deletedMenuIds && typeof parsed.deletedMenuIds === 'object') ? parsed.deletedMenuIds : {},
+            deletedUserIds: (parsed.deletedUserIds && typeof parsed.deletedUserIds === 'object') ? parsed.deletedUserIds : {},
             profile: { ...DEFAULT_PROFILE, ...(parsed.profile || {}) }
           };
         }
@@ -3496,8 +3500,10 @@
         showToast('Isi nama menu dan harga jual yang valid.');
         return;
       }
+      const newMenuId = 'm_' + Date.now();
+      if (appState.deletedMenuIds) delete appState.deletedMenuIds[newMenuId];
       appState.menu.push({
-        id: 'm_' + Date.now(),
+        id: newMenuId,
         name,
         category,
         price,
@@ -3581,6 +3587,8 @@
     }
 
     function deleteMenuItem(id) {
+      appState.deletedMenuIds = appState.deletedMenuIds || {};
+      appState.deletedMenuIds[id] = Date.now();
       appState.menu = appState.menu.filter(m => m.id !== id);
       saveState();
       renderKelolaTab();
@@ -3598,8 +3606,10 @@
         showToast('Isi nama staf dan PIN 4–6 digit angka.');
         return;
       }
+      const newUserId = 'u_' + Date.now();
+      if (appState.deletedUserIds) delete appState.deletedUserIds[newUserId];
       appState.users.push({
-        id: 'u_' + Date.now(),
+        id: newUserId,
         name,
         role,
         pin,
@@ -3621,6 +3631,8 @@
     }
 
     function deleteUserAccount(id) {
+      appState.deletedUserIds = appState.deletedUserIds || {};
+      appState.deletedUserIds[id] = Date.now();
       appState.users = appState.users.filter(u => u.id !== id);
       saveState();
       renderKelolaTab();
@@ -3919,15 +3931,44 @@
       showToast('Logout dari Cloud Owner.');
     }
 
-    function mergeByIdAndUpdatedAt(localArr, remoteArr) {
+    function mergeDeletedMaps(localMap, remoteMap) {
+      const merged = { ...(remoteMap || {}), ...(localMap || {}) };
+      const now = Date.now();
+      const maxAgeMs = 90 * 24 * 60 * 60 * 1000;
+      Object.keys(merged).forEach(k => {
+        if (!merged[k] || (now - Number(merged[k])) > maxAgeMs) {
+          delete merged[k];
+        }
+      });
+      return merged;
+    }
+
+    function mergeByIdAndUpdatedAt(localArr, remoteArr, deletedMap) {
+      const del = deletedMap || {};
       const map = new Map();
-      (remoteArr || []).forEach(item => map.set(item.id, item));
+
+      (remoteArr || []).forEach(item => {
+        if (!item || !item.id) return;
+        const delTs = del[item.id] || 0;
+        const itemTs = item.updatedAt || 0;
+        if (delTs > 0 && itemTs <= delTs) return;
+        map.set(item.id, item);
+      });
+
       (localArr || []).forEach(item => {
+        if (!item || !item.id) return;
+        const delTs = del[item.id] || 0;
+        const itemTs = item.updatedAt || 0;
+        if (delTs > 0 && itemTs <= delTs) {
+          map.delete(item.id);
+          return;
+        }
         const existing = map.get(item.id);
-        if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
+        if (!existing || itemTs >= (existing.updatedAt || 0)) {
           map.set(item.id, item);
         }
       });
+
       return Array.from(map.values());
     }
 
@@ -3954,8 +3995,11 @@
             appState.profile = { ...appState.profile, ...remote.profile };
           }
 
-          appState.menu = mergeByIdAndUpdatedAt(appState.menu, remote.menu);
-          appState.users = mergeByIdAndUpdatedAt(appState.users, remote.users);
+          appState.deletedMenuIds = mergeDeletedMaps(appState.deletedMenuIds, remote.deletedMenuIds);
+          appState.deletedUserIds = mergeDeletedMaps(appState.deletedUserIds, remote.deletedUserIds);
+
+          appState.menu = mergeByIdAndUpdatedAt(appState.menu, remote.menu, appState.deletedMenuIds);
+          appState.users = mergeByIdAndUpdatedAt(appState.users, remote.users, appState.deletedUserIds);
           appState.orders = mergeByIdAndUpdatedAt(appState.orders, remote.orders)
             .sort((a, b) => b.createdAt - a.createdAt)
             .slice(0, 1000);
@@ -3972,6 +4016,8 @@
           profile: appState.profile,
           menu: appState.menu,
           users: appState.users,
+          deletedMenuIds: appState.deletedMenuIds || {},
+          deletedUserIds: appState.deletedUserIds || {},
           orders: appState.orders.slice(0, 1000),
           expenses: (appState.expenses || []).slice(0, 1000),
           voidLogs: appState.voidLogs,
