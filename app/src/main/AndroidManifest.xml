@@ -15,9 +15,12 @@
     <application
         android:allowBackup="true"
         android:label="A-POS"
+        android:icon="@drawable/ic_launcher"
+    android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         android:usesCleartextTraffic="true">
+            ... >
 
         <activity
             android:name=".MainActivity"
