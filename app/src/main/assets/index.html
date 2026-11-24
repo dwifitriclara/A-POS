@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>A POS — Sistem Kasir Kedai &amp; Resto</title>
-  <!-- Firebase Compat SDK untuk Sinkronisasi 2-Arah Email Owner -->
+  <title>A POS — Sistem Kasir &amp; Manajemen Kedai</title>
+  <!-- Firebase Compat SDK untuk Sinkronisasi Cloud 2-Arah (Email Owner) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -28,6 +28,9 @@
       --warning-bg: #fff4df;
       --radius: 12px;
       --shadow: 0 2px 8px rgba(31, 23, 18, 0.08);
+      /* Variabel terisolasi khusus kertas struk */
+      --receipt-font-size: 10px;
+      --receipt-paper-width: 260px;
     }
 
     * {
@@ -35,7 +38,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* SKALA FONT DINAIKKAN +2 HINGGA +3 PX UNTUK LAYAR TABLET 7 INCI */
+    /* SKALA FONT APLIKASI BESAR (+2.5 PX) UNTUK LAYAR TABLET KASIR 7 INCI */
     html, body {
       margin: 0;
       padding: 0;
@@ -117,6 +120,13 @@
     input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 36px;
+      accent-color: var(--primary);
+      cursor: pointer;
     }
 
     label {
@@ -450,7 +460,7 @@
       cursor: pointer;
     }
 
-    /* THERMAL RECEIPT PREVIEW */
+    /* ==================== ISOLASI TOTAL STRUK THERMAL (58MM / 80MM) ==================== */
     .receipt-stage {
       background: #e6dfd7;
       padding: 18px;
@@ -459,16 +469,52 @@
       justify-content: center;
       overflow-x: auto;
     }
-    .receipt-paper {
-      background: #fff;
-      color: #111;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 13.5px;
-      line-height: 1.35;
-      padding: 14px 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-      white-space: pre-wrap;
-      word-break: break-word;
+
+    #receipt-print-area {
+      background: #ffffff;
+      color: #000000;
+      font-family: "Courier New", Courier, monospace !important;
+      font-size: var(--receipt-font-size) !important;
+      line-height: 1.32 !important;
+      width: var(--receipt-paper-width);
+      padding: 12px 10px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+      box-sizing: border-box;
+    }
+
+    #receipt-print-area * {
+      font-family: "Courier New", Courier, monospace !important;
+      font-size: var(--receipt-font-size) !important;
+      line-height: 1.32 !important;
+      color: #000000 !important;
+    }
+
+    #receipt-text-preview {
+      white-space: pre;
+      overflow-x: hidden;
+    }
+
+    /* ATURAN CETAK BROWSER / SYSTEM PRINT / RAWBT */
+    @media print {
+      @page {
+        margin: 0 !important;
+        size: auto;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #receipt-print-area,
+      #receipt-print-area * {
+        visibility: visible !important;
+      }
+      #receipt-print-area {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        padding: 2mm 1mm !important;
+        box-shadow: none !important;
+      }
     }
 
     /* TABLE */
@@ -804,15 +850,22 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 4: PRINTER THERMAL 58MM ==================== -->
+    <!-- ==================== TAB 4: PRINTER THERMAL & UKURAN FONT STRUK ==================== -->
     <section id="tab-printer" class="tab-pane">
       <div class="grid-2" style="align-items: start;">
         <!-- KIRI: PENGATURAN PRINTER & LOGO -->
         <div>
           <div class="card">
-            <h3>1. Koneksi Printer Bluetooth (ESC/POS 58mm)</h3>
-            <div class="flex-gap mt-1">
-              <button class="btn-primary" onclick="scanBluetoothPrinters()">Muat Perangkat Paired</button>
+            <h3>1. Koneksi &amp; Metode Printer</h3>
+            <div class="mt-1">
+              <label for="print-method-select">Jalankan Cetak Melalui</label>
+              <select id="print-method-select" onchange="savePrinterProfile()">
+                <option value="bluetooth">Bluetooth Thermal Direct (ESC/POS APK)</option>
+                <option value="system">System Print / Browser / RawBT</option>
+              </select>
+            </div>
+            <div class="flex-gap mt-2">
+              <button class="btn-primary" onclick="scanBluetoothPrinters()">Muat Perangkat Bluetooth</button>
               <span class="text-muted" id="printer-conn-status">Belum terhubung</span>
             </div>
             <div id="paired-devices-list" class="mt-1"></div>
@@ -823,8 +876,58 @@
           </div>
 
           <div class="card">
+            <h3>2. Ukuran Kertas &amp; Font Kertas Struk</h3>
+            <p class="text-muted">Terpisah dari font aplikasi agar hasil print di kertas 58mm tetap kecil, rapat, dan presisi.</p>
+
+            <div class="grid-2 mt-1">
+              <div>
+                <label for="paper-size-select">Ukuran Kertas Thermal</label>
+                <select id="paper-size-select" onchange="onPrinterPresetChange()">
+                  <option value="58mm">58mm (Mini Thermal)</option>
+                  <option value="80mm">80mm (Standard)</option>
+                </select>
+              </div>
+              <div>
+                <label for="receipt-font-mode">Ukuran Font Kertas Struk</label>
+                <select id="receipt-font-mode" onchange="onPrinterPresetChange()">
+                  <option value="FONT_B">Kecil &amp; Rapat (Font B — Ideal 58mm)</option>
+                  <option value="FONT_A">Sedang / Standar (Font A)</option>
+                  <option value="FONT_A_TALL">Besar / Tinggi (Font A 2x)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <label for="receipt-preview-slider">
+                Ukuran Font Pratinjau &amp; System Print: <strong id="receipt-preview-size-val">10</strong> px
+              </label>
+              <input type="range" id="receipt-preview-slider" min="8.5" max="15" step="0.5" value="10" oninput="onPreviewFontSlider()" />
+              <div class="flex-gap mt-1">
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(9)">Kecil (9px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(10)">Ideal 58mm (10px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(12)">Besar 80mm (12px)</button>
+              </div>
+            </div>
+
+            <div class="grid-3 mt-2">
+              <div>
+                <label for="char-width-input">Lebar Karakter</label>
+                <input type="number" id="char-width-input" min="24" max="64" value="42" onchange="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="left-margin-input">Margin Kiri (Spasi)</label>
+                <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
+              </div>
+              <div>
+                <label for="feed-lines-input">Spasi Sobek Bawah</label>
+                <input type="number" id="feed-lines-input" min="1" max="8" value="3" onchange="savePrinterProfile()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="flex-between">
-              <h3 style="margin:0;">1. Logo Struk (Monokrom 1-Bit)</h3>
+              <h3 style="margin:0;">3. Logo Struk (Monokrom 1-Bit)</h3>
               <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer;">
                 <input type="checkbox" id="logo-enabled" style="width:22px; height:22px;" onchange="savePrinterProfile()" />
                 <span>Aktifkan Logo</span>
@@ -859,48 +962,7 @@
           </div>
 
           <div class="card">
-            <h3>3. Area Cetak &amp; Profil Kedai</h3>
-            <div class="card">
-         <h3>3. Area Cetak, Ukuran Font &amp; Profil Kedai</h3>
-
-         <div class="grid-2 mt-1">
-           <div>
-             <label for="paper-size-select">Ukuran Kertas Thermal</label>
-             <select id="paper-size-select" onchange="onPrinterPresetChange()">
-               <option value="58mm">58mm (Mini Thermal)</option>
-               <option value="80mm">80mm (Standard)</option>
-             </select>
-           </div>
-           <div>
-             <label for="receipt-font-mode">Ukuran Font Kertas Struk</label>
-             <select id="receipt-font-mode" onchange="onPrinterPresetChange()">
-               <option value="FONT_B">Kecil &amp; Rapat (Font B — Ideal 58mm)</option>
-               <option value="FONT_A">Sedang / Standar (Font A)</option>
-               <option value="FONT_A_TALL">Besar / Tinggi (Font A 2x)</option>
-             </select>
-           </div>
-         </div>
-
-         <div class="mt-1">
-           <label for="receipt-preview-size">Ukuran Teks Pratinjau Struk: <span id="receipt-preview-size-val">11</span> px</label>
-           <input type="range" id="receipt-preview-size" min="9" max="15" step="0.5" value="11" oninput="onPreviewFontSlider()" />
-         </div>
-
-         <div class="grid-3 mt-1">
-           <div>
-             <label for="char-width-input">Lebar Karakter</label>
-             <input type="number" id="char-width-input" min="24" max="48" value="42" onchange="savePrinterProfile()" />
-           </div>
-           <div>
-             <label for="left-margin-input">Margin Kiri (Spasi)</label>
-             <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
-           </div>
-           <div>
-             <label for="feed-lines-input">Spasi Sobek Bawah</label>
-             <input type="number" id="feed-lines-input" min="1" max="8" value="3" onchange="savePrinterProfile()" />
-           </div>
-         </div>
-
+            <h3>4. Profil Kedai di Header Struk</h3>
             <div class="grid-2 mt-1">
               <div>
                 <label for="shop-name-input">Nama Kedai (Header Besar)</label>
@@ -936,14 +998,14 @@
           </div>
         </div>
 
-        <!-- KANAN: PRATINJAU STRUK 58MM -->
-        <div class="card">
+        <!-- KANAN: PRATINJAU STRUK THERMAL -->
+        <div class="card" style="position: sticky; top: 76px;">
           <div class="flex-between">
-            <h3 style="margin:0;">Pratinjau Output Thermal 58mm</h3>
-            <span class="badge-count" id="preview-cols-badge">32 kolom</span>
+            <h3 style="margin:0;">Pratinjau Output Struk</h3>
+            <span class="badge-count" id="preview-cols-badge">58mm • 42 kolom • 10px</span>
           </div>
           <div class="receipt-stage mt-2">
-            <div class="receipt-paper" id="receipt-preview-box">
+            <div id="receipt-print-area">
               <div id="receipt-logo-preview-wrap" style="text-align:center; margin-bottom:8px; display:none;">
                 <canvas id="receipt-logo-canvas"></canvas>
               </div>
@@ -954,17 +1016,17 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 5: KELOLA & SINKRONISASI ==================== -->
+    <!-- ==================== TAB 5: KELOLA & SINKRONISASI CLOUD ==================== -->
     <section id="tab-kelola" class="tab-pane">
 
       <!-- 1. SINKRONISASI CLOUD 2-ARAH (EMAIL OWNER) -->
       <div class="card">
         <div class="flex-between">
           <h2 style="margin:0;">Sinkronisasi Cloud 2-Arah (Email Owner)</h2>
-          <span class="sync-pill" id="cloud-panel-badge">Mode Lokal</span>
+          <span class="sync-pill" id="cloud-panel-badge">● Mode Lokal</span>
         </div>
         <p class="text-muted mt-1">
-          Masuk dengan Email Owner untuk menyinkronkan Menu, Profil Kedai, Logo, QRIS, Staf, dan Transaksi secara 2-arah antar perangkat.
+          Hubungkan dengan Email Owner agar seluruh data transaksi, menu, logo, QRIS, dan laporan tersinkron <strong>real-time 2-arah</strong> ke HP/Web Owner di mana saja.
         </p>
 
         <div class="grid-2 mt-1">
@@ -1014,10 +1076,13 @@
         </div>
 
         <!-- KONFIGURASI FIREBASE PROJECT -->
-        <details class="mt-2">
+        <details class="mt-2" open>
           <summary style="font-weight: 700; cursor: pointer; padding: 6px 0;">Pengaturan Kunci Firebase Project (Isi Sekali)</summary>
-          <div class="mt-1">
-            <label for="firebase-config-textarea">Tempel JSON Firebase Web Config Anda di sini:</label>
+          <div class="mt-1" style="background: var(--accent-soft); padding: 12px; border-radius: 10px;">
+            <p class="text-muted" style="margin-top:0;">
+              1. Buka <strong>console.firebase.google.com</strong> &rarr; buat proyek &rarr; aktifkan <strong>Authentication (Email/Password)</strong> &amp; <strong>Firestore Database</strong>.<br/>
+              2. Di <em>Project Settings &rarr; Your apps (Web)</em>, salin objek <code>firebaseConfig</code> (JSON atau teks <code>const firebaseConfig = {...}</code>) dan tempel di bawah ini:
+            </p>
             <textarea id="firebase-config-textarea" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
             <div class="flex-gap mt-1">
               <button class="btn-primary btn-sm" onclick="saveFirebaseConfig()">Simpan &amp; Hubungkan Firebase</button>
@@ -1216,7 +1281,7 @@
 
   <script>
     /* ==================== STATE & DEFAULT NETRAL (A POS) ==================== */
-    const STORAGE_KEY = 'apos_state_v2';
+    const STORAGE_KEY = 'apos_state_v3';
     const FB_CFG_KEY = 'apos_firebase_cfg_v1';
 
     const DEFAULT_MENU = [
@@ -1257,7 +1322,11 @@
       social: '@kedaianda',
       footer1: 'Terima kasih sudah singgah!',
       footer2: 'Selamat menikmati pesanan Anda',
-      charWidth: 32,
+      printMethod: 'bluetooth',
+      paperSize: '58mm',
+      receiptFontMode: 'FONT_B',
+      receiptPreviewFontSize: 10,
+      charWidth: 42,
       leftMargin: 0,
       feedLines: 3,
       logoEnabled: true,
@@ -1290,7 +1359,7 @@
 
     // PIN Modal State
     let pinBuffer = '';
-    let pinModalContext = null; // { mode: 'switch' | 'void' | 'reset' | 'unlock', targetOrderId?: string }
+    let pinModalContext = null;
 
     // Firebase State
     let fbAuth = null;
@@ -1301,7 +1370,7 @@
     /* ==================== INIT & STORAGE ==================== */
     function loadState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('apos_state_v2');
         if (raw) {
           const parsed = JSON.parse(raw);
           appState = {
@@ -1319,6 +1388,7 @@
       if (!appState.users.find(u => u.id === appState.activeUserId)) {
         appState.activeUserId = appState.users[0].id;
       }
+      applyIsolatedReceiptCss();
     }
 
     function saveState() {
@@ -1360,7 +1430,6 @@
       const shop = (appState.profile.shopName || 'A POS').trim();
       document.getElementById('topbar-shop-name').textContent = `${shop} • ${appState.profile.branchName || 'Cabang Utama'}`;
 
-      // Inisial dinamis untuk badge (default AP untuk A POS)
       const words = shop.split(/\s+/).filter(Boolean);
       let initials = 'AP';
       if (words.length >= 2) {
@@ -1590,7 +1659,6 @@
       const nextSeq = (appState.orderCounterByDate[today] || 0) + 1;
       appState.orderCounterByDate[today] = nextSeq;
 
-      // Prefix dinamis dari nama kedai (default POS jika belum diubah)
       const shop = (appState.profile.shopName || 'A POS').trim();
       let prefix = 'POS';
       if (shop.toUpperCase() !== 'A POS') {
@@ -1646,7 +1714,7 @@
       updateHeaderUI();
 
       // Auto cetak struk dapur saat pembayaran berhasil
-      printEscPosReceipt(orderObj, 'KITCHEN');
+      printReceiptOrder(orderObj, 'KITCHEN');
 
       lastCompletedOrder = orderObj;
       document.getElementById('post-pay-info').textContent =
@@ -1659,7 +1727,7 @@
 
     function printLastCustomerReceipt() {
       if (lastCompletedOrder) {
-        printEscPosReceipt(lastCompletedOrder, 'CUSTOMER');
+        printReceiptOrder(lastCompletedOrder, 'CUSTOMER');
       }
       closePostPayModal();
     }
@@ -1720,7 +1788,7 @@
 
     function reprintOrder(orderId, mode) {
       const ord = appState.orders.find(o => o.id === orderId);
-      if (ord) printEscPosReceipt(ord, mode);
+      if (ord) printReceiptOrder(ord, mode);
     }
 
     /* ==================== TAB LACI KAS & AUDIT ==================== */
@@ -1833,9 +1901,23 @@
       URL.revokeObjectURL(url);
     }
 
-    /* ==================== TAB PRINTER THERMAL 58MM & LOGO ==================== */
+    /* ==================== TAB PRINTER THERMAL & UKURAN FONT ADJUSTABLE ==================== */
+    function applyIsolatedReceiptCss() {
+      const p = appState.profile;
+      const fontSize = Number(p.receiptPreviewFontSize) || 10;
+      const is80mm = p.paperSize === '80mm';
+      document.documentElement.style.setProperty('--receipt-font-size', fontSize + 'px');
+      document.documentElement.style.setProperty('--receipt-paper-width', is80mm ? '340px' : '255px');
+    }
+
     function loadPrinterForm() {
       const p = appState.profile;
+      document.getElementById('print-method-select').value = p.printMethod || 'bluetooth';
+      document.getElementById('paper-size-select').value = p.paperSize || '58mm';
+      document.getElementById('receipt-font-mode').value = p.receiptFontMode || 'FONT_B';
+      document.getElementById('receipt-preview-slider').value = p.receiptPreviewFontSize || 10;
+      document.getElementById('receipt-preview-size-val').textContent = p.receiptPreviewFontSize || 10;
+
       document.getElementById('logo-enabled').checked = !!p.logoEnabled;
       document.getElementById('logo-width-range').value = p.logoWidth || 180;
       document.getElementById('logo-width-val').textContent = p.logoWidth || 180;
@@ -1843,7 +1925,7 @@
       document.getElementById('logo-thresh-val').textContent = p.logoThreshold || 128;
       document.getElementById('logo-file-name').textContent = p.logoDataUrl ? 'Logo tersimpan' : 'Belum ada file dipilih';
 
-      document.getElementById('char-width-input').value = p.charWidth || 32;
+      document.getElementById('char-width-input').value = p.charWidth || 42;
       document.getElementById('left-margin-input').value = p.leftMargin || 0;
       document.getElementById('feed-lines-input').value = p.feedLines || 3;
       document.getElementById('shop-name-input').value = p.shopName || 'A POS';
@@ -1856,6 +1938,41 @@
       renderReceiptPreview();
     }
 
+    function onPrinterPresetChange() {
+      const paper = document.getElementById('paper-size-select').value;
+      const fontMode = document.getElementById('receipt-font-mode').value;
+      const charInput = document.getElementById('char-width-input');
+      const slider = document.getElementById('receipt-preview-slider');
+
+      if (paper === '58mm') {
+        charInput.value = (fontMode === 'FONT_B') ? 42 : 32;
+      } else {
+        charInput.value = (fontMode === 'FONT_B') ? 56 : 48;
+      }
+
+      if (fontMode === 'FONT_B') {
+        slider.value = 10;
+      } else if (fontMode === 'FONT_A') {
+        slider.value = 11.5;
+      } else {
+        slider.value = 13.5;
+      }
+      document.getElementById('receipt-preview-size-val').textContent = slider.value;
+      savePrinterProfile();
+    }
+
+    function onPreviewFontSlider() {
+      const val = document.getElementById('receipt-preview-slider').value;
+      document.getElementById('receipt-preview-size-val').textContent = val;
+      savePrinterProfile();
+    }
+
+    function setQuickPreviewFont(px) {
+      document.getElementById('receipt-preview-slider').value = px;
+      document.getElementById('receipt-preview-size-val').textContent = px;
+      savePrinterProfile();
+    }
+
     function onLogoSliderChange() {
       document.getElementById('logo-width-val').textContent = document.getElementById('logo-width-range').value;
       document.getElementById('logo-thresh-val').textContent = document.getElementById('logo-thresh-range').value;
@@ -1864,10 +1981,15 @@
 
     function savePrinterProfile() {
       const p = appState.profile;
+      p.printMethod = document.getElementById('print-method-select').value;
+      p.paperSize = document.getElementById('paper-size-select').value;
+      p.receiptFontMode = document.getElementById('receipt-font-mode').value;
+      p.receiptPreviewFontSize = Number(document.getElementById('receipt-preview-slider').value) || 10;
+
       p.logoEnabled = document.getElementById('logo-enabled').checked;
       p.logoWidth = Number(document.getElementById('logo-width-range').value) || 180;
       p.logoThreshold = Number(document.getElementById('logo-thresh-range').value) || 128;
-      p.charWidth = Math.min(42, Math.max(24, Number(document.getElementById('char-width-input').value) || 32));
+      p.charWidth = Math.min(64, Math.max(24, Number(document.getElementById('char-width-input').value) || 42));
       p.leftMargin = Math.min(10, Math.max(0, Number(document.getElementById('left-margin-input').value) || 0));
       p.feedLines = Math.min(8, Math.max(1, Number(document.getElementById('feed-lines-input').value) || 3));
       p.shopName = document.getElementById('shop-name-input').value;
@@ -1878,13 +2000,14 @@
       p.footer2 = document.getElementById('footer-2-input').value;
       p.updatedAt = Date.now();
 
+      applyIsolatedReceiptCss();
       saveState();
       updateHeaderUI();
       renderReceiptPreview();
       triggerBackgroundSync();
     }
 
-    // KOMPRESI & RESIZE GAMBAR OTOMATIS AGAR UPLOAD DI ANDROID WEBVIEW TIDAK PERNAH GAGAL
+    // KOMPRESI & RESIZE GAMBAR OTOMATIS AGAR UPLOAD DI ANDROID WEBVIEW SELALU SUKSES
     function compressImageFile(file, maxWidth, quality, asPng) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1971,7 +2094,7 @@
 
     function buildSampleOrder() {
       return {
-        orderNumber: 'POS-TAB1-20261123-0001',
+        orderNumber: 'POS-TAB1-20261124-0001',
         createdAt: Date.now(),
         orderType: 'DINE IN',
         customerName: 'Meja 3',
@@ -1991,7 +2114,7 @@
 
     function formatReceiptLines(order, mode) {
       const p = appState.profile;
-      const cols = p.charWidth || 32;
+      const cols = p.charWidth || 42;
       const margin = ' '.repeat(p.leftMargin || 0);
       const sep = '-'.repeat(cols);
 
@@ -2056,26 +2179,32 @@
       return lines.join('\n');
     }
 
-    async function renderReceiptPreview() {
+    async function renderReceiptPreview(orderOverride, modeOverride) {
       const p = appState.profile;
-      const cols = p.charWidth || 32;
-      document.getElementById('preview-cols-badge').textContent = `${cols} kolom`;
-      const paper = document.getElementById('receipt-paper') || document.getElementById('receipt-preview-box');
-      paper.style.width = `${Math.max(240, cols * 8.6)}px`;
+      const cols = p.charWidth || 42;
+      const fontSize = p.receiptPreviewFontSize || 10;
+      const paper = p.paperSize || '58mm';
+
+      document.getElementById('preview-cols-badge').textContent = `${paper} • ${cols} kolom • ${fontSize}px`;
+      applyIsolatedReceiptCss();
 
       const logoWrap = document.getElementById('receipt-logo-preview-wrap');
       const logoCanvas = document.getElementById('receipt-logo-canvas');
-      if (p.logoEnabled && p.logoDataUrl) {
+      const isKitchen = modeOverride === 'KITCHEN';
+
+      if (!isKitchen && p.logoEnabled && p.logoDataUrl) {
         logoWrap.style.display = 'block';
         await renderMonochromeLogoToCanvas(logoCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128);
       } else {
         logoWrap.style.display = 'none';
       }
 
-      document.getElementById('receipt-text-preview').textContent = formatReceiptLines(buildSampleOrder(), 'CUSTOMER');
+      const targetOrder = orderOverride || buildSampleOrder();
+      const targetMode = modeOverride || 'CUSTOMER';
+      document.getElementById('receipt-text-preview').textContent = formatReceiptLines(targetOrder, targetMode);
     }
 
-    /* ==================== BLUETOOTH ESC/POS BRIDGE ==================== */
+    /* ==================== BLUETOOTH ESC/POS & SYSTEM PRINT ==================== */
     function scanBluetoothPrinters() {
       const listDiv = document.getElementById('paired-devices-list');
       if (window.AndroidPrinter && typeof window.AndroidPrinter.getPairedDevices === 'function') {
@@ -2099,7 +2228,7 @@
           showToast('Gagal membaca perangkat Bluetooth: ' + e.message);
         }
       } else {
-        listDiv.innerHTML = '<div class="text-muted">Bridge AndroidPrinter tidak terdeteksi (jalankan di dalam APK Android untuk mencetak via Bluetooth).</div>';
+        listDiv.innerHTML = '<div class="text-muted">Bridge AndroidPrinter tidak terdeteksi (gunakan APK Android untuk Bluetooth langsung, atau pilih System Print / Browser).</div>';
       }
     }
 
@@ -2116,6 +2245,16 @@
       }
     }
 
+    function getEscPosFontBytes() {
+      const mode = appState.profile.receiptFontMode || 'FONT_B';
+      if (mode === 'FONT_A') {
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00]; // Font A Standar
+      } else if (mode === 'FONT_A_TALL') {
+        return [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01]; // Font A Tinggi 2x
+      }
+      return [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];   // Font B Kecil & Rapat (Ideal 58mm)
+    }
+
     async function buildEscPosRasterLogoBytes() {
       const p = appState.profile;
       if (!p.logoEnabled || !p.logoDataUrl) return [];
@@ -2125,7 +2264,6 @@
       const h = imgData.height;
       const bytesPerRow = Math.ceil(w / 8);
 
-      // Center align ESC a 1 + GS v 0
       const bytes = [0x1B, 0x61, 0x01, 0x1D, 0x76, 0x30, 0x00, bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF];
       for (let y = 0; y < h; y++) {
         for (let bx = 0; bx < bytesPerRow; bx++) {
@@ -2144,15 +2282,26 @@
       return bytes;
     }
 
-    async function printEscPosReceipt(order, mode) {
+    async function printReceiptOrder(order, mode) {
+      await renderReceiptPreview(order, mode);
+      const method = appState.profile.printMethod || 'bluetooth';
+
+      if (method === 'system' || !(window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function')) {
+        if (method === 'system') {
+          window.print();
+          return;
+        }
+      }
+
       const text = formatReceiptLines(order, mode) + '\n'.repeat(appState.profile.feedLines || 3);
       if (window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function') {
         try {
           const initBytes = [0x1B, 0x40];
+          const fontBytes = getEscPosFontBytes();
           const logoBytes = mode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
           const encoder = new TextEncoder();
           const textBytes = Array.from(encoder.encode(text));
-          const allBytes = new Uint8Array([...initBytes, ...logoBytes, ...textBytes]);
+          const allBytes = new Uint8Array([...initBytes, ...fontBytes, ...logoBytes, ...textBytes]);
           let bin = '';
           allBytes.forEach(b => bin += String.fromCharCode(b));
           window.AndroidPrinter.printRawBase64(btoa(bin));
@@ -2161,12 +2310,12 @@
           showToast('Error cetak printer: ' + e.message);
         }
       } else {
-        showToast(mode === 'KITCHEN' ? 'Simulasi: Struk Dapur siap.' : 'Simulasi: Struk Pelanggan siap.');
+        showToast(mode === 'KITCHEN' ? 'Pratinjau Struk Dapur siap.' : 'Pratinjau Struk Pelanggan siap.');
       }
     }
 
-    function testPrintCustomer() { printEscPosReceipt(buildSampleOrder(), 'CUSTOMER'); }
-    function testPrintKitchen() { printEscPosReceipt(buildSampleOrder(), 'KITCHEN'); }
+    function testPrintCustomer() { printReceiptOrder(buildSampleOrder(), 'CUSTOMER'); }
+    function testPrintKitchen() { printReceiptOrder(buildSampleOrder(), 'KITCHEN'); }
 
     function printCashSummary() {
       const dateFilter = document.getElementById('laci-filter-date').value || getTodayStr();
@@ -2176,7 +2325,7 @@
       const cash = validOrders.filter(o => o.payMethod === 'TUNAI').reduce((s, o) => s + o.total, 0);
       const qris = validOrders.filter(o => o.payMethod === 'QRIS').reduce((s, o) => s + o.total, 0);
 
-      const cols = appState.profile.charWidth || 32;
+      const cols = appState.profile.charWidth || 42;
       const sep = '-'.repeat(cols);
       const summaryText = [
         (appState.profile.shopName || 'A POS').toUpperCase(),
@@ -2194,13 +2343,15 @@
       ].join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
 
       if (window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function') {
-        const bytes = new Uint8Array([0x1B, 0x40, ...Array.from(new TextEncoder().encode(summaryText))]);
+        const bytes = new Uint8Array([0x1B, 0x40, ...getEscPosFontBytes(), ...Array.from(new TextEncoder().encode(summaryText))]);
         let bin = '';
         bytes.forEach(b => bin += String.fromCharCode(b));
         window.AndroidPrinter.printRawBase64(btoa(bin));
         showToast('Rekap kas dicetak.');
       } else {
-        showToast('Simulasi cetak rekap kas berhasil.');
+        document.getElementById('receipt-logo-preview-wrap').style.display = 'none';
+        document.getElementById('receipt-text-preview').textContent = summaryText;
+        window.print();
       }
     }
 
@@ -2463,7 +2614,6 @@
         return;
       }
 
-      // Validasi PIN Owner untuk Void & Reset
       const ownerAcc = appState.users.find(u => u.role === 'Owner' && u.pin === pinBuffer);
       if (!ownerAcc) {
         showToast('PIN Owner tidak valid!');
@@ -2512,6 +2662,21 @@
     }
 
     /* ==================== SINKRONISASI CLOUD 2-ARAH (EMAIL OWNER) ==================== */
+    function parseFirebaseConfigInput(rawText) {
+      let cleaned = rawText.trim();
+      // Mendukung paste langsung dari Firebase Console (const firebaseConfig = { ... };)
+      const braceStart = cleaned.indexOf('{');
+      const braceEnd = cleaned.lastIndexOf('}');
+      if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+        cleaned = cleaned.slice(braceStart, braceEnd + 1);
+      }
+      // Ubah unquoted JS keys (apiKey: "...") menjadi valid JSON ("apiKey": "...")
+      cleaned = cleaned.replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":');
+      // Hapus trailing comma sebelum }
+      cleaned = cleaned.replace(/,\s*}/g, '}');
+      return JSON.parse(cleaned);
+    }
+
     function initFirebaseFromSavedConfig() {
       const raw = localStorage.getItem(FB_CFG_KEY);
       if (!raw) return;
@@ -2544,13 +2709,13 @@
     function saveFirebaseConfig() {
       const txt = (document.getElementById('firebase-config-textarea').value || '').trim();
       try {
-        const parsed = JSON.parse(txt);
+        const parsed = parseFirebaseConfigInput(txt);
         if (!parsed.apiKey || !parsed.projectId) throw new Error('apiKey dan projectId wajib ada');
         localStorage.setItem(FB_CFG_KEY, JSON.stringify(parsed, null, 2));
         showToast('Konfigurasi Firebase disimpan. Memuat ulang...');
         setTimeout(() => location.reload(), 700);
       } catch (e) {
-        showToast('Format JSON Firebase tidak valid: ' + e.message);
+        showToast('Format Firebase config tidak valid: ' + e.message);
       }
     }
 
@@ -2650,12 +2815,10 @@
         if (snap.exists) {
           const remote = snap.data();
 
-          // Merge Profile (ambil yang updatedAt paling baru, termasuk Logo & QRIS)
           if (remote.profile && (remote.profile.updatedAt || 0) > (appState.profile.updatedAt || 0)) {
             appState.profile = { ...appState.profile, ...remote.profile };
           }
 
-          // Merge Menu, Users, Orders, VoidLogs secara 2-arah
           appState.menu = mergeByIdAndUpdatedAt(appState.menu, remote.menu);
           appState.users = mergeByIdAndUpdatedAt(appState.users, remote.users);
           appState.orders = mergeByIdAndUpdatedAt(appState.orders, remote.orders)
@@ -2666,7 +2829,6 @@
           appState.openingCashByDate = { ...(remote.openingCashByDate || {}), ...(appState.openingCashByDate || {}) };
         }
 
-        // Push hasil gabungan kembali ke Firestore (2-Way Sync)
         await docRef.set({
           ownerEmail: currentOwnerUser.email,
           profile: appState.profile,
@@ -2708,128 +2870,5 @@
       }
     });
   </script>
-<script>
-  // === PENGATUR UKURAN KERTAS & FONT STRUK ===
-  function applyReceiptFontPreset() {
-    const paperEl = document.getElementById('paperSizeSelect');
-    const fontEl = document.getElementById('receiptFontMode');
-    const charInput = document.getElementById('charWidthInput');
-    const slider = document.getElementById('receiptPreviewSlider');
-
-    const paper = paperEl ? paperEl.value : '58mm';
-    const fontMode = fontEl ? fontEl.value : 'FONT_B';
-
-    if (charInput) {
-      charInput.max = 64;
-      if (paper === '58mm') {
-        charInput.value = (fontMode === 'FONT_B') ? 42 : 32;
-      } else {
-        charInput.value = (fontMode === 'FONT_B') ? 56 : 48;
-      }
-    }
-
-    if (slider) {
-      if (fontMode === 'FONT_B') {
-        slider.value = 10;
-      } else if (fontMode === 'FONT_A') {
-        slider.value = 11.5;
-      } else {
-        slider.value = 13.5;
-      }
-    }
-
-    localStorage.setItem('pos_paper_size', paper);
-    localStorage.setItem('pos_receipt_font_mode', fontMode);
-
-    updateReceiptPreviewFont();
-    if (typeof updatePrinterSettings === 'function') {
-      updatePrinterSettings();
-    }
-  }
-
-  function updateReceiptPreviewFont() {
-    const slider = document.getElementById('receiptPreviewSlider');
-    const label = document.getElementById('receiptPreviewSizeVal');
-    const size = slider ? slider.value : (localStorage.getItem('pos_receipt_preview_size') || '10');
-
-    if (label) label.textContent = size;
-    localStorage.setItem('pos_receipt_preview_size', size);
-
-    let styleTag = document.getElementById('dynamic-receipt-font-style');
-    if (!styleTag) {
-      styleTag = document.createElement('style');
-      styleTag.id = 'dynamic-receipt-font-style';
-      document.head.appendChild(styleTag);
-    }
-
-    styleTag.textContent = `
-      #receiptPreview, .receipt-preview, #previewStruk, .struk-preview, pre {
-        font-size: ${size}px !important;
-        line-height: 1.35 !important;
-      }
-      @media print {
-        #receiptPreview, .receipt-preview, #previewStruk, .struk-preview, pre, .print-area * {
-          font-size: ${size}px !important;
-          line-height: 1.35 !important;
-        }
-      }
-    `;
-  }
-
-  (function initReceiptFontSettings() {
-    const savedPaper = localStorage.getItem('pos_paper_size') || '58mm';
-    const savedFont = localStorage.getItem('pos_receipt_font_mode') || 'FONT_B';
-    const savedSize = localStorage.getItem('pos_receipt_preview_size') || '10';
-
-    const paperEl = document.getElementById('paperSizeSelect');
-    const fontEl = document.getElementById('receiptFontMode');
-    const sliderEl = document.getElementById('receiptPreviewSlider');
-
-    if (paperEl) paperEl.value = savedPaper;
-    if (fontEl) fontEl.value = savedFont;
-    if (sliderEl) sliderEl.value = savedSize;
-
-    updateReceiptPreviewFont();
-  })();
-// === OTOMATIS SISIPKAN PERINTAH FONT ESC/POS SAAT CETAK BLUETOOTH ===
-  (function hookBluetoothFontMode() {
-    if (!window.AndroidPrinter || typeof window.AndroidPrinter.printRawBase64 !== 'function') return;
-    if (window.AndroidPrinter._fontHooked) return;
-
-    const origPrint = window.AndroidPrinter.printRawBase64.bind(window.AndroidPrinter);
-    window.AndroidPrinter.printRawBase64 = function(base64Data) {
-      try {
-        const fontMode = localStorage.getItem('pos_receipt_font_mode') || 'FONT_B';
-        // ESC M 1 (Font B kecil 58mm) | ESC M 0 (Font A standar) | GS ! 0x01 (Tinggi 2x)
-        let prefix = [0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];
-        if (fontMode === 'FONT_A') {
-          prefix = [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00];
-        } else if (fontMode === 'FONT_A_TALL') {
-          prefix = [0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01];
-        }
-
-        const rawBin = atob(base64Data);
-        const origBytes = new Uint8Array(rawBin.length);
-        for (let i = 0; i < rawBin.length; i++) origBytes[i] = rawBin.charCodeAt(i);
-
-        // Sisipkan perintah font setelah ESC @ (0x1B 0x40) jika ada, atau di awal data
-        const hasInit = origBytes.length >= 2 && origBytes[0] === 0x1B && origBytes[1] === 0x40;
-        const head = hasInit ? [0x1B, 0x40, ...prefix] : [...prefix];
-        const body = hasInit ? origBytes.slice(2) : origBytes;
-
-        const merged = new Uint8Array(head.length + body.length);
-        merged.set(head, 0);
-        merged.set(body, head.length);
-
-        let outBin = '';
-        for (let i = 0; i < merged.length; i++) outBin += String.fromCharCode(merged[i]);
-        return origPrint(btoa(outBin));
-      } catch (e) {
-        return origPrint(base64Data);
-      }
-    };
-    window.AndroidPrinter._fontHooked = true;
-  })();
-</script>
 </body>
 </html>
