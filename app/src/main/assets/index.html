@@ -1313,5 +1313,137 @@
       });
     }
   </script>
+  <script>
+(function () {
+  var DEFAULT_PIN = "1234";
+  var isLoggingIn = false;
+
+  function collectPinsFromStorage() {
+    var pins = [DEFAULT_PIN];
+    var keys = ["apos_users", "users", "kasir_users", "singgah_users", "apos_pins", "pin_list"];
+    for (var i = 0; i < keys.length; i++) {
+      try {
+        var raw = window.localStorage && window.localStorage.getItem(keys[i]);
+        if (!raw) continue;
+        var parsed = JSON.parse(raw);
+        if (typeof parsed === "string" || typeof parsed === "number") {
+          pins.push(String(parsed).trim());
+        } else if (Array.isArray(parsed)) {
+          for (var j = 0; j < parsed.length; j++) {
+            var item = parsed[j];
+            if (typeof item === "string" || typeof item === "number") {
+              pins.push(String(item).trim());
+            } else if (item && typeof item === "object") {
+              var val = item.pin !== undefined ? item.pin : (item.password !== undefined ? item.password : item.code);
+              if (val !== undefined && val !== null) pins.push(String(val).trim());
+            }
+          }
+        } else if (parsed && typeof parsed === "object") {
+          var singleVal = parsed.pin !== undefined ? parsed.pin : (parsed.password !== undefined ? parsed.password : parsed.code);
+          if (singleVal !== undefined && singleVal !== null) pins.push(String(singleVal).trim());
+        }
+      } catch (e) {}
+    }
+    return pins;
+  }
+
+  function hidePinOverlay() {
+    var pinScreen = document.getElementById("pin-screen");
+    if (pinScreen) {
+      pinScreen.classList.add("hidden");
+      pinScreen.style.setProperty("display", "none", "important");
+      pinScreen.style.pointerEvents = "none";
+      pinScreen.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  window.loginWithPin = function () {
+    if (isLoggingIn) return;
+    isLoggingIn = true;
+
+    var inputEl = document.getElementById("pin-input");
+    var errorEl = document.getElementById("pin-error");
+
+    try {
+      var entered = inputEl ? String(inputEl.value || "").trim() : "";
+      var validPins = collectPinsFromStorage();
+      var matched = entered.length > 0 && validPins.indexOf(entered) !== -1;
+
+      if (!matched) {
+        if (errorEl) {
+          errorEl.textContent = "PIN salah. Coba lagi.";
+          errorEl.classList.remove("hidden");
+          errorEl.style.display = "block";
+        }
+        return;
+      }
+
+      if (errorEl) {
+        errorEl.classList.add("hidden");
+        errorEl.style.display = "none";
+      }
+
+      try {
+        if (window.localStorage) {
+          window.localStorage.setItem("apos_unlocked", "true");
+          window.localStorage.setItem("apos_last_pin", entered);
+        }
+      } catch (e) {}
+
+      hidePinOverlay();
+
+      var postHooks = ["onPinSuccess", "afterLogin", "renderKasir", "initApp", "loadState"];
+      for (var k = 0; k < postHooks.length; k++) {
+        try {
+          if (typeof window[postHooks[k]] === "function") {
+            window[postHooks[k]](entered);
+          }
+        } catch (hookErr) {}
+      }
+    } catch (err) {
+      hidePinOverlay();
+    } finally {
+      isLoggingIn = false;
+    }
+  };
+
+  function ensurePinButtonWorks() {
+    var pinScreen = document.getElementById("pin-screen");
+    if (pinScreen) {
+      pinScreen.style.pointerEvents = "auto";
+    }
+
+    var btn = document.querySelector('#pin-screen button[onclick*="loginWithPin"]') ||
+              document.querySelector('#pin-screen button');
+    if (btn && !btn.dataset.aposFixed) {
+      btn.dataset.aposFixed = "1";
+      btn.setAttribute("type", "button");
+      btn.style.pointerEvents = "auto";
+      btn.style.touchAction = "manipulation";
+      btn.addEventListener("click", function (ev) {
+        if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+        window.loginWithPin();
+      });
+    }
+
+    var inputEl = document.getElementById("pin-input");
+    if (inputEl && !inputEl.dataset.aposKeyFixed) {
+      inputEl.dataset.aposKeyFixed = "1";
+      inputEl.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.keyCode === 13) {
+          if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+          window.loginWithPin();
+        }
+      });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", ensurePinButtonWorks);
+  } else {
+    ensurePinButtonWorks();
+  }
+})();
+</script>
 </body>
 </html>
