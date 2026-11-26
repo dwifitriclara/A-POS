@@ -133,7 +133,7 @@
       <input id="pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••"
         class="w-full text-center text-2xl tracking-[0.5em] py-3 px-4 rounded-xl border outline-none mb-3 font-bold"
         style="border-color: var(--border-latte); background: #FFF;" />
-      <button onclick="loginWithPin()" class="btn-primary w-full py-3 rounded-xl font-semibold text-sm">
+      <button type="button" onclick="loginWithPin()" class="btn-primary w-full py-3 rounded-xl font-semibold text-sm">
         Masuk ke Kasir
       </button>
       <p id="pin-error" class="text-xs text-red-600 mt-2 hidden">PIN salah. Coba lagi.</p>
@@ -153,11 +153,11 @@
     </div>
 
     <nav class="flex items-center gap-1.5 overflow-x-auto">
-      <button onclick="switchTab('kasir')" id="nav-kasir" class="tab-active px-3 py-1.5 rounded-lg text-xs">Kasir</button>
-      <button onclick="switchTab('riwayat')" id="nav-riwayat" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Riwayat &amp; Open Bill</button>
-      <button onclick="switchTab('menu')" id="nav-menu" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Produk</button>
-      <button onclick="switchTab('printer')" id="nav-printer" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Printer &amp; Struk</button>
-      <button onclick="switchTab('laporan')" id="nav-laporan" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Laporan</button>
+      <button type="button" onclick="switchTab('kasir')" id="nav-kasir" class="tab-active px-3 py-1.5 rounded-lg text-xs">Kasir</button>
+      <button type="button" onclick="switchTab('riwayat')" id="nav-riwayat" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Riwayat &amp; Open Bill</button>
+      <button type="button" onclick="switchTab('menu')" id="nav-menu" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Produk</button>
+      <button type="button" onclick="switchTab('printer')" id="nav-printer" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Printer &amp; Struk</button>
+      <button type="button" onclick="switchTab('laporan')" id="nav-laporan" class="tab-inactive px-3 py-1.5 rounded-lg text-xs">Laporan</button>
     </nav>
   </header>
 
@@ -187,7 +187,7 @@
         <div class="card-surface rounded-2xl p-4 flex flex-col gap-3 sticky top-16">
           <div class="flex items-center justify-between border-b pb-2" style="border-color: var(--border-latte);">
             <h2 class="font-bold text-base">Pesanan Aktif</h2>
-            <button onclick="clearCart()" class="text-xs text-red-600 hover:underline">Kosongkan</button>
+            <button type="button" onclick="clearCart()" class="text-xs text-red-600 hover:underline">Kosongkan</button>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
@@ -246,10 +246,10 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <button onclick="checkoutOrder(false)" class="py-2.5 px-3 rounded-xl border text-xs font-semibold" style="border-color: var(--brown-dark); color: var(--brown-dark);">
+            <button type="button" onclick="checkoutOrder(false)" class="py-2.5 px-3 rounded-xl border text-xs font-semibold" style="border-color: var(--brown-dark); color: var(--brown-dark);">
               Simpan Saja
             </button>
-            <button onclick="checkoutOrder(true)" class="btn-primary py-2.5 px-3 rounded-xl text-xs font-semibold">
+            <button type="button" onclick="checkoutOrder(true)" class="btn-primary py-2.5 px-3 rounded-xl text-xs font-semibold">
               Bayar &amp; Cetak Struk
             </button>
           </div>
@@ -281,7 +281,7 @@
           <input id="new-prod-name" type="text" placeholder="Nama Produk (cth: Es Kosong)" class="px-3 py-2 rounded-xl border text-xs bg-white" style="border-color: var(--border-latte);" />
           <input id="new-prod-cat" type="text" placeholder="Kategori (cth: Minuman)" class="px-3 py-2 rounded-xl border text-xs bg-white" style="border-color: var(--border-latte);" />
           <input id="new-prod-price" type="number" min="0" placeholder="Harga (Rp)" class="px-3 py-2 rounded-xl border text-xs bg-white" style="border-color: var(--border-latte);" />
-          <button onclick="addProduct()" class="btn-primary py-2 px-4 rounded-xl text-xs font-semibold">+ Simpan Produk</button>
+          <button type="button" onclick="addProduct()" class="btn-primary py-2 px-4 rounded-xl text-xs font-semibold">+ Simpan Produk</button>
         </div>
       </div>
       <div id="manage-menu-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
@@ -375,13 +375,13 @@
           </div>
 
           <div class="flex flex-wrap gap-2 pt-2">
-            <button onclick="savePrinterSettings()" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-semibold">
+            <button type="button" onclick="savePrinterSettings()" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-semibold">
               Simpan Pengaturan
             </button>
-            <button onclick="testPrintReceipt()" class="px-4 py-2.5 rounded-xl border text-xs font-semibold" style="border-color: var(--brown-dark); color: var(--brown-dark);">
+            <button type="button" onclick="testPrintReceipt()" class="px-4 py-2.5 rounded-xl border text-xs font-semibold" style="border-color: var(--brown-dark); color: var(--brown-dark);">
               Tes Cetak Struk
             </button>
-            <button onclick="openIOSFallbackPrintWindow(buildSampleOrder(), 'CUSTOMER')" class="px-4 py-2.5 rounded-xl border text-xs font-semibold" style="border-color: var(--accent-caramel); color: var(--accent-caramel);">
+            <button type="button" onclick="openIOSFallbackPrintWindow(buildSampleOrder(), 'CUSTOMER')" class="px-4 py-2.5 rounded-xl border text-xs font-semibold" style="border-color: var(--accent-caramel); color: var(--accent-caramel);">
               Buka Layar Cetak iOS / Share
             </button>
           </div>
@@ -496,11 +496,14 @@
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {}
     }
 
     function showToast(msg) {
       const el = document.getElementById('toast');
+      if (!el) return;
       el.textContent = msg;
       el.classList.remove('hidden');
       clearTimeout(window._toastTimer);
@@ -523,7 +526,6 @@
       if (clean.length <= maxTextWidth) {
         return ' '.repeat(indent) + clean;
       }
-      // Pecah baris rapi jika nama produk panjang agar tidak merusak margin
       const words = clean.split(/\s+/);
       const out = [];
       let current = '';
@@ -652,7 +654,6 @@
     // CETAK ANDROID ESC/POS & PERBAIKAN BUG CETAK SAFARI iOS
     // =========================================================================
     function getEscPosFontBytes() {
-      // ESC M 1 = Font B (rapat 42 kolom), ESC M 0 = Font A (standar 32 kolom)
       return appState.profile.escFont === 'FONT_A' ? [0x1B, 0x4D, 0x00] : [0x1B, 0x4D, 0x01];
     }
 
@@ -662,7 +663,7 @@
         const img = new Image();
         img.onload = () => {
           try {
-            const maxW = 192; // kelipatan 8 agar aman untuk printhead 384 dots (58mm)
+            const maxW = 192;
             const scale = Math.min(1, maxW / img.width);
             const targetW = Math.max(8, Math.floor((img.width * scale) / 8) * 8);
             const targetH = Math.max(8, Math.round(img.height * (targetW / img.width)));
@@ -699,7 +700,6 @@
             const yL = targetH & 0xFF;
             const yH = (targetH >> 8) & 0xFF;
 
-            // Center logo (ESC a 1) -> GS v 0 -> kembalikan rata kiri (ESC a 0)
             resolve([
               0x1B, 0x61, 0x01,
               0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH,
@@ -819,12 +819,10 @@
         window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function'
       );
 
-      // JALUR 1: ANDROID BLUETOOTH ESC/POS (Tablet Huawei / Redmi)
       if ((method === 'bluetooth' || method === 'auto') && hasAndroidBridge && !isIOSDevice) {
         (async () => {
           try {
-            const feed = '
-'.repeat(Math.max(1, Number(appState.profile.feedLines) || 3));
+            const feed = '\n'.repeat(Math.max(1, Number(appState.profile.feedLines) || 3));
             const initBytes = [0x1B, 0x40, 0x1B, 0x61, 0x00];
             const fontBytes = getEscPosFontBytes();
             const logoBytes = mode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
@@ -852,7 +850,6 @@
         return;
       }
 
-      // JALUR 2: SAFARI iOS / BROWSER (Dipanggil sinkron langsung dalam event klik!)
       const printRoot = document.getElementById('ios-print-root');
       if (printRoot) {
         printRoot.style.display = 'block';
@@ -871,7 +868,6 @@
         printTriggered = false;
       }
 
-      // Jika Safari iOS mengabaikan window.print() langsung, buka halaman cetak khusus
       setTimeout(() => {
         cleanupAfterPrint();
         if (!printTriggered && isIOSDevice) {
@@ -883,26 +879,78 @@
     // =========================================================================
     // LOGIKA UI, KASIR, PRODUK, PENGATURAN & LAPORAN
     // =========================================================================
-    function loginWithPin() {
-      const val = document.getElementById('pin-input').value.trim();
-      if (val === String(appState.profile.pin || '1234')) {
-        document.getElementById('pin-screen').classList.add('hidden');
-        document.getElementById('pin-error').classList.add('hidden');
-        initAppUI();
-      } else {
-        document.getElementById('pin-error').classList.remove('hidden');
+    function collectValidPins() {
+      const pins = ['1234', String(appState.profile.pin || '1234').trim()].filter(Boolean);
+      const keys = ['apos_users', 'users', 'kasir_users', 'singgah_users', 'apos_pins', 'pin_list'];
+      for (const k of keys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          if (typeof parsed === 'string' || typeof parsed === 'number') {
+            pins.push(String(parsed).trim());
+          } else if (Array.isArray(parsed)) {
+            parsed.forEach((item) => {
+              if (typeof item === 'string' || typeof item === 'number') {
+                pins.push(String(item).trim());
+              } else if (item && typeof item === 'object') {
+                const candidate = item.pin ?? item.password ?? item.code;
+                if (candidate !== undefined && candidate !== null) pins.push(String(candidate).trim());
+              }
+            });
+          } else if (parsed && typeof parsed === 'object') {
+            const candidate = parsed.pin ?? parsed.password ?? parsed.code;
+            if (candidate !== undefined && candidate !== null) pins.push(String(candidate).trim());
+          }
+        } catch (e) {}
+      }
+      return pins;
+    }
+
+    function hidePinScreen() {
+      const pinScreen = document.getElementById('pin-screen');
+      if (pinScreen) {
+        pinScreen.classList.add('hidden');
+        pinScreen.style.display = 'none';
+        pinScreen.style.pointerEvents = 'none';
       }
     }
 
-    document.getElementById('pin-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') loginWithPin();
-    });
+    function loginWithPin() {
+      const inputEl = document.getElementById('pin-input');
+      const errEl = document.getElementById('pin-error');
+      const val = inputEl ? String(inputEl.value || '').trim() : '';
+      const validPins = collectValidPins();
+
+      if (val.length > 0 && validPins.includes(val)) {
+        if (errEl) errEl.classList.add('hidden');
+        hidePinScreen();
+        initAppUI();
+      } else if (errEl) {
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    (function () {
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) {
+        pinInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            loginWithPin();
+          }
+        });
+      }
+    })();
 
     function switchTab(tabName) {
       ['kasir', 'riwayat', 'menu', 'printer', 'laporan'].forEach((t) => {
-        document.getElementById('tab-' + t).classList.toggle('hidden', t !== tabName);
+        const sec = document.getElementById('tab-' + t);
+        if (sec) sec.classList.toggle('hidden', t !== tabName);
         const btn = document.getElementById('nav-' + t);
-        btn.className = (t === tabName ? 'tab-active' : 'tab-inactive') + ' px-3 py-1.5 rounded-lg text-xs';
+        if (btn) {
+          btn.className = (t === tabName ? 'tab-active' : 'tab-inactive') + ' px-3 py-1.5 rounded-lg text-xs';
+        }
       });
       if (tabName === 'riwayat') renderOrdersList();
       if (tabName === 'menu') renderManageMenuList();
@@ -914,9 +962,13 @@
     }
 
     function initAppUI() {
-      document.getElementById('header-shop-name').textContent = appState.profile.shopName || 'A-POS';
-      const modeLabel = isIOSDevice ? 'iOS Safari' : (window.AndroidPrinter ? 'Android BT Siap' : 'Web Browser');
-      document.getElementById('header-cashier-info').textContent = `Kasir: ${appState.profile.cashierName} • ${modeLabel}`;
+      const shopEl = document.getElementById('header-shop-name');
+      const infoEl = document.getElementById('header-cashier-info');
+      if (shopEl) shopEl.textContent = appState.profile.shopName || 'A-POS';
+      if (infoEl) {
+        const modeLabel = isIOSDevice ? 'iOS Safari' : (window.AndroidPrinter ? 'Android BT Siap' : 'Web Browser');
+        infoEl.textContent = `Kasir: ${appState.profile.cashierName} • ${modeLabel}`;
+      }
       populateCategoryFilter();
       renderMenuGrid();
       renderCart();
@@ -926,15 +978,20 @@
 
     function populateCategoryFilter() {
       const sel = document.getElementById('filter-category');
+      if (!sel) return;
       const cats = Array.from(new Set(appState.products.map((p) => p.category || 'Umum')));
       sel.innerHTML = '<option value="ALL">Semua Kategori</option>' +
         cats.map((c) => `<option value="${c}">${c}</option>`).join('');
     }
 
     function renderMenuGrid() {
-      const q = (document.getElementById('search-menu').value || '').toLowerCase();
-      const cat = document.getElementById('filter-category').value;
+      const searchEl = document.getElementById('search-menu');
+      const catEl = document.getElementById('filter-category');
       const grid = document.getElementById('menu-grid');
+      if (!grid) return;
+
+      const q = (searchEl ? searchEl.value : '').toLowerCase();
+      const cat = catEl ? catEl.value : 'ALL';
 
       const filtered = appState.products.filter((p) => {
         const matchQ = p.name.toLowerCase().includes(q);
@@ -943,7 +1000,7 @@
       });
 
       grid.innerHTML = filtered.map((p) => `
-        <button onclick="addToCart('${p.id}')" class="card-surface rounded-2xl p-3 text-left hover:shadow transition flex flex-col justify-between">
+        <button type="button" onclick="addToCart('${p.id}')" class="card-surface rounded-2xl p-3 text-left hover:shadow transition flex flex-col justify-between">
           <div>
             <span class="text-[10px] px-2 py-0.5 rounded-full" style="background:#EFE5D8;color:var(--brown-mid);">${p.category || 'Umum'}</span>
             <div class="font-bold text-sm mt-1.5 leading-snug">${p.name}</div>
@@ -974,14 +1031,18 @@
 
     function clearCart() {
       cart = [];
-      document.getElementById('cart-discount').value = 0;
-      document.getElementById('cash-received').value = '';
-      document.getElementById('customer-name').value = '';
+      const discEl = document.getElementById('cart-discount');
+      const cashEl = document.getElementById('cash-received');
+      const custEl = document.getElementById('customer-name');
+      if (discEl) discEl.value = 0;
+      if (cashEl) cashEl.value = '';
+      if (custEl) custEl.value = '';
       renderCart();
     }
 
     function renderCart() {
       const box = document.getElementById('cart-items');
+      if (!box) return;
       if (!cart.length) {
         box.innerHTML = '<div class="py-6 text-center text-xs" style="color:var(--text-muted);">Belum ada item dipilih.</div>';
       } else {
@@ -992,9 +1053,9 @@
               <div style="color:var(--text-muted);">${formatRp(it.price)}</div>
             </div>
             <div class="flex items-center gap-1.5">
-              <button onclick="updateCartQty(${idx}, -1)" class="w-6 h-6 rounded-lg border font-bold">-</button>
+              <button type="button" onclick="updateCartQty(${idx}, -1)" class="w-6 h-6 rounded-lg border font-bold">-</button>
               <span class="w-5 text-center font-bold">${it.qty}</span>
-              <button onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg border font-bold">+</button>
+              <button type="button" onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg border font-bold">+</button>
             </div>
             <div class="w-20 text-right font-bold">${formatRp(it.qty * it.price)}</div>
           </div>
@@ -1102,9 +1163,9 @@
             <span>${formatRp(o.total)}</span>
           </div>
           <div class="flex flex-wrap gap-1.5 pt-1">
-            <button onclick="reprintOrder('${o.id}', 'CUSTOMER')" class="btn-primary px-3 py-1.5 rounded-lg text-[11px] font-semibold">Cetak Struk</button>
-            <button onclick="reprintOrder('${o.id}', 'KITCHEN')" class="px-3 py-1.5 rounded-lg border text-[11px] font-semibold" style="border-color:var(--brown-dark);">Struk Dapur</button>
-            ${o.paymentStatus === 'UNPAID' ? `<button onclick="settleOrder('${o.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[11px] font-semibold">Lunasi Tunai</button>` : ''}
+            <button type="button" onclick="reprintOrder('${o.id}', 'CUSTOMER')" class="btn-primary px-3 py-1.5 rounded-lg text-[11px] font-semibold">Cetak Struk</button>
+            <button type="button" onclick="reprintOrder('${o.id}', 'KITCHEN')" class="px-3 py-1.5 rounded-lg border text-[11px] font-semibold" style="border-color:var(--brown-dark);">Struk Dapur</button>
+            ${o.paymentStatus === 'UNPAID' ? `<button type="button" onclick="settleOrder('${o.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[11px] font-semibold">Lunasi Tunai</button>` : ''}
           </div>
         </div>
       `).join('');
@@ -1163,7 +1224,7 @@
             <div class="font-bold">${p.name}</div>
             <div style="color:var(--text-muted);">${p.category} • ${formatRp(p.price)}</div>
           </div>
-          <button onclick="deleteProduct('${p.id}')" class="text-red-600 font-semibold px-2 py-1">Hapus</button>
+          <button type="button" onclick="deleteProduct('${p.id}')" class="text-red-600 font-semibold px-2 py-1">Hapus</button>
         </div>
       `).join('');
     }
@@ -1313,137 +1374,5 @@
       });
     }
   </script>
-  <script>
-(function () {
-  var DEFAULT_PIN = "1234";
-  var isLoggingIn = false;
-
-  function collectPinsFromStorage() {
-    var pins = [DEFAULT_PIN];
-    var keys = ["apos_users", "users", "kasir_users", "singgah_users", "apos_pins", "pin_list"];
-    for (var i = 0; i < keys.length; i++) {
-      try {
-        var raw = window.localStorage && window.localStorage.getItem(keys[i]);
-        if (!raw) continue;
-        var parsed = JSON.parse(raw);
-        if (typeof parsed === "string" || typeof parsed === "number") {
-          pins.push(String(parsed).trim());
-        } else if (Array.isArray(parsed)) {
-          for (var j = 0; j < parsed.length; j++) {
-            var item = parsed[j];
-            if (typeof item === "string" || typeof item === "number") {
-              pins.push(String(item).trim());
-            } else if (item && typeof item === "object") {
-              var val = item.pin !== undefined ? item.pin : (item.password !== undefined ? item.password : item.code);
-              if (val !== undefined && val !== null) pins.push(String(val).trim());
-            }
-          }
-        } else if (parsed && typeof parsed === "object") {
-          var singleVal = parsed.pin !== undefined ? parsed.pin : (parsed.password !== undefined ? parsed.password : parsed.code);
-          if (singleVal !== undefined && singleVal !== null) pins.push(String(singleVal).trim());
-        }
-      } catch (e) {}
-    }
-    return pins;
-  }
-
-  function hidePinOverlay() {
-    var pinScreen = document.getElementById("pin-screen");
-    if (pinScreen) {
-      pinScreen.classList.add("hidden");
-      pinScreen.style.setProperty("display", "none", "important");
-      pinScreen.style.pointerEvents = "none";
-      pinScreen.setAttribute("aria-hidden", "true");
-    }
-  }
-
-  window.loginWithPin = function () {
-    if (isLoggingIn) return;
-    isLoggingIn = true;
-
-    var inputEl = document.getElementById("pin-input");
-    var errorEl = document.getElementById("pin-error");
-
-    try {
-      var entered = inputEl ? String(inputEl.value || "").trim() : "";
-      var validPins = collectPinsFromStorage();
-      var matched = entered.length > 0 && validPins.indexOf(entered) !== -1;
-
-      if (!matched) {
-        if (errorEl) {
-          errorEl.textContent = "PIN salah. Coba lagi.";
-          errorEl.classList.remove("hidden");
-          errorEl.style.display = "block";
-        }
-        return;
-      }
-
-      if (errorEl) {
-        errorEl.classList.add("hidden");
-        errorEl.style.display = "none";
-      }
-
-      try {
-        if (window.localStorage) {
-          window.localStorage.setItem("apos_unlocked", "true");
-          window.localStorage.setItem("apos_last_pin", entered);
-        }
-      } catch (e) {}
-
-      hidePinOverlay();
-
-      var postHooks = ["onPinSuccess", "afterLogin", "renderKasir", "initApp", "loadState"];
-      for (var k = 0; k < postHooks.length; k++) {
-        try {
-          if (typeof window[postHooks[k]] === "function") {
-            window[postHooks[k]](entered);
-          }
-        } catch (hookErr) {}
-      }
-    } catch (err) {
-      hidePinOverlay();
-    } finally {
-      isLoggingIn = false;
-    }
-  };
-
-  function ensurePinButtonWorks() {
-    var pinScreen = document.getElementById("pin-screen");
-    if (pinScreen) {
-      pinScreen.style.pointerEvents = "auto";
-    }
-
-    var btn = document.querySelector('#pin-screen button[onclick*="loginWithPin"]') ||
-              document.querySelector('#pin-screen button');
-    if (btn && !btn.dataset.aposFixed) {
-      btn.dataset.aposFixed = "1";
-      btn.setAttribute("type", "button");
-      btn.style.pointerEvents = "auto";
-      btn.style.touchAction = "manipulation";
-      btn.addEventListener("click", function (ev) {
-        if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
-        window.loginWithPin();
-      });
-    }
-
-    var inputEl = document.getElementById("pin-input");
-    if (inputEl && !inputEl.dataset.aposKeyFixed) {
-      inputEl.dataset.aposKeyFixed = "1";
-      inputEl.addEventListener("keydown", function (ev) {
-        if (ev.key === "Enter" || ev.keyCode === 13) {
-          if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
-          window.loginWithPin();
-        }
-      });
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ensurePinButtonWorks);
-  } else {
-    ensurePinButtonWorks();
-  }
-})();
-</script>
 </body>
 </html>
