@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>A POS — Kasir &amp; Dapur</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -25,7 +25,7 @@
       --danger: #b82929;
       --danger-bg: #fdeaea;
       --warning: #c97a16;
-      --receipt-font-size: 10px;
+      --receipt-font-size: 11.5px;
       --receipt-paper-width: 255px;
     }
 
@@ -34,8 +34,14 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
@@ -114,7 +120,7 @@
       font-weight: 700;
     }
 
-    /* NAV TABS */
+    /* NAV TABS (BUTTON PILL STYLE) */
     .nav-bar {
       position: sticky;
       top: 58px;
@@ -122,29 +128,44 @@
       background: var(--card);
       border-bottom: 1.5px solid var(--border);
       display: flex;
+      align-items: center;
       overflow-x: auto;
-      padding: 0 10px;
-      gap: 4px;
+      padding: 8px 12px;
+      gap: 8px;
     }
 
     .nav-tab {
-      border: none;
-      background: transparent;
-      color: var(--muted);
+      border: 1.5px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--primary);
       font-weight: 800;
-      font-size: 15px;
-      padding: 12px 16px;
+      font-size: 14.5px;
+      min-height: 40px;
+      padding: 7px 14px;
+      border-radius: 10px;
       cursor: pointer;
-      border-bottom: 3px solid transparent;
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      box-shadow: 0 1px 2px rgba(59, 38, 24, 0.05);
+    }
+
+    .nav-tab:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
     }
 
     .nav-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--accent);
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(59, 38, 24, 0.2);
+    }
+
+    .nav-tab.active .badge-count {
+      background: var(--accent);
+      color: #ffffff;
     }
 
     .badge-count {
@@ -160,7 +181,7 @@
     .main-wrap {
       max-width: 1360px;
       margin: 0 auto;
-      padding: 14px;
+      padding: 14px 14px 100px 14px;
     }
 
     .tab-pane { display: none; }
@@ -194,6 +215,13 @@
       grid-template-columns: 1.2fr 1fr;
       gap: 14px;
       align-items: start;
+    }
+
+    #checkout-submit-btn {
+      position: sticky;
+      bottom: 12px;
+      z-index: 25;
+      box-shadow: 0 6px 18px rgba(27, 122, 67, 0.35);
     }
 
     @media (max-width: 900px) {
@@ -454,7 +482,16 @@
       font-family: inherit;
       font-size: inherit;
     }
+    #receipt-logo-preview-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 8px;
+    }
     #receipt-logo-canvas {
+      display: block;
+      margin: 0 auto;
       max-width: 100%;
       height: auto;
       image-rendering: pixelated;
@@ -963,8 +1000,8 @@
               <div>
                 <label for="receipt-font-mode">Jenis Font ESC/POS</label>
                 <select id="receipt-font-mode" onchange="onPrinterPresetChange()">
-                  <option value="FONT_B">Font B — Rapat (42 Kolom / 58mm)</option>
                   <option value="FONT_A">Font A — Standar (32 Kolom / 58mm)</option>
+                  <option value="FONT_B">Font B — Rapat (42 Kolom / 58mm)</option>
                   <option value="FONT_A_TALL">Font A Tinggi — Besar</option>
                 </select>
               </div>
@@ -972,24 +1009,24 @@
 
             <div class="mt-2">
               <label for="receipt-preview-slider">
-                Ukuran Font Pratinjau &amp; System Print: <strong id="receipt-preview-size-val">10</strong> px
+                Ukuran Font Pratinjau &amp; System Print: <strong id="receipt-preview-size-val">11.5</strong> px
               </label>
-              <input type="range" id="receipt-preview-slider" min="8.5" max="15" step="0.5" value="10" oninput="onPreviewFontSlider()" />
+              <input type="range" id="receipt-preview-slider" min="8.5" max="15" step="0.5" value="11.5" oninput="onPreviewFontSlider()" />
               <div class="flex-gap mt-1">
-                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(9)">Kecil (9px)</button>
-                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(10)">Ideal 58mm (10px)</button>
-                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(12)">Besar 80mm (12px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(9.5)">Kecil (9.5px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(11.5)">Ideal 58mm (11.5px)</button>
+                <button type="button" class="btn-outline btn-sm" onclick="setQuickPreviewFont(13)">Besar 80mm (13px)</button>
               </div>
             </div>
 
             <div class="grid-3 mt-2">
               <div>
                 <label for="char-width-input">Lebar Karakter</label>
-                <input type="number" id="char-width-input" min="24" max="64" value="42" onchange="savePrinterProfile()" />
+                <input type="number" id="char-width-input" min="24" max="64" value="32" onchange="savePrinterProfile()" />
               </div>
               <div>
                 <label for="left-margin-input">Margin Kiri (Spasi)</label>
-                <input type="number" id="left-margin-input" min="0" max="10" value="1" onchange="savePrinterProfile()" />
+                <input type="number" id="left-margin-input" min="0" max="10" value="0" onchange="savePrinterProfile()" />
               </div>
               <div>
                 <label for="feed-lines-input">Spasi Sobek Bawah</label>
@@ -1075,7 +1112,7 @@
         <div class="card" style="position: sticky; top: 76px;">
           <div class="flex-between">
             <h3 style="margin:0;">Pratinjau Output Struk</h3>
-            <span class="badge-count" id="preview-cols-badge">58mm • 42 kolom • 10px</span>
+            <span class="badge-count" id="preview-cols-badge">58mm • 32 kolom • 11.5px</span>
           </div>
           <div class="receipt-stage mt-2">
             <div id="receipt-print-area">
@@ -1498,12 +1535,12 @@
       footer2: 'Selamat menikmati pesanan Anda',
       printMethod: 'bluetooth',
       paperSize: '58mm',
-      receiptFontMode: 'FONT_B',
-      receiptPreviewFontSize: 10,
-      charWidth: 42,
-      leftMargin: 1,
+      receiptFontMode: 'FONT_A',
+      receiptPreviewFontSize: 11.5,
+      charWidth: 32,
+      leftMargin: 0,
       feedLines: 3,
-      logoEnabled: true,
+      logoEnabled: false,
       logoDataUrl: '',
       logoWidth: 180,
       logoThreshold: 128,
@@ -1560,9 +1597,12 @@
             deletedUserIds: (parsed.deletedUserIds && typeof parsed.deletedUserIds === 'object') ? parsed.deletedUserIds : {},
             profile: { ...DEFAULT_PROFILE, ...(parsed.profile || {}) }
           };
-          if (!appState.profile.marginFixedV1 && (appState.profile.leftMargin === 0 || appState.profile.leftMargin === undefined)) {
-            appState.profile.leftMargin = 1;
-            appState.profile.marginFixedV1 = true;
+          if (!appState.profile.cleanReceiptV2) {
+            appState.profile.receiptFontMode = 'FONT_A';
+            appState.profile.charWidth = 32;
+            appState.profile.leftMargin = 0;
+            appState.profile.receiptPreviewFontSize = 11.5;
+            appState.profile.cleanReceiptV2 = true;
           }
         }
       } catch (e) {
@@ -1596,9 +1636,24 @@
       el._timer = setTimeout(() => el.classList.remove('show'), 3200);
     }
 
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function formatRp(num) {
       const n = Math.round(Number(num) || 0);
-      return 'Rp ' + n.toLocaleString('id-ID');
+      return 'Rp ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function formatNumOnly(num) {
+      const n = Math.round(Number(num) || 0);
+      return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
     function getTodayStr() {
@@ -2936,7 +2991,7 @@
     /* ==================== TAB PRINTER THERMAL & UKURAN FONT ADJUSTABLE ==================== */
     function applyIsolatedReceiptCss() {
       const p = appState.profile;
-      const fontSize = Number(p.receiptPreviewFontSize) || 10;
+      const fontSize = Number(p.receiptPreviewFontSize) || 11.5;
       const is80mm = p.paperSize === '80mm';
       document.documentElement.style.setProperty('--receipt-font-size', fontSize + 'px');
       document.documentElement.style.setProperty('--receipt-paper-width', is80mm ? '340px' : '255px');
@@ -2946,9 +3001,9 @@
       const p = appState.profile;
       document.getElementById('print-method-select').value = p.printMethod || 'bluetooth';
       document.getElementById('paper-size-select').value = p.paperSize || '58mm';
-      document.getElementById('receipt-font-mode').value = p.receiptFontMode || 'FONT_B';
-      document.getElementById('receipt-preview-slider').value = p.receiptPreviewFontSize || 10;
-      document.getElementById('receipt-preview-size-val').textContent = p.receiptPreviewFontSize || 10;
+      document.getElementById('receipt-font-mode').value = p.receiptFontMode || 'FONT_A';
+      document.getElementById('receipt-preview-slider').value = p.receiptPreviewFontSize || 11.5;
+      document.getElementById('receipt-preview-size-val').textContent = p.receiptPreviewFontSize || 11.5;
 
       document.getElementById('logo-enabled').checked = !!p.logoEnabled;
       document.getElementById('logo-width-range').value = p.logoWidth || 180;
@@ -2957,8 +3012,8 @@
       document.getElementById('logo-thresh-val').textContent = p.logoThreshold || 128;
       document.getElementById('logo-file-name').textContent = p.logoDataUrl ? 'Logo tersimpan' : 'Belum ada file dipilih';
 
-      document.getElementById('char-width-input').value = p.charWidth || 42;
-      document.getElementById('left-margin-input').value = p.leftMargin !== undefined ? p.leftMargin : 1;
+      document.getElementById('char-width-input').value = p.charWidth || 32;
+      document.getElementById('left-margin-input').value = p.leftMargin !== undefined ? p.leftMargin : 0;
       document.getElementById('feed-lines-input').value = p.feedLines || 3;
       document.getElementById('shop-name-input').value = p.shopName || 'A POS';
       document.getElementById('branch-name-input').value = p.branchName || 'Cabang Utama';
@@ -3016,14 +3071,14 @@
       p.printMethod = document.getElementById('print-method-select').value;
       p.paperSize = document.getElementById('paper-size-select').value;
       p.receiptFontMode = document.getElementById('receipt-font-mode').value;
-      p.receiptPreviewFontSize = Number(document.getElementById('receipt-preview-slider').value) || 10;
+      p.receiptPreviewFontSize = Number(document.getElementById('receipt-preview-slider').value) || 11.5;
 
       p.logoEnabled = document.getElementById('logo-enabled').checked;
       p.logoWidth = Number(document.getElementById('logo-width-range').value) || 180;
       p.logoThreshold = Number(document.getElementById('logo-thresh-range').value) || 128;
-      p.charWidth = Math.min(64, Math.max(24, Number(document.getElementById('char-width-input').value) || 42));
+      p.charWidth = Math.min(64, Math.max(24, Number(document.getElementById('char-width-input').value) || 32));
       const rawLeft = Number(document.getElementById('left-margin-input').value);
-      p.leftMargin = Math.min(10, Math.max(0, Number.isNaN(rawLeft) ? 1 : rawLeft));
+      p.leftMargin = Math.min(10, Math.max(0, Number.isNaN(rawLeft) ? 0 : rawLeft));
       p.feedLines = Math.min(8, Math.max(1, Number(document.getElementById('feed-lines-input').value) || 3));
       p.shopName = document.getElementById('shop-name-input').value;
       p.branchName = document.getElementById('branch-name-input').value;
@@ -3133,14 +3188,15 @@
         cashierName: getActiveUser().name,
         payMethod: 'TUNAI',
         items: [
-          { name: 'Es Kopi Susu Gula Aren', qty: 2, price: 18000, note: 'Less Ice' },
-          { name: 'Croissant Butter', qty: 1, price: 16000, note: '' }
+          { name: 'Americano', qty: 1, price: 16000, note: '' },
+          { name: 'Caramel', qty: 1, price: 23000, note: 'Less Ice' },
+          { name: 'Sanger', qty: 1, price: 18000, note: '' }
         ],
-        subtotal: 52000,
+        subtotal: 57000,
         discount: 0,
-        total: 52000,
+        total: 57000,
         cashReceived: 100000,
-        change: 48000
+        change: 43000
       };
     }
 
@@ -3165,17 +3221,18 @@
 
     function formatReceiptLines(order, mode) {
       const p = appState.profile;
-      const cols = Math.max(24, Number(p.charWidth) || 42);
-      const leftMarginCount = Math.max(0, Number(p.leftMargin !== undefined ? p.leftMargin : 1));
+      const cols = Math.max(24, Number(p.charWidth) || 32);
+      const leftMarginCount = Math.max(0, Number(p.leftMargin !== undefined ? p.leftMargin : 0));
       const margin = ' '.repeat(leftMarginCount);
       const usableCols = Math.max(20, cols - leftMarginCount);
       const sep = '-'.repeat(usableCols);
 
       const center = (txt) => {
-        const s = String(txt || '').slice(0, usableCols);
-        const pad = Math.max(0, Math.floor((usableCols - s.length) / 2));
+        const s = String(txt || '').trim().slice(0, usableCols);
+        const pad = Math.max(0, Math.round((usableCols - s.length) / 2));
         return margin + ' '.repeat(pad) + s;
       };
+
       const rowLR = (left, right) => {
         const r = String(right || '');
         const maxLeft = Math.max(4, usableCols - r.length - 1);
@@ -3189,10 +3246,9 @@
       if (mode === 'KITCHEN') {
         lines.push(center('*** STRUK DAPUR ***'));
         lines.push(margin + sep);
-        lines.push(margin + `No Order : ${order.orderNumber}`);
-        lines.push(margin + `Tipe     : ${order.orderType}`);
-        if (order.customerName) lines.push(margin + `Pelanggan: ${order.customerName}`);
-        lines.push(margin + `Waktu    : ${new Date(order.createdAt).toLocaleTimeString('id-ID')}`);
+        lines.push(rowLR('No Order', order.orderNumber));
+        lines.push(rowLR('Tipe', order.orderType + (order.customerName ? ' (' + order.customerName + ')' : '')));
+        lines.push(rowLR('Waktu', new Date(order.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })));
         lines.push(margin + sep);
         order.items.forEach(it => {
           wrapReceiptText(`${it.qty}x ${it.name}`, usableCols).forEach(line => {
@@ -3208,49 +3264,58 @@
         return lines.join('\n');
       }
 
-      if (p.shopName) lines.push(center(p.shopName.toUpperCase()));
+      // HEADER KEDAI (RATA TENGAH)
+      if (p.shopName) lines.push(center(p.shopName));
+      lines.push(margin + sep);
       if (p.branchName) lines.push(center(p.branchName));
       if (p.address) lines.push(center(p.address));
       if (p.social) lines.push(center(p.social));
       lines.push(margin + sep);
-      lines.push(margin + `No Order : ${order.orderNumber}`);
-      lines.push(margin + `Tanggal  : ${new Date(order.createdAt).toLocaleString('id-ID')}`);
-      lines.push(margin + `Kasir    : ${order.cashierName}`);
-      lines.push(margin + `Tipe     : ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`);
+
+      // INFO TRANSAKSI RINGKAS
+      const dtStr = new Date(order.createdAt).toLocaleString('id-ID', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      lines.push(rowLR('No', order.orderNumber));
+      lines.push(rowLR('Waktu', dtStr));
+      lines.push(rowLR('Kasir', `${order.cashierName} • ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`));
       lines.push(margin + sep);
 
+      // DAFTAR ITEM: NAMA MARGIN KIRI, NOMINAL RATA KANAN
       order.items.forEach(it => {
-        wrapReceiptText(it.name, usableCols).forEach(nameLine => {
-          lines.push(margin + nameLine);
-        });
-        lines.push(rowLR(`${it.qty}x ${formatRp(it.price)}`, formatRp(it.qty * it.price)));
+        const label = it.qty > 1 ? `${it.name} x${it.qty}` : it.name;
+        const priceStr = formatNumOnly(it.qty * it.price);
+        lines.push(rowLR(label, priceStr));
         if (it.note) {
-          wrapReceiptText(`(${it.note})`, Math.max(12, usableCols - 2)).forEach(noteLine => {
-            lines.push(margin + '  ' + noteLine);
-          });
+          lines.push(margin + `  (${it.note})`);
         }
       });
 
       lines.push(margin + sep);
-      lines.push(rowLR('Subtotal', formatRp(order.subtotal)));
-      if (order.discount > 0) lines.push(rowLR('Diskon', '-' + formatRp(order.discount)));
-      lines.push(rowLR('GRAND TOTAL', formatRp(order.total)));
+      if (order.discount > 0) {
+        lines.push(rowLR('Subtotal', formatNumOnly(order.subtotal)));
+        lines.push(rowLR('Diskon', '-' + formatNumOnly(order.discount)));
+      }
+      lines.push(rowLR('TOTAL', formatNumOnly(order.total)));
+
       const unpaidFlag = order.paymentStatus === 'UNPAID' || order.payMethod === 'BAYAR NANTI';
       lines.push(rowLR('Metode', unpaidFlag ? 'BAYAR NANTI' : order.payMethod));
       if (!unpaidFlag && order.payMethod === 'TUNAI') {
-        lines.push(rowLR('Tunai', formatRp(order.cashReceived)));
-        lines.push(rowLR('Kembalian', formatRp(order.change)));
+        lines.push(rowLR('Tunai', formatNumOnly(order.cashReceived)));
+        lines.push(rowLR('Kembali', formatNumOnly(order.change)));
       }
       lines.push(margin + sep);
-      if (p.footer1) lines.push(center(p.footer1));
-      if (p.footer2) lines.push(center(p.footer2));
+
+      // FOOTER RATA TENGAH
+      if (p.footer1) wrapReceiptText(p.footer1, usableCols).forEach(l => lines.push(center(l)));
+      if (p.footer2) wrapReceiptText(p.footer2, usableCols).forEach(l => lines.push(center(l)));
       return lines.join('\n');
     }
 
     function updateReceiptTextAndVisibilitySync(orderOverride, modeOverride) {
       const p = appState.profile;
-      const cols = p.charWidth || 42;
-      const fontSize = p.receiptPreviewFontSize || 10;
+      const cols = p.charWidth || 32;
+      const fontSize = p.receiptPreviewFontSize || 11.5;
       const paper = p.paperSize || '58mm';
 
       document.getElementById('preview-cols-badge').textContent = `${paper} • ${cols} kolom • ${fontSize}px`;
@@ -3259,7 +3324,7 @@
       const logoWrap = document.getElementById('receipt-logo-preview-wrap');
       const isKitchen = modeOverride === 'KITCHEN';
       if (!isKitchen && p.logoEnabled && p.logoDataUrl) {
-        logoWrap.style.display = 'block';
+        logoWrap.style.display = 'flex';
       } else {
         logoWrap.style.display = 'none';
       }
@@ -3280,6 +3345,15 @@
     }
 
     /* ==================== BLUETOOTH ESC/POS & SYSTEM PRINT (SAFARI iOS READY) ==================== */
+    function triggerSafePrint() {
+      try {
+        window.print();
+      } catch (err) {
+        console.warn('Print dialog fallback:', err);
+        showToast('Dialog cetak tidak tersedia di pratinjau ini; buka langsung di browser untuk mencetak.');
+      }
+    }
+
     function scanBluetoothPrinters() {
       const listDiv = document.getElementById('paired-devices-list');
       if (window.AndroidPrinter && typeof window.AndroidPrinter.getPairedDevices === 'function') {
@@ -3321,14 +3395,13 @@
     }
 
     function getEscPosFontBytes() {
-      const mode = appState.profile.receiptFontMode || 'FONT_B';
-      const resetMargin = [0x1D, 0x4C, 0x00, 0x00, 0x1B, 0x61, 0x00];
-      if (mode === 'FONT_A') {
-        return [...resetMargin, 0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00];
+      const mode = appState.profile.receiptFontMode || 'FONT_A';
+      if (mode === 'FONT_B') {
+        return [0x1B, 0x61, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];
       } else if (mode === 'FONT_A_TALL') {
-        return [...resetMargin, 0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01];
+        return [0x1B, 0x61, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x01];
       }
-      return [...resetMargin, 0x1B, 0x4D, 0x01, 0x1D, 0x21, 0x00];
+      return [0x1B, 0x61, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x4D, 0x00, 0x1D, 0x21, 0x00];
     }
 
     async function buildEscPosRasterLogoBytes() {
@@ -3369,9 +3442,9 @@
         const logoCanvas = document.getElementById('receipt-logo-canvas');
         if (mode !== 'KITCHEN' && p.logoEnabled && p.logoDataUrl && logoCanvas.width === 0) {
           renderMonochromeLogoToCanvas(logoCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128)
-            .then(() => window.print());
+            .then(() => triggerSafePrint());
         } else {
-          window.print();
+          triggerSafePrint();
         }
         return;
       }
@@ -3380,12 +3453,12 @@
         try {
           await renderReceiptPreview(order, mode);
           const text = formatReceiptLines(order, mode) + '\n'.repeat(appState.profile.feedLines || 3);
-          const initBytes = [0x1B, 0x40];
-          const fontBytes = getEscPosFontBytes();
+          const initBytes = [0x1B, 0x40, ...getEscPosFontBytes()];
           const logoBytes = mode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
+          const afterLogoReset = getEscPosFontBytes();
           const encoder = new TextEncoder();
           const textBytes = Array.from(encoder.encode(text));
-          const allBytes = new Uint8Array([...initBytes, ...fontBytes, ...logoBytes, ...textBytes]);
+          const allBytes = new Uint8Array([...initBytes, ...logoBytes, ...afterLogoReset, ...textBytes]);
           let bin = '';
           allBytes.forEach(b => bin += String.fromCharCode(b));
           window.AndroidPrinter.printRawBase64(btoa(bin));
@@ -3401,26 +3474,36 @@
 
     function printCashSummary() {
       const ds = getReportDataset();
-      const cols = Math.max(24, Number(appState.profile.charWidth) || 42);
-      const leftMarginCount = Math.max(0, Number(appState.profile.leftMargin !== undefined ? appState.profile.leftMargin : 1));
+      const cols = Math.max(24, Number(appState.profile.charWidth) || 32);
+      const leftMarginCount = Math.max(0, Number(appState.profile.leftMargin !== undefined ? appState.profile.leftMargin : 0));
       const margin = ' '.repeat(leftMarginCount);
       const usableCols = Math.max(20, cols - leftMarginCount);
       const sep = '-'.repeat(usableCols);
+
+      const rowLR = (left, right) => {
+        const r = String(right || '');
+        const maxLeft = Math.max(4, usableCols - r.length - 1);
+        const rawL = String(left || '');
+        const l = rawL.length > maxLeft ? rawL.slice(0, maxLeft) : rawL;
+        const space = Math.max(1, usableCols - l.length - r.length);
+        return margin + l + ' '.repeat(space) + r;
+      };
+
       const summaryText = [
         margin + (appState.profile.shopName || 'A POS').toUpperCase(),
         margin + 'REKAP LAPORAN KEUANGAN',
         margin + sep,
-        margin + `Periode    : ${ds.periodLabel}`,
-        margin + `Dicetak    : ${getActiveUser().name}`,
+        rowLR('Periode', ds.periodLabel),
+        rowLR('Dicetak', getActiveUser().name),
         margin + sep,
-        margin + `Omzet      : ${formatRp(ds.netSales)}`,
-        margin + `Tunai      : ${formatRp(ds.cashSales)}`,
-        margin + `QRIS       : ${formatRp(ds.qrisSales)}`,
-        margin + `Total HPP  : ${formatRp(ds.totalHpp)}`,
-        margin + `Laba Kotor : ${formatRp(ds.grossProfit)}`,
-        margin + `Pengeluaran: ${formatRp(ds.totalExpenses)}`,
-        margin + `LABA BERSIH: ${formatRp(ds.netProfit)}`,
-        ...(ds.mode === 'daily' ? [margin + `Modal Awal : ${formatRp(ds.openingCash)}`, margin + `Est. Laci  : ${formatRp(ds.drawerEstimate)}`] : []),
+        rowLR('Omzet', formatNumOnly(ds.netSales)),
+        rowLR('Tunai', formatNumOnly(ds.cashSales)),
+        rowLR('QRIS', formatNumOnly(ds.qrisSales)),
+        rowLR('Total HPP', formatNumOnly(ds.totalHpp)),
+        rowLR('Laba Kotor', formatNumOnly(ds.grossProfit)),
+        rowLR('Pengeluaran', formatNumOnly(ds.totalExpenses)),
+        rowLR('LABA BERSIH', formatNumOnly(ds.netProfit)),
+        ...(ds.mode === 'daily' ? [rowLR('Modal Awal', formatNumOnly(ds.openingCash)), rowLR('Est. Laci', formatNumOnly(ds.drawerEstimate))] : []),
         margin + sep
       ].join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
 
@@ -3433,7 +3516,7 @@
       } else {
         document.getElementById('receipt-logo-preview-wrap').style.display = 'none';
         document.getElementById('receipt-text-preview').textContent = summaryText;
-        window.print();
+        triggerSafePrint();
       }
     }
 
