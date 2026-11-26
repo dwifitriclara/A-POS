@@ -469,18 +469,13 @@
       background: #ffffff;
       color: #000000;
       width: var(--receipt-paper-width);
-      padding: 10px 8px;
+      max-width: 100%;
+      padding: 12px 10px;
       box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-      font-family: "Courier New", Courier, monospace;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: var(--receipt-font-size);
-      line-height: 1.32;
-    }
-    #receipt-text-preview {
-      white-space: pre;
-      overflow-x: hidden;
-      margin: 0;
-      font-family: inherit;
-      font-size: inherit;
+      line-height: 1.38;
+      box-sizing: border-box;
     }
     #receipt-logo-preview-wrap {
       display: flex;
@@ -488,13 +483,75 @@
       align-items: center;
       width: 100%;
       margin-bottom: 8px;
+      text-align: center;
     }
-    #receipt-logo-canvas {
+    #receipt-logo-canvas,
+    .receipt-logo-img {
       display: block;
       margin: 0 auto;
       max-width: 100%;
       height: auto;
       image-rendering: pixelated;
+    }
+    #receipt-structured-preview {
+      width: 100%;
+      color: #000000;
+    }
+    .rcp-center {
+      text-align: center;
+      word-break: break-word;
+    }
+    .rcp-shop-title {
+      font-weight: 800;
+      font-size: 1.15em;
+      letter-spacing: 0.4px;
+      text-align: center;
+    }
+    .rcp-sep {
+      border: none;
+      border-top: 1px dashed #222222;
+      margin: 6px 0;
+      height: 0;
+    }
+    .rcp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 2px 0;
+    }
+    .rcp-left {
+      text-align: left;
+      flex: 1 1 auto;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .rcp-right {
+      text-align: right;
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .rcp-note {
+      text-align: left;
+      padding-left: 10px;
+      font-size: 0.92em;
+      color: #222222;
+      margin-bottom: 2px;
+    }
+    .rcp-total-row {
+      font-weight: 800;
+      font-size: 1.08em;
+      margin-top: 3px;
+      margin-bottom: 3px;
+    }
+    .rcp-footer {
+      text-align: center;
+      margin-top: 4px;
+      word-break: break-word;
+    }
+    #print-host-container {
+      display: none;
     }
 
     /* MODALS & TOAST */
@@ -575,20 +632,29 @@
       @page {
         margin: 0;
       }
-      body * {
-        visibility: hidden !important;
-      }
-      #receipt-print-area,
-      #receipt-print-area * {
-        visibility: visible !important;
-      }
-      #receipt-print-area {
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
         width: var(--receipt-paper-width) !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      body > *:not(#print-host-container) {
+        display: none !important;
+      }
+      #print-host-container {
+        display: block !important;
+        width: var(--receipt-paper-width) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+      #print-host-container #receipt-print-area {
+        width: 100% !important;
+        max-width: 100% !important;
         box-shadow: none !important;
-        padding: 4px !important;
+        padding: 4px 6px !important;
         margin: 0 !important;
       }
     }
@@ -1114,12 +1180,16 @@
             <h3 style="margin:0;">Pratinjau Output Struk</h3>
             <span class="badge-count" id="preview-cols-badge">58mm • 32 kolom • 11.5px</span>
           </div>
+          <div class="flex-gap mt-1">
+            <button type="button" class="btn-outline btn-sm active" id="prev-mode-customer" onclick="setPreviewMode('CUSTOMER')">Struk Pelanggan</button>
+            <button type="button" class="btn-outline btn-sm" id="prev-mode-kitchen" onclick="setPreviewMode('KITCHEN')">Struk Dapur</button>
+          </div>
           <div class="receipt-stage mt-2">
             <div id="receipt-print-area">
-              <div id="receipt-logo-preview-wrap" style="text-align:center; margin-bottom:8px; display:none;">
+              <div id="receipt-logo-preview-wrap" style="display:none;">
                 <canvas id="receipt-logo-canvas"></canvas>
               </div>
-              <div id="receipt-text-preview"></div>
+              <div id="receipt-structured-preview"></div>
             </div>
           </div>
         </div>
@@ -1489,6 +1559,7 @@
   </div>
 
   <div class="toast" id="toast-msg"></div>
+  <div id="print-host-container" aria-hidden="true"></div>
 
   <script>
     /* ==================== STATE & DEFAULT NETRAL (A POS) ==================== */
@@ -2989,6 +3060,17 @@
     }
 
     /* ==================== TAB PRINTER THERMAL & UKURAN FONT ADJUSTABLE ==================== */
+    let currentPreviewMode = 'CUSTOMER';
+
+    function setPreviewMode(mode) {
+      currentPreviewMode = mode === 'KITCHEN' ? 'KITCHEN' : 'CUSTOMER';
+      const btnCust = document.getElementById('prev-mode-customer');
+      const btnKit = document.getElementById('prev-mode-kitchen');
+      if (btnCust) btnCust.classList.toggle('active', currentPreviewMode === 'CUSTOMER');
+      if (btnKit) btnKit.classList.toggle('active', currentPreviewMode === 'KITCHEN');
+      renderReceiptPreview(null, currentPreviewMode);
+    }
+
     function applyIsolatedReceiptCss() {
       const p = appState.profile;
       const fontSize = Number(p.receiptPreviewFontSize) || 11.5;
@@ -3022,7 +3104,12 @@
       document.getElementById('footer-1-input').value = p.footer1 || '';
       document.getElementById('footer-2-input').value = p.footer2 || '';
 
-      renderReceiptPreview();
+      if (p.printerMac) {
+        connectedPrinterMac = p.printerMac;
+        document.getElementById('printer-conn-status').textContent = `Tersimpan: ${p.printerName || 'Printer Bluetooth'} (${p.printerMac})`;
+      }
+
+      renderReceiptPreview(null, currentPreviewMode);
     }
 
     function onPrinterPresetChange() {
@@ -3091,7 +3178,7 @@
       applyIsolatedReceiptCss();
       saveState();
       updateHeaderUI();
-      renderReceiptPreview();
+      renderReceiptPreview(null, currentPreviewMode);
       triggerBackgroundSync();
     }
 
@@ -3133,7 +3220,7 @@
         document.getElementById('logo-enabled').checked = true;
         document.getElementById('logo-file-name').textContent = file.name;
         saveState();
-        renderReceiptPreview();
+        await renderReceiptPreview(null, currentPreviewMode);
         triggerBackgroundSync();
         showToast('Logo berhasil diunggah & dikonversi!');
       } catch (err) {
@@ -3146,34 +3233,56 @@
       appState.profile.updatedAt = Date.now();
       document.getElementById('logo-file-name').textContent = 'Belum ada file dipilih';
       saveState();
-      renderReceiptPreview();
+      renderReceiptPreview(null, currentPreviewMode);
       triggerBackgroundSync();
       showToast('Logo dihapus.');
     }
 
     function renderMonochromeLogoToCanvas(canvas, dataUrl, targetWidth, threshold) {
       return new Promise((resolve) => {
+        if (!dataUrl || !canvas) {
+          resolve(null);
+          return;
+        }
+        let settled = false;
+        const finish = (res) => {
+          if (!settled) {
+            settled = true;
+            resolve(res);
+          }
+        };
+        const timer = setTimeout(() => finish(null), 2000);
+
         const img = new Image();
         img.onload = () => {
-          const w = Math.min(384, Math.max(64, targetWidth));
-          const h = Math.max(1, Math.round((img.height / img.width) * w));
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, w, h);
-          ctx.drawImage(img, 0, 0, w, h);
+          clearTimeout(timer);
+          try {
+            const w = Math.min(384, Math.max(64, targetWidth));
+            const h = Math.max(1, Math.round((img.height / img.width) * w));
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
 
-          const imgData = ctx.getImageData(0, 0, w, h);
-          const data = imgData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            const bw = lum < threshold ? 0 : 255;
-            data[i] = data[i + 1] = data[i + 2] = bw;
-            data[i + 3] = 255;
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+              const bw = lum < threshold ? 0 : 255;
+              data[i] = data[i + 1] = data[i + 2] = bw;
+              data[i + 3] = 255;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            finish(imgData);
+          } catch (e) {
+            finish(null);
           }
-          ctx.putImageData(imgData, 0, 0);
-          resolve(imgData);
+        };
+        img.onerror = () => {
+          clearTimeout(timer);
+          finish(null);
         };
         img.src = dataUrl;
       });
@@ -3219,6 +3328,7 @@
       return out;
     }
 
+    /* ESC/POS MONOSPACE LINES: LOGO/HEADER/FOOTER CENTER, MENU RATA KIRI, NOMINAL Rp RATA KANAN */
     function formatReceiptLines(order, mode) {
       const p = appState.profile;
       const cols = Math.max(24, Number(p.charWidth) || 32);
@@ -3242,11 +3352,32 @@
         return margin + l + ' '.repeat(spaceCount) + r;
       };
 
+      const appendItemLR = (itemLabel, priceStr) => {
+        const r = String(priceStr || '').trim();
+        const maxFirstLineLeft = usableCols - r.length - 1;
+        const cleanLabel = String(itemLabel || '').trim();
+        if (cleanLabel.length <= maxFirstLineLeft) {
+          lines.push(rowLR(cleanLabel, r));
+        } else {
+          const wrapped = wrapReceiptText(cleanLabel, usableCols);
+          for (let i = 0; i < wrapped.length - 1; i++) {
+            lines.push(margin + wrapped[i]);
+          }
+          const lastPart = wrapped[wrapped.length - 1];
+          if (lastPart.length <= maxFirstLineLeft) {
+            lines.push(rowLR(lastPart, r));
+          } else {
+            lines.push(margin + lastPart);
+            lines.push(rowLR('', r));
+          }
+        }
+      };
+
       const lines = [];
       if (mode === 'KITCHEN') {
         lines.push(center('*** STRUK DAPUR ***'));
         lines.push(margin + sep);
-        lines.push(rowLR('No Order', order.orderNumber));
+        lines.push(rowLR('No', order.orderNumber));
         lines.push(rowLR('Tipe', order.orderType + (order.customerName ? ' (' + order.customerName + ')' : '')));
         lines.push(rowLR('Waktu', new Date(order.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })));
         lines.push(margin + sep);
@@ -3264,15 +3395,15 @@
         return lines.join('\n');
       }
 
-      // HEADER KEDAI (RATA TENGAH)
+      // HEADER KEDAI (CENTER)
       if (p.shopName) lines.push(center(p.shopName));
       lines.push(margin + sep);
       if (p.branchName) lines.push(center(p.branchName));
-      if (p.address) lines.push(center(p.address));
+      if (p.address) wrapReceiptText(p.address, usableCols).forEach(l => lines.push(center(l)));
       if (p.social) lines.push(center(p.social));
       lines.push(margin + sep);
 
-      // INFO TRANSAKSI (RATA KIRI-KANAN)
+      // INFO TRANSAKSI (RATA KIRI - KANAN)
       const dtStr = new Date(order.createdAt).toLocaleString('id-ID', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
@@ -3282,11 +3413,11 @@
       lines.push(rowLR('Kasir', cashierInfo));
       lines.push(margin + sep);
 
-      // DAFTAR ITEM: NAMA RATA KIRI, HARGA (DENGAN Rp) RATA KANAN
+      // DAFTAR MENU PRODUK (RATA KIRI) & NOMINAL Rp ... (RATA KANAN)
       order.items.forEach(it => {
         const label = it.qty > 1 ? `${it.name} x${it.qty}` : it.name;
-        const priceStr = formatRupiah(it.qty * it.price);
-        lines.push(rowLR(label, priceStr));
+        const priceStr = formatRp(it.qty * it.price);
+        appendItemLR(label, priceStr);
         if (it.note) {
           lines.push(margin + `  (${it.note})`);
         }
@@ -3294,23 +3425,91 @@
 
       lines.push(margin + sep);
       if (order.discount > 0) {
-        lines.push(rowLR('Subtotal', formatRupiah(order.subtotal)));
-        lines.push(rowLR('Diskon', '-' + formatRupiah(order.discount)));
+        lines.push(rowLR('Subtotal', formatRp(order.subtotal)));
+        lines.push(rowLR('Diskon', '-' + formatRp(order.discount)));
       }
-      lines.push(rowLR('TOTAL', formatRupiah(order.total)));
+      lines.push(rowLR('TOTAL', formatRp(order.total)));
 
       const unpaidFlag = order.paymentStatus === 'UNPAID' || order.payMethod === 'BAYAR NANTI';
       lines.push(rowLR('Metode', unpaidFlag ? 'BAYAR NANTI' : order.payMethod));
       if (!unpaidFlag && order.payMethod === 'TUNAI') {
-        lines.push(rowLR('Tunai', formatRupiah(order.cashReceived)));
-        lines.push(rowLR('Kembali', formatRupiah(order.change)));
+        lines.push(rowLR('Tunai', formatRp(order.cashReceived)));
+        lines.push(rowLR('Kembali', formatRp(order.change)));
       }
       lines.push(margin + sep);
 
-      // FOOTER RATA TENGAH
+      // FOOTER (CENTER)
       if (p.footer1) wrapReceiptText(p.footer1, usableCols).forEach(l => lines.push(center(l)));
       if (p.footer2) wrapReceiptText(p.footer2, usableCols).forEach(l => lines.push(center(l)));
       return lines.join('\n');
+    }
+
+    /* HTML STRUCTURED PREVIEW & SYSTEM PRINT: LOGO/HEADER/FOOTER CENTER, MENU RATA KIRI, NOMINAL Rp RATA KANAN */
+    function buildStructuredReceiptHtml(order, mode) {
+      const p = appState.profile;
+      const lrRow = (left, right, extraClass = '') => `
+        <div class="rcp-row ${extraClass}">
+          <span class="rcp-left">${escapeHtml(left)}</span>
+          <span class="rcp-right">${escapeHtml(right)}</span>
+        </div>
+      `;
+
+      if (mode === 'KITCHEN') {
+        const timeStr = new Date(order.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const itemsHtml = order.items.map(it => `
+          <div style="text-align:left; font-weight:700; margin:3px 0;">${escapeHtml(`${it.qty}x ${it.name}`)}</div>
+          ${it.note ? `<div class="rcp-note">&gt;&gt; ${escapeHtml(it.note)}</div>` : ''}
+        `).join('');
+
+        return `
+          <div class="rcp-shop-title">*** STRUK DAPUR ***</div>
+          <hr class="rcp-sep" />
+          ${lrRow('No', order.orderNumber)}
+          ${lrRow('Tipe', order.orderType + (order.customerName ? ' (' + order.customerName + ')' : ''))}
+          ${lrRow('Waktu', timeStr)}
+          <hr class="rcp-sep" />
+          ${itemsHtml}
+          <hr class="rcp-sep" />
+        `;
+      }
+
+      const dtStr = new Date(order.createdAt).toLocaleString('id-ID', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const cashierInfo = `${order.cashierName} / ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`;
+
+      const itemsHtml = order.items.map(it => {
+        const label = it.qty > 1 ? `${it.name} x${it.qty}` : it.name;
+        const priceStr = formatRp(it.qty * it.price);
+        return `
+          ${lrRow(label, priceStr)}
+          ${it.note ? `<div class="rcp-note">(${escapeHtml(it.note)})</div>` : ''}
+        `;
+      }).join('');
+
+      const unpaidFlag = order.paymentStatus === 'UNPAID' || order.payMethod === 'BAYAR NANTI';
+
+      return `
+        ${p.shopName ? `<div class="rcp-shop-title">${escapeHtml(p.shopName)}</div>` : ''}
+        <hr class="rcp-sep" />
+        ${p.branchName ? `<div class="rcp-center">${escapeHtml(p.branchName)}</div>` : ''}
+        ${p.address ? `<div class="rcp-center">${escapeHtml(p.address)}</div>` : ''}
+        ${p.social ? `<div class="rcp-center">${escapeHtml(p.social)}</div>` : ''}
+        <hr class="rcp-sep" />
+        ${lrRow('No', order.orderNumber)}
+        ${lrRow('Waktu', dtStr)}
+        ${lrRow('Kasir', cashierInfo)}
+        <hr class="rcp-sep" />
+        ${itemsHtml}
+        <hr class="rcp-sep" />
+        ${order.discount > 0 ? lrRow('Subtotal', formatRp(order.subtotal)) + lrRow('Diskon', '-' + formatRp(order.discount)) : ''}
+        ${lrRow('TOTAL', formatRp(order.total), 'rcp-total-row')}
+        ${lrRow('Metode', unpaidFlag ? 'BAYAR NANTI' : order.payMethod)}
+        ${(!unpaidFlag && order.payMethod === 'TUNAI') ? lrRow('Tunai', formatRp(order.cashReceived)) + lrRow('Kembali', formatRp(order.change)) : ''}
+        <hr class="rcp-sep" />
+        ${p.footer1 ? `<div class="rcp-footer">${escapeHtml(p.footer1)}</div>` : ''}
+        ${p.footer2 ? `<div class="rcp-footer">${escapeHtml(p.footer2)}</div>` : ''}
+      `;
     }
 
     function updateReceiptTextAndVisibilitySync(orderOverride, modeOverride) {
@@ -3319,20 +3518,22 @@
       const fontSize = p.receiptPreviewFontSize || 11.5;
       const paper = p.paperSize || '58mm';
 
-      document.getElementById('preview-cols-badge').textContent = `${paper} • ${cols} kolom • ${fontSize}px`;
+      const badge = document.getElementById('preview-cols-badge');
+      if (badge) badge.textContent = `${paper} • ${cols} kolom • ${fontSize}px`;
       applyIsolatedReceiptCss();
 
       const logoWrap = document.getElementById('receipt-logo-preview-wrap');
       const isKitchen = modeOverride === 'KITCHEN';
-      if (!isKitchen && p.logoEnabled && p.logoDataUrl) {
-        logoWrap.style.display = 'flex';
-      } else {
-        logoWrap.style.display = 'none';
+      if (logoWrap) {
+        logoWrap.style.display = (!isKitchen && p.logoEnabled && p.logoDataUrl) ? 'flex' : 'none';
       }
 
       const targetOrder = orderOverride || buildSampleOrder();
-      const targetMode = modeOverride || 'CUSTOMER';
-      document.getElementById('receipt-text-preview').textContent = formatReceiptLines(targetOrder, targetMode);
+      const targetMode = modeOverride || currentPreviewMode || 'CUSTOMER';
+      const container = document.getElementById('receipt-structured-preview');
+      if (container) {
+        container.innerHTML = buildStructuredReceiptHtml(targetOrder, targetMode);
+      }
     }
 
     async function renderReceiptPreview(orderOverride, modeOverride) {
@@ -3340,18 +3541,42 @@
       const p = appState.profile;
       const logoCanvas = document.getElementById('receipt-logo-canvas');
       const isKitchen = modeOverride === 'KITCHEN';
-      if (!isKitchen && p.logoEnabled && p.logoDataUrl) {
+      if (!isKitchen && p.logoEnabled && p.logoDataUrl && logoCanvas) {
         await renderMonochromeLogoToCanvas(logoCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128);
       }
     }
 
-    /* ==================== BLUETOOTH ESC/POS & SYSTEM PRINT (SAFARI iOS READY) ==================== */
+    /* ==================== BLUETOOTH ESC/POS & SYSTEM PRINT (ANDROID APK + SAFARI iOS READY) ==================== */
+    function preparePrintHost() {
+      const host = document.getElementById('print-host-container');
+      const sourceArea = document.getElementById('receipt-print-area');
+      if (!host || !sourceArea) return;
+
+      const clone = sourceArea.cloneNode(true);
+      const srcCanvas = document.getElementById('receipt-logo-canvas');
+      const cloneCanvas = clone.querySelector('#receipt-logo-canvas');
+      if (srcCanvas && cloneCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
+        try {
+          const img = document.createElement('img');
+          img.src = srcCanvas.toDataURL('image/png');
+          img.className = 'receipt-logo-img';
+          img.style.width = srcCanvas.width + 'px';
+          cloneCanvas.replaceWith(img);
+        } catch (e) {
+          console.warn('Canvas to img print clone warning:', e);
+        }
+      }
+      host.innerHTML = '';
+      host.appendChild(clone);
+    }
+
     function triggerSafePrint() {
+      preparePrintHost();
       try {
         window.print();
       } catch (err) {
         console.warn('Print dialog fallback:', err);
-        showToast('Dialog cetak tidak tersedia di pratinjau ini; buka langsung di browser untuk mencetak.');
+        showToast('Dialog cetak sistem tidak tersedia di tampilan ini.');
       }
     }
 
@@ -3368,10 +3593,10 @@
           listDiv.innerHTML = devices.map(d => `
             <div class="flex-between" style="padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px;">
               <div>
-                <strong>${d.name || 'Printer Bluetooth'}</strong>
-                <div class="text-muted">MAC: ${d.address}</div>
+                <strong>${escapeHtml(d.name || 'Printer Bluetooth')}</strong>
+                <div class="text-muted">MAC: ${escapeHtml(d.address)}</div>
               </div>
-              <button type="button" class="btn-primary btn-sm" onclick="connectBluetoothPrinter('${d.address}', '${(d.name || 'Printer').replace(/'/g, '')}')">Pilih</button>
+              <button type="button" class="btn-primary btn-sm" onclick="connectBluetoothPrinter('${escapeHtml(d.address)}', '${escapeHtml((d.name || 'Printer').replace(/'/g, ''))}')">Pilih</button>
             </div>
           `).join('');
         } catch (e) {
@@ -3387,12 +3612,33 @@
         const ok = window.AndroidPrinter.connect(mac);
         if (ok) {
           connectedPrinterMac = mac;
+          appState.profile.printerMac = mac;
+          appState.profile.printerName = name;
+          saveState();
           document.getElementById('printer-conn-status').textContent = `Terhubung: ${name} (${mac})`;
           showToast(`Terhubung ke ${name}`);
         } else {
-          showToast('Gagal menghubungkan ke printer.');
+          showToast('Gagal menghubungkan ke printer. Pastikan printer menyala.');
         }
       }
+    }
+
+    function ensureAndroidPrinterConnected() {
+      if (!window.AndroidPrinter) return false;
+      try {
+        if (typeof window.AndroidPrinter.isConnected === 'function' && window.AndroidPrinter.isConnected()) {
+          return true;
+        }
+        const mac = connectedPrinterMac || appState.profile.printerMac;
+        if (mac && typeof window.AndroidPrinter.connect === 'function') {
+          const ok = window.AndroidPrinter.connect(mac);
+          if (ok) connectedPrinterMac = mac;
+          return !!ok;
+        }
+      } catch (e) {
+        console.warn('Reconnect printer warning:', e);
+      }
+      return true;
     }
 
     function getEscPosFontBytes() {
@@ -3410,6 +3656,7 @@
       if (!p.logoEnabled || !p.logoDataUrl) return [];
       const tempCanvas = document.createElement('canvas');
       const imgData = await renderMonochromeLogoToCanvas(tempCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128);
+      if (!imgData) return [];
       const w = imgData.width;
       const h = imgData.height;
       const bytesPerRow = Math.ceil(w / 8);
@@ -3432,8 +3679,23 @@
       return bytes;
     }
 
+    function sendBytesToAndroidPrinter(allBytes, successMsg) {
+      let bin = '';
+      for (let i = 0; i < allBytes.length; i++) {
+        bin += String.fromCharCode(allBytes[i]);
+      }
+      const res = window.AndroidPrinter.printRawBase64(btoa(bin));
+      if (res === false) {
+        showToast('Printer tidak merespon. Periksa koneksi Bluetooth printer.');
+      } else {
+        showToast(successMsg);
+      }
+    }
+
     function printReceiptOrder(order, mode) {
-      updateReceiptTextAndVisibilitySync(order, mode);
+      const targetOrder = order || buildSampleOrder();
+      const targetMode = mode || 'CUSTOMER';
+      updateReceiptTextAndVisibilitySync(targetOrder, targetMode);
 
       const method = appState.profile.printMethod || 'bluetooth';
       const hasAndroidBridge = !!(window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function');
@@ -3441,7 +3703,7 @@
       if (method === 'system' || !hasAndroidBridge) {
         const p = appState.profile;
         const logoCanvas = document.getElementById('receipt-logo-canvas');
-        if (mode !== 'KITCHEN' && p.logoEnabled && p.logoDataUrl && logoCanvas.width === 0) {
+        if (targetMode !== 'KITCHEN' && p.logoEnabled && p.logoDataUrl && logoCanvas) {
           renderMonochromeLogoToCanvas(logoCanvas, p.logoDataUrl, p.logoWidth || 180, p.logoThreshold || 128)
             .then(() => triggerSafePrint());
         } else {
@@ -3452,18 +3714,16 @@
 
       (async () => {
         try {
-          await renderReceiptPreview(order, mode);
-          const text = formatReceiptLines(order, mode) + '\n'.repeat(appState.profile.feedLines || 3);
+          ensureAndroidPrinterConnected();
+          await renderReceiptPreview(targetOrder, targetMode);
+          const text = formatReceiptLines(targetOrder, targetMode) + '\n'.repeat(appState.profile.feedLines || 3);
           const initBytes = [0x1B, 0x40, ...getEscPosFontBytes()];
-          const logoBytes = mode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
+          const logoBytes = targetMode === 'CUSTOMER' ? await buildEscPosRasterLogoBytes() : [];
           const afterLogoReset = getEscPosFontBytes();
           const encoder = new TextEncoder();
           const textBytes = Array.from(encoder.encode(text));
           const allBytes = new Uint8Array([...initBytes, ...logoBytes, ...afterLogoReset, ...textBytes]);
-          let bin = '';
-          allBytes.forEach(b => bin += String.fromCharCode(b));
-          window.AndroidPrinter.printRawBase64(btoa(bin));
-          showToast(mode === 'KITCHEN' ? 'Struk dapur dicetak.' : 'Struk pelanggan dicetak.');
+          sendBytesToAndroidPrinter(allBytes, targetMode === 'KITCHEN' ? 'Struk dapur dicetak.' : 'Struk pelanggan dicetak.');
         } catch (e) {
           showToast('Error cetak printer: ' + e.message);
         }
@@ -3481,42 +3741,67 @@
       const usableCols = Math.max(20, cols - leftMarginCount);
       const sep = '-'.repeat(usableCols);
 
+      const center = (txt) => {
+        const s = String(txt || '').trim().slice(0, usableCols);
+        const pad = Math.max(0, Math.floor((usableCols - s.length) / 2));
+        return margin + ' '.repeat(pad) + s;
+      };
+
       const rowLR = (left, right) => {
-        const r = String(right || '');
-        const maxLeft = Math.max(4, usableCols - r.length - 1);
-        const rawL = String(left || '');
+        const r = String(right || '').trim().slice(0, usableCols - 2);
+        const maxLeft = Math.max(1, usableCols - r.length - 1);
+        const rawL = String(left || '').trim();
         const l = rawL.length > maxLeft ? rawL.slice(0, maxLeft) : rawL;
         const space = Math.max(1, usableCols - l.length - r.length);
         return margin + l + ' '.repeat(space) + r;
       };
 
-      const summaryText = [
-        margin + (appState.profile.shopName || 'A POS').toUpperCase(),
-        margin + 'REKAP LAPORAN KEUANGAN',
+      const summaryLines = [
+        center((appState.profile.shopName || 'A POS').toUpperCase()),
+        center('REKAP LAPORAN KEUANGAN'),
         margin + sep,
         rowLR('Periode', ds.periodLabel),
         rowLR('Dicetak', getActiveUser().name),
         margin + sep,
-        rowLR('Omzet', formatNumOnly(ds.netSales)),
-        rowLR('Tunai', formatNumOnly(ds.cashSales)),
-        rowLR('QRIS', formatNumOnly(ds.qrisSales)),
-        rowLR('Total HPP', formatNumOnly(ds.totalHpp)),
-        rowLR('Laba Kotor', formatNumOnly(ds.grossProfit)),
-        rowLR('Pengeluaran', formatNumOnly(ds.totalExpenses)),
-        rowLR('LABA BERSIH', formatNumOnly(ds.netProfit)),
-        ...(ds.mode === 'daily' ? [rowLR('Modal Awal', formatNumOnly(ds.openingCash)), rowLR('Est. Laci', formatNumOnly(ds.drawerEstimate))] : []),
+        rowLR('Omzet', formatRp(ds.netSales)),
+        rowLR('Tunai', formatRp(ds.cashSales)),
+        rowLR('QRIS', formatRp(ds.qrisSales)),
+        rowLR('Total HPP', formatRp(ds.totalHpp)),
+        rowLR('Laba Kotor', formatRp(ds.grossProfit)),
+        rowLR('Pengeluaran', formatRp(ds.totalExpenses)),
+        rowLR('LABA BERSIH', formatRp(ds.netProfit)),
+        ...(ds.mode === 'daily' ? [rowLR('Modal Awal', formatRp(ds.openingCash)), rowLR('Est. Laci', formatRp(ds.drawerEstimate))] : []),
         margin + sep
-      ].join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
+      ];
 
-      if (window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function') {
+      const summaryText = summaryLines.join('\n') + '\n'.repeat(appState.profile.feedLines || 3);
+      const method = appState.profile.printMethod || 'bluetooth';
+      const hasAndroidBridge = !!(window.AndroidPrinter && typeof window.AndroidPrinter.printRawBase64 === 'function');
+
+      if (method !== 'system' && hasAndroidBridge) {
+        ensureAndroidPrinterConnected();
         const bytes = new Uint8Array([0x1B, 0x40, ...getEscPosFontBytes(), ...Array.from(new TextEncoder().encode(summaryText))]);
-        let bin = '';
-        bytes.forEach(b => bin += String.fromCharCode(b));
-        window.AndroidPrinter.printRawBase64(btoa(bin));
-        showToast('Rekap laporan dicetak.');
+        sendBytesToAndroidPrinter(bytes, 'Rekap laporan dicetak.');
       } else {
+        const lrHtml = (l, r, cls = '') => `<div class="rcp-row ${cls}"><span class="rcp-left">${escapeHtml(l)}</span><span class="rcp-right">${escapeHtml(r)}</span></div>`;
         document.getElementById('receipt-logo-preview-wrap').style.display = 'none';
-        document.getElementById('receipt-text-preview').textContent = summaryText;
+        document.getElementById('receipt-structured-preview').innerHTML = `
+          <div class="rcp-shop-title">${escapeHtml((appState.profile.shopName || 'A POS').toUpperCase())}</div>
+          <div class="rcp-center">REKAP LAPORAN KEUANGAN</div>
+          <hr class="rcp-sep" />
+          ${lrHtml('Periode', ds.periodLabel)}
+          ${lrHtml('Dicetak', getActiveUser().name)}
+          <hr class="rcp-sep" />
+          ${lrHtml('Omzet', formatRp(ds.netSales))}
+          ${lrHtml('Tunai', formatRp(ds.cashSales))}
+          ${lrHtml('QRIS', formatRp(ds.qrisSales))}
+          ${lrHtml('Total HPP', formatRp(ds.totalHpp))}
+          ${lrHtml('Laba Kotor', formatRp(ds.grossProfit))}
+          ${lrHtml('Pengeluaran', formatRp(ds.totalExpenses))}
+          ${lrHtml('LABA BERSIH', formatRp(ds.netProfit), 'rcp-total-row')}
+          ${ds.mode === 'daily' ? lrHtml('Modal Awal', formatRp(ds.openingCash)) + lrHtml('Est. Laci', formatRp(ds.drawerEstimate)) : ''}
+          <hr class="rcp-sep" />
+        `;
         triggerSafePrint();
       }
     }
@@ -4218,6 +4503,7 @@
       renderMenuGrid();
       renderCart();
       renderReceiptPreview();
+      window.addEventListener('beforeprint', preparePrintHost);
 
       const today = getTodayStr();
       document.getElementById('laci-filter-date').value = today;
