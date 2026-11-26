@@ -3229,17 +3229,17 @@
 
       const center = (txt) => {
         const s = String(txt || '').trim().slice(0, usableCols);
-        const pad = Math.max(0, Math.round((usableCols - s.length) / 2));
+        const pad = Math.max(0, Math.floor((usableCols - s.length) / 2));
         return margin + ' '.repeat(pad) + s;
       };
 
       const rowLR = (left, right) => {
-        const r = String(right || '');
-        const maxLeft = Math.max(4, usableCols - r.length - 1);
-        const rawL = String(left || '');
+        const r = String(right || '').trim().slice(0, usableCols - 2);
+        const maxLeft = Math.max(1, usableCols - r.length - 1);
+        const rawL = String(left || '').trim();
         const l = rawL.length > maxLeft ? rawL.slice(0, maxLeft) : rawL;
-        const space = Math.max(1, usableCols - l.length - r.length);
-        return margin + l + ' '.repeat(space) + r;
+        const spaceCount = Math.max(1, usableCols - l.length - r.length);
+        return margin + l + ' '.repeat(spaceCount) + r;
       };
 
       const lines = [];
@@ -3272,19 +3272,20 @@
       if (p.social) lines.push(center(p.social));
       lines.push(margin + sep);
 
-      // INFO TRANSAKSI RINGKAS
+      // INFO TRANSAKSI (RATA KIRI-KANAN)
       const dtStr = new Date(order.createdAt).toLocaleString('id-ID', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
+      const cashierInfo = `${order.cashierName} / ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`;
       lines.push(rowLR('No', order.orderNumber));
       lines.push(rowLR('Waktu', dtStr));
-      lines.push(rowLR('Kasir', `${order.cashierName} • ${order.orderType}${order.customerName ? ' (' + order.customerName + ')' : ''}`));
+      lines.push(rowLR('Kasir', cashierInfo));
       lines.push(margin + sep);
 
-      // DAFTAR ITEM: NAMA MARGIN KIRI, NOMINAL RATA KANAN
+      // DAFTAR ITEM: NAMA RATA KIRI, HARGA (DENGAN Rp) RATA KANAN
       order.items.forEach(it => {
         const label = it.qty > 1 ? `${it.name} x${it.qty}` : it.name;
-        const priceStr = formatNumOnly(it.qty * it.price);
+        const priceStr = formatRupiah(it.qty * it.price);
         lines.push(rowLR(label, priceStr));
         if (it.note) {
           lines.push(margin + `  (${it.note})`);
@@ -3293,16 +3294,16 @@
 
       lines.push(margin + sep);
       if (order.discount > 0) {
-        lines.push(rowLR('Subtotal', formatNumOnly(order.subtotal)));
-        lines.push(rowLR('Diskon', '-' + formatNumOnly(order.discount)));
+        lines.push(rowLR('Subtotal', formatRupiah(order.subtotal)));
+        lines.push(rowLR('Diskon', '-' + formatRupiah(order.discount)));
       }
-      lines.push(rowLR('TOTAL', formatNumOnly(order.total)));
+      lines.push(rowLR('TOTAL', formatRupiah(order.total)));
 
       const unpaidFlag = order.paymentStatus === 'UNPAID' || order.payMethod === 'BAYAR NANTI';
       lines.push(rowLR('Metode', unpaidFlag ? 'BAYAR NANTI' : order.payMethod));
       if (!unpaidFlag && order.payMethod === 'TUNAI') {
-        lines.push(rowLR('Tunai', formatNumOnly(order.cashReceived)));
-        lines.push(rowLR('Kembali', formatNumOnly(order.change)));
+        lines.push(rowLR('Tunai', formatRupiah(order.cashReceived)));
+        lines.push(rowLR('Kembali', formatRupiah(order.change)));
       }
       lines.push(margin + sep);
 
